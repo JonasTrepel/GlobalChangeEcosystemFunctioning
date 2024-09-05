@@ -65,6 +65,8 @@ pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
 
 ## Nitrogen depo 
 
+## Defaunation ## 
+
 #### Others ####
 
 ## Biome
