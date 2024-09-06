@@ -59,13 +59,19 @@ pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
 
 ## Percentage temp increase 
 
+## Prec mm increase 
+
+## Percentage mm prec increase 
+
 ## Temperature slope last 20 years
 
 ## Precipitation slope last 20 years 
 
 ## Nitrogen depo 
 
-## Defaunation ## 
+## Megafauna species loss 
+
+## Body mass loss
 
 #### Others ####
 
@@ -95,7 +101,8 @@ colNames <- c(
   "RelPrecDiff", ## Percentage precipitation increase 
   "TempSlope", ## Temperature slope last 20 years
   "PrecSlope", ## Precipitation slope last 20 years 
-  "NitrogenDepo"## Nitrogen depo 
+  "NitrogenDepo", ## Nitrogen depo
+  
 )
 
 covPaths <- c(
