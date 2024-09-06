@@ -96,11 +96,15 @@ colNames <- c(
   "LOSTrend", ## LOS Trend 
   #### Global Change ####
   "TempDiffDeg", ## Degree increase 
-  "PrecDiffMM", ## Precipitation increase
+  "PrecDiffmm", ## Precipitation increase
   "RelTempDiff", ## Percentage temp increase 
   "RelPrecDiff", ## Percentage precipitation increase 
   "TempSlope", ## Temperature slope last 20 years
   "PrecSlope", ## Precipitation slope last 20 years 
+  "MaxTempSlope", ## temp max slope last 20 years
+  "MinTempSlope", ## temp min slope last 20 years
+  "MaxTempDiffDeg", ## temp max diff last 20 years
+  "MinTempDiffmm", ## temp min diff last 20 years
   "NitrogenDepo", ## Nitrogen depo
   
 )
@@ -112,11 +116,11 @@ covPaths <- c(
   "../../../../resources/spatial/Chelsa_Climate/CHELSA_bio1_1981-2010_V.2.1.tif", ## MAT
   NA, ## MaxTemp
   #### Trends ####
-  NA, ## EVI trend
-  NA, ## Fire frequency trend
-  NA, ## SOS Trend 
-  NA, ## EOS Trend
-  NA, ## LOS Trend 
+  "data/spatialData/trendData/eviTrend20032023.tif", ## EVI trend
+  "data/spatialData/trendData/fireFreqTrend20032023.tif", ## Fire frequency trend
+  "data/spatialData/trendData/sosTrend20032023.tif", ## SOS Trend 
+  "data/spatialData/trendData/eosTrend20032023.tif", ## EOS Trend
+  "data/spatialData/trendData/losTrend20032023.tif", ## LOS Trend 
   #### Global Change ####
   NA, ## Degree increase 
   NA, ## Precipitation increase
@@ -124,6 +128,10 @@ covPaths <- c(
   NA, ## Percentage precipitation increase 
   NA, ## Temperature slope last 20 years
   NA, ## Precipitation slope last 20 years 
+  NA, ## temp max slope last 20 years
+  NA, ## temp min slope last 20 years
+  NA, ## temp max diff last 20 years
+  NA, ## temp min diff last 20 years
   "../../../../resources/spatial/N_deposition_Rubin_etal/total_N_dep.tif"## Nitrogen depo 
 )
 
