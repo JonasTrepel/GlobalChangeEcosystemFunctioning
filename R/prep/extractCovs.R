@@ -85,9 +85,10 @@ pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
 colNames <- c(
   #### Environmental ####
   "Elevation", ## Elevation
-  "MAP", ## MAP
+  "MMP", ## MAP
   "MAT", ## MAT
   "MaxTemp", ## MaxTemp
+  "MinTemp", 
   #### Trends ####
   "EVITrend", ## EVI trend
   "FireFreqTrend", ## Fire frequency trend
@@ -95,26 +96,31 @@ colNames <- c(
   "EOSTrend", ## EOS Trend
   "LOSTrend", ## LOS Trend 
   #### Global Change ####
-  "TempDiffDeg", ## Degree increase 
-  "PrecDiffmm", ## Precipitation increase
-  "RelTempDiff", ## Percentage temp increase 
-  "RelPrecDiff", ## Percentage precipitation increase 
-  "TempSlope", ## Temperature slope last 20 years
-  "PrecSlope", ## Precipitation slope last 20 years 
-  "MaxTempSlope", ## temp max slope last 20 years
-  "MinTempSlope", ## temp min slope last 20 years
-  "MaxTempDiffDeg", ## temp max diff last 20 years
-  "MinTempDiffmm", ## temp min diff last 20 years
+  "AbsMeanTempDiff", ## Mean temp change 
+  "RelMeanTempDiff", ## Relative mean temp change
+  "AbsMaxTempDiff", ## Max temp change
+  "RelMaxTempDiff", ## Relative Max temp change
+  "AbsMinTempDiff", ## Min temp change
+  "RelMinTempDiff", ## Relative min temp change
+  "AbsPrecDiff", ## Prec change
+  "RelprecDiff", ## Relative prec change
+  "SlopeMeanTemp", ## Mean temp slope
+  "SlopeMeanTemp", ## Max temp slope
+  "SlopeMeanTemp", ## Min temp slope
+  "SlopePrec", ## Prec slope
   "NitrogenDepo", ## Nitrogen depo
+  "SpeciesLoss", ## Species loss
+  "BodyMassLoss" ## Body mass loss
   
 )
 
 covPaths <- c(
   #### Environmental ####
-  "../../../../resources/spatial/Elevation/Elevation_Global_930m.tif", ## Elevation
-  "../../../../resources/spatial/Chelsa_Climate/CHELSA_bio12_1981-2010_V.2.1.tif", ## MAP
-  "../../../../resources/spatial/Chelsa_Climate/CHELSA_bio1_1981-2010_V.2.1.tif", ## MAT
-  NA, ## MaxTemp
+  "data/spatialData/otherCovariates/Elevation_Global_930m.tif", ## Elevation
+  "data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif", ## MMP
+  "data/spatialData/climateData/currentMeanTemp20092019.tif", ##MAT
+  "data/spatialData/climateData/currentMaxTemp20092019.tif", ##Max Temp
+  "data/spatialData/climateData/currentMinTemp20092019.tif", ## MinTemp
   #### Trends ####
   "data/spatialData/trendData/eviTrend20032023.tif", ## EVI trend
   "data/spatialData/trendData/fireFreqTrend20032023.tif", ## Fire frequency trend
@@ -122,17 +128,21 @@ covPaths <- c(
   "data/spatialData/trendData/eosTrend20032023.tif", ## EOS Trend
   "data/spatialData/trendData/losTrend20032023.tif", ## LOS Trend 
   #### Global Change ####
-  NA, ## Degree increase 
-  NA, ## Precipitation increase
-  NA, ## Percentage temp increase 
-  NA, ## Percentage precipitation increase 
-  NA, ## Temperature slope last 20 years
-  NA, ## Precipitation slope last 20 years 
-  NA, ## temp max slope last 20 years
-  NA, ## temp min slope last 20 years
-  NA, ## temp max diff last 20 years
-  NA, ## temp min diff last 20 years
-  "../../../../resources/spatial/N_deposition_Rubin_etal/total_N_dep.tif"## Nitrogen depo 
+  "data/spatialData/climateData/absoluteChangeMeanTemp.tif", ## Mean temp change 
+  "data/spatialData/climateData/relativeChangeMeanTemp.tif", ## Relative mean temp change
+  "data/spatialData/climateData/absoluteChangeMaxTemp.tif", ## Max temp change
+  "data/spatialData/climateData/relativeChangeMaxTemp.tif", ## Relative Max temp change
+  "data/spatialData/climateData/absoluteChangeMinTemp.tif", ## Min temp change
+  "data/spatialData/climateData/relativeChangeMinTemp.tif", ## Relative min temp change
+  "data/spatialData/climateData/absoluteChangeMonthlyPrec.tif", ## Prec change
+  "data/spatialData/climateData/relativeChangeMonthlyPrec.tif", ## Relative prec change
+  "data/spatialData/climateData/slopeMeanTempChelsa20002019.tif", ## Mean temp slope
+  NA, ## Max temp slope
+  NA, ## Min temp slope
+  NA, ## Prec slope
+  "data/spatialData/otherCovariates/total_N_dep.tif",## Nitrogen depo
+  "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_MASS.tif", ## Species loss
+  "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_RICHNESS.tif" ## Body mass loss
 )
 
 covs <- data.table(

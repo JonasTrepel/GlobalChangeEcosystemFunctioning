@@ -19,15 +19,32 @@ eviR8 <- rast(eviFiles[8])
 
 
 globalEVI <- merge(eviR1, eviR2, eviR3, eviR4, eviR5, eviR6, eviR7, eviR8, 
-                filename = "data/spatialData/trendData/eviTrend20032023.tif", 
+               # filename = "data/spatialData/trendData/eviTrend20032023.tif", 
                 overwrite = TRUE)
-globalEVI[globalEVI > 100] <- NA
-globalEVI[globalEVI < -100] <- NA
+globalEVI <- clamp(globalEVI,
+                       lower=-100,
+                       upper=100,
+                       values=TRUE)
 
 plot(globalEVI)
 
 writeRaster(globalEVI,  "data/spatialData/trendData/eviTrend20032023.tif", 
             overwrite = TRUE)
+
+#### Landcover ----------------------------------------
+lcFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "GlobalLand", full.names = T)
+
+lcR1 <- rast(lcFiles[1])
+lcR2 <- rast(lcFiles[2])
+
+
+globalLC <- merge(lcR1, lcR2, 
+                   filename = "data/spatialData/otherCovariates/GlobalLandCoverCopernicus2019.tif", 
+                   overwrite = TRUE)
+
+
+plot(globalLC)
+
 
 #### Fire Frequency TREND ----------------------------------------
 fireFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "FireFreq", full.names = T)

@@ -131,10 +131,8 @@ currentPrecPaths <- data.frame(paths = currentPrecPathsRaw,
 
 currentPrecStack <- rast(currentPrecPaths)
 
-plot(currentPrecStack[[27]])
-
-currentPrec <- mean(currentPrecStack, na.rm = T)
-currentPrec <- (currentPrec/1000)
+currentPrecRaw <- mean(currentPrecStack, na.rm = T)
+currentPrec <- (currentPrecRaw/100)
 plot(currentPrec)
 
 #write data to avoid redoing all these time-consuming calculations 
@@ -147,29 +145,73 @@ writeRaster(currentMaxT , "data/spatialData/climateData/currentMaxTemp20092019.t
 writeRaster(currentMinT, "data/spatialData/climateData/currentMinTemp20092019.tif", overwrite = T)
 writeRaster(currentPrec , "data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif", overwrite = T)
 
+preIndustMeanT <-  rast("data/spatialData/climateData/preIndustrialMeanTemp16001900.tif")
+preIndustMaxT <-  rast("data/spatialData/climateData/preIndustrialMaxTemp16001900.tif")
+preIndustMinT <-  rast("data/spatialData/climateData/preIndustrialMinTemp16001900.tif")
+preIndustPrec <-  rast("data/spatialData/climateData/preIndustrialMeanMonthlyPrec16001900.tif")
+currentMeanT <- rast("data/spatialData/climateData/currentMeanTemp20092019.tif")
+currentMaxT <- rast("data/spatialData/climateData/currentMaxTemp20092019.tif")
+currentMinT <- rast("data/spatialData/climateData/currentMinTemp20092019.tif")
+currentPrec <- rast("data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif")
+
+
 
 ## Mean Degree Change 
 absChangeMeanT <- (currentMeanT-preIndustMeanT)
-writeRaster(absChangeMeanT, "data/spatialData/climateData/absoluteChangeMeanTemp.tif", overwrite = T)
-plot(currentMeanT)
-plot(preIndustMeanT)
-
+absChangeMeanT[is.infinite(absChangeMeanT)] <- NA
+absChangeMeanT <- clamp(absChangeMeanT,
+                        lower=quantile(values(absChangeMeanT), c(.005), na.rm = T),
+                        upper=quantile(values(absChangeMeanT), c(.995), na.rm = T),
+                        values=TRUE)
 plot(absChangeMeanT)
+writeRaster(absChangeMeanT, "data/spatialData/climateData/absoluteChangeMeanTemp.tif", overwrite = T)
+
 relChangeMeanT <- (currentMeanT/preIndustMeanT)
+relChangeMeanT[is.infinite(relChangeMeanT)] <- NA
+relChangeMeanT <- clamp(relChangeMeanT,
+                       lower=quantile(values(relChangeMeanT), c(.005), na.rm = T),
+                       upper=quantile(values(relChangeMeanT), c(.995), na.rm = T),
+                       values=TRUE)
+plot(relChangeMeanT)
 writeRaster(relChangeMeanT, "data/spatialData/climateData/relativeChangeMeanTemp.tif", overwrite = T)
 
 # Max Degree Change
 absChangeMaxT <- (currentMaxT-preIndustMaxT)
+absChangeMaxT[is.infinite(absChangeMaxT)] <- NA
+absChangeMaxT <- clamp(absChangeMaxT,
+                        lower=quantile(values(absChangeMaxT), c(.005), na.rm = T),
+                        upper=quantile(values(absChangeMaxT), c(.995), na.rm = T),
+                        values=TRUE)
+plot(absChangeMaxT)
 writeRaster(absChangeMaxT, "data/spatialData/climateData/absoluteChangeMaxTemp.tif", overwrite = T)
 
 relChangeMaxT <- (currentMaxT/preIndustMaxT)
+quantile(values(relChangeMaxT))
+relChangeMaxT[is.infinite(relChangeMaxT)] <- NA
+relChangeMaxT <- clamp(relChangeMaxT,
+                       lower=quantile(values(relChangeMaxT), c(.005), na.rm = T),
+                       upper=quantile(values(relChangeMaxT), c(.995), na.rm = T),
+                       values=TRUE)
+plot(relChangeMaxT)
 writeRaster(relChangeMaxT, "data/spatialData/climateData/relativeChangeMaxTemp.tif", overwrite = T)
 
 # Min Degree Change
 absChangeMinT <- (currentMinT-preIndustMinT)
+absChangeMinT[is.infinite(absChangeMinT)] <- NA
+absChangeMinT <- clamp(absChangeMinT,
+                       lower=quantile(values(absChangeMinT), c(.005), na.rm = T),
+                       upper=quantile(values(absChangeMinT), c(.995), na.rm = T),
+                       values=TRUE)
+plot(absChangeMinT)
 writeRaster(absChangeMinT, "data/spatialData/climateData/absoluteChangeMinTemp.tif", overwrite = T)
 
 relChangeMinT <- (currentMinT/preIndustMinT)
+relChangeMinT[is.infinite(relChangeMinT)] <- NA
+relChangeMinT <- clamp(relChangeMinT,
+                       lower=quantile(values(relChangeMinT), c(.005), na.rm = T),
+                       upper=quantile(values(relChangeMinT), c(.995), na.rm = T),
+                       values=TRUE)
+plot(relChangeMinT)
 writeRaster(relChangeMinT, "data/spatialData/climateData/relativeChangeMinTemp.tif", overwrite = T)
 
 
@@ -177,12 +219,23 @@ writeRaster(relChangeMinT, "data/spatialData/climateData/relativeChangeMinTemp.t
 plot(currentPrec)
 plot(preIndustPrec)
 absChangePrec <- (currentPrec-preIndustPrec)
-writeRaster(absChangePrec, "data/spatialData/climateData/absoluteChangeMonthlyPrec.tif", overwrite = T)
+absChangePrec[is.infinite(absChangePrec)] <- NA
+absChangePrec <- clamp(absChangePrec,
+                       lower=quantile(values(absChangePrec), c(.005), na.rm = T),
+                       upper=quantile(values(absChangePrec), c(.995), na.rm = T),
+                       values=TRUE)
 plot(absChangePrec)
+writeRaster(absChangePrec, "data/spatialData/climateData/absoluteChangeMonthlyPrec.tif", overwrite = T)
 
 relChangePrec <- (currentPrec/preIndustPrec)
-writeRaster(relChangePrec, "data/spatialData/climateData/relativeChangeMonthlyPrec.tif", overwrite = T)
+quantile(values(relChangePrec), c(1, .99, .5, .01, 0), na.rm  = T)
+relChangePrec[is.infinite(relChangePrec)] <- NA
+relChangePrec <- clamp(relChangePrec,
+                       lower=quantile(values(relChangePrec), c(.005), na.rm = T),
+                       upper=quantile(values(relChangePrec), c(.995), na.rm = T),
+                       values=TRUE)
 plot(relChangePrec)
+writeRaster(relChangePrec, "data/spatialData/climateData/relativeChangeMonthlyPrec.tif", overwrite = T)
 
 ## SLOPES ----------------------
 
@@ -216,6 +269,8 @@ fitRasterLm <- function(x, allStats = FALSE) {
   }
 }
 
+terraOptions(memfrac = .9)
+terraOptions()
 ## Temperature slope last 20 years
 
 currentMeanTPathsRaw <- list.files(path = "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Data/Climate/Modern/CHELSA_tas/",  full.names = T)
@@ -225,7 +280,7 @@ currentMeanPaths <- data.frame(paths = currentMeanTPathsRaw,
   mutate(year = gsub("CHELSA_tas_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2003:2019))
+  filter(year %in% c(2000:2019))
 
 listMeanT <- list()
 
@@ -248,10 +303,13 @@ for(Year in unique(currentMeanPaths$year)){
   
 }
 
-stackMeanT <- rast(listMeanT)
 
-slopeMeanT <- app(stackMeanT, fun=fitRasterLm, allStats = FALSE,
-                  filename = "data/spatialData/climateData/slopeMeanTempChelsa20032019.tif")
+#stackMeanT <- rast(listMeanT)
+stackMeanT <- do.call(c, listMeanT)
+
+
+slopeMeanT <- app(stackMeanT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
+                  filename = "data/spatialData/climateData/slopeMeanTempChelsa20002019.tif")
 
 plot(slopeMeanT)
 
@@ -264,7 +322,7 @@ currentMaxPaths <- data.frame(paths = currentMaxTPathsRaw,
   mutate(year = gsub("CHELSA_tasmax_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2003:2019))
+  filter(year %in% c(2000:2019))
 
 listMaxT <- list()
 
@@ -277,7 +335,7 @@ for(Year in unique(currentMaxPaths$year)){
   
   annualStack <- rast(yearPaths)
   
-  annualMax <- max(annualStack, na.rm = T)
+  annualMaxRaw <- max(annualStack, na.rm = T)
   
   names(annualMaxRaw) <- paste0("year", Year)
   annualMax <- ((annualMaxRaw/10)-273.15)
@@ -290,10 +348,12 @@ for(Year in unique(currentMaxPaths$year)){
   
 }
 
-stackMaxT <- rast(listMaxT)
+#stackMaxT <- rast(listMaxT)
+stackMaxT <- do.call(c, listMaxT)
 
-slopeMaxT <- app(stackMaxT, fun=fitRasterLm, allStats = FALSE,
-                  filename = "data/spatialData/climateData/slopeMaxTempChelsa20032019.tif")
+
+slopeMaxT <- app(stackMaxT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
+                  filename = "data/spatialData/climateData/slopeMaxTempChelsa20002019.tif")
 
 plot(slopeMaxT)
 
@@ -305,7 +365,7 @@ currentMinPaths <- data.frame(paths = currentMinTPathsRaw,
   mutate(year = gsub("CHELSA_tasmin_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2003:2019))
+  filter(year %in% c(2000:2019))
 
 listMinT <- list()
 
@@ -330,10 +390,11 @@ for(Year in unique(currentMinPaths$year)){
   
 }
 
-stackMinT <- rast(listMinT)
+stackMinT <- do.call(c, listMinT)
 
-slopeMinT <- app(stackMinT, fun=fitRasterLm, allStats = FALSE, 
-                 filename = "data/spatialData/climateData/slopeMinTempChelsa20032019.tif")
+
+slopeMinT <- app(stackMinT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
+                 filename = "data/spatialData/climateData/slopeMinTempChelsa20002019.tif")
 
 plot(slopeMinT)
 
@@ -345,7 +406,7 @@ currentPrecPaths <- data.frame(paths = currentPrecPathsRaw,
   mutate(year = gsub("CHELSA_pr_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2003:2019))
+  filter(year %in% c(2000:2019))
 
 listPrec <- list()
 
@@ -359,7 +420,7 @@ for(Year in unique(currentPrecPaths$year)){
   annualStack <- rast(yearPaths)
   
   annualPrecRaw <- mean(annualStack, na.rm = T)
-  annualMPrec <- (annualPrecRaw/1000)
+  annualMPrec <- (annualPrecRaw/100)
   names(annualMPrec) <- paste0("year", Year)
   
   listPrec[[length(listPrec) + 1]] <- annualMPrec
@@ -369,9 +430,10 @@ for(Year in unique(currentPrecPaths$year)){
   
 }
 
-stackPrec <- rast(listPrec)
+stackPrec <- do.call(c, listPrec)
 
-slopePrec <- app(stackPrec, fun=fitRasterLm, allStats = FALSE,
-                 filename = "data/spatialData/climateData/slopePrecChelsa20032019.tif")
+
+slopePrec <- app(stackPrec, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
+                 filename = "data/spatialData/climateData/slopePrecChelsa20002019.tif")
 
 plot(slopePrec)
