@@ -1,6 +1,5 @@
 ##################
 data/spatialData/
-data/processedData/cleanData/gridWithCovs.csv
 ##################
 # History files
 .Rhistory
