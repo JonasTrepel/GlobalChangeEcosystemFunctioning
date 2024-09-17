@@ -54,8 +54,8 @@ world <- rnaturalearth::ne_countries() %>% dplyr::select(continent, sovereignt, 
 
 #world <- world %>% filter(sovereignt == "Germany")
 
-## For now 10km, but change that later 
-worldGridRaw <- st_make_grid(world, cellsize = c(0.09, 0.09)) 
+## For now 5km
+worldGridRaw <- st_make_grid(world, cellsize = c(0.045, 0.045)) 
 worldGridRaw1 <- worldGridRaw %>% st_as_sf()
 
 mapview::mapview(worldGridRaw1)
@@ -115,10 +115,6 @@ plot(lc)
 gridTransLC <- worldGridRaw2 %>%
   st_transform(crs(lc))
 
-# lcExtr <- terra::extract(lc,
-#                            gridTransLC,
-#                            fun = Mode, na.rm = T)# 
-
 
 lcExtr <- exactextractr::exact_extract(lc,
                                        gridTransLC,
@@ -168,12 +164,20 @@ colNames <- c(
   "MAT", ## MAT
   "MaxTemp", ## MaxTemp
   "MinTemp", ##MinTemp
-  #### Trends ####
-  "EVITrend", ## EVI trend
+  "BurnedAreaMean", ## Burned Area
+  "FireFrequencyMean", ## Fire Frequency
+  "EVI", ## EVI
+  "NPP", ##
+  "EviSD", ##
+ 
+   #### Trends ####
+  "EviTrend", ## EVI trend
+  "NppTrend", ## NPP Trend
   "FireFreqTrend", ## Fire frequency trend
+  "BurnedAreaTrend", ## Burned area trend
   "SOSTrend", ## SOS Trend 
-  "EOSTrend", ## EOS Trend
-  "LOSTrend", ## LOS Trend 
+  "EviSDTrend", ##EVI SD Trend
+
   #### Global Change ####
   "AbsMeanTempDiff", ## Mean temp change 
   "RelMeanTempDiff", ## Relative mean temp change
@@ -184,13 +188,13 @@ colNames <- c(
   "AbsPrecDiff", ## Prec change
   "RelprecDiff", ## Relative prec change
   "SlopeMeanTemp", ## Mean temp slope
-  "SlopeMeanTemp", ## Max temp slope
-  "SlopeMeanTemp", ## Min temp slope
+  "SlopeMaxTemp", ## Max temp slope
+  "SlopeMinTemp", ## Min temp slope
   "SlopePrec", ## Prec slope
   "NitrogenDepo", ## Nitrogen depo
+  "HumanModification", #Human moddification index
   "SpeciesLoss", ## Species loss
   "BodyMassLoss" ## Body mass loss
-  
 )
 
 covPaths <- c(
@@ -200,12 +204,20 @@ covPaths <- c(
   "data/spatialData/climateData/currentMeanTemp20092019.tif", ##MAT
   "data/spatialData/climateData/currentMaxTemp20092019.tif", ##Max Temp
   "data/spatialData/climateData/currentMinTemp20092019.tif", ## MinTemp
+  "data/spatialData/otherCovariates/BurnedAreaMean20012023.tif", ## Burned Area
+  "data/spatialData/otherCovariates/FireMeanFreqTrend20012023.tif", ## Fire Frequency
+  "data/spatialData/otherCovariates/EviMean20012023.tif", ## EVI
+  "data/spatialData/otherCovariates/NppMean20012023.tif", ##NPP
+  "data/spatialData/otherCovariates/EviSdMean20012023.tif", ## EVI Sd trend
+  
   #### Trends ####
-  "data/spatialData/trendData/eviTrend20032023.tif", ## EVI trend
-  "data/spatialData/trendData/fireFreqTrend20032023.tif", ## Fire frequency trend
-  "data/spatialData/trendData/sosTrend20032023.tif", ## SOS Trend 
-  "data/spatialData/trendData/eosTrend20032023.tif", ## EOS Trend
-  "data/spatialData/trendData/losTrend20032023.tif", ## LOS Trend 
+  "data/spatialData/trendData/EviTrend20012023.tif", ## EVI trend
+  "data/spatialData/trendData/NppTrend20012023.tif", ## NPP Trend
+  "data/spatialData/trendData/FireFreqTrend20012023.tif", ## Fire frequency trend
+  "data/spatialData/trendData/BurnedAreaTrend20012023.tif", ## Burned area trend
+  "data/spatialData/trendData/SosTrend20012023.tif", ## SOS Trend 
+  "data/spatialData/trendData/EviSdTrend20012023.tif", ##EVI SD Trend
+  
   #### Global Change ####
   "data/spatialData/climateData/absoluteChangeMeanTemp.tif", ## Mean temp change 
   "data/spatialData/climateData/relativeChangeMeanTemp.tif", ## Relative mean temp change
@@ -215,11 +227,12 @@ covPaths <- c(
   "data/spatialData/climateData/relativeChangeMinTemp.tif", ## Relative min temp change
   "data/spatialData/climateData/absoluteChangeMonthlyPrec.tif", ## Prec change
   "data/spatialData/climateData/relativeChangeMonthlyPrec.tif", ## Relative prec change
-  "data/spatialData/climateData/slopeMeanTempChelsa20032019.tif", ## Mean temp slope
-  NA, ## Max temp slope
-  NA, ## Min temp slope
-  NA, ## Prec slope
+  "data/spatialData/climateData/slopeMeanTempChelsa20012019.tif", ## Mean temp slope
+  "data/spatialData/climateData/slopeMaxTempChelsa20012019.tif", ## Max temp slope
+  "data/spatialData/climateData/slopeMinTempChelsa20012019.tif", ## Min temp slope
+  "data/spatialData/climateData/slopePrecChelsa20012019.tif", ## Prec slope
   "data/spatialData/otherCovariates/total_N_dep.tif",## Nitrogen depo
+  "data/spatialData/otherCovariates/lulc-human-modification-terrestrial-systems_geographic.tif", #Human moddification index
   "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_MASS.tif", ## Species loss
   "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_RICHNESS.tif" ## Body mass loss
 )
@@ -261,6 +274,7 @@ fwrite(worldGridCovsDT, "data/processedData/cleanData/gridWithCovs.csv")
 worldGridCovs <- worldGridRawCovs
 
 write_sf(worldGridCovs, "data/spatialData/gridWithCovs.gpkg")
+
 #### EXTRACT CATEGORICAl COVS #### ----------------------------------
 
 ## Biome
@@ -273,12 +287,8 @@ rastTmp <- terra::rast(res = 0.045) #roughly 5 km at equator
 biomeR <- terra::rasterize(wwfBiome, rastTmp, field = "BIOME")
 plot(biomeR)
 
-worldGridBiome <- worldGridRawCovs %>%
+worldGridBiome <- worldGridRawCovs %>% st_as_sf() %>%
   st_transform(crs(biomeR))
-
-biomeExtr <- terra::extract(biomeR,
-                            worldGridBiome,
-                            fun = Mode, na.rm = T)# 
 
 biomeExtr <- exactextractr::exact_extract(biomeR,
                                           worldGridBiome,
@@ -297,23 +307,28 @@ biomeExtrFin <- data.table(BIOME = biomeExtr) %>%
   mutate(geometry = NULL) %>% 
   left_join(biomeLeg, by = "BIOME") %>% 
   rename(Biome = BIOME_Name) %>% 
-  dplyr::select(unique_id, Biome) 
+  dplyr::select(gridID, Biome) 
 
-worldGridCovs <- worldGridRawCovs %>% 
-  left_join(biomeExtrFin)
 
 ######## Summarize and Write Out
-
 worldGridCovsDT <- worldGridRawCovs %>% 
   left_join(biomeExtrFin) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
-         iucnCat = ifelse(is.na(iucnCat), "Not Protected", iucnCat))
+         geom = NULL, 
+         iucnCat = ifelse(is.na(iucnCat), "Not Protected", iucnCat), 
+         FireFreqTrend = ifelse(is.na(FireFreqTrend), 0 , FireFreqTrend),
+         BurnedAreaMean = ifelse(is.na(BurnedAreaMean), 0 , BurnedAreaMean),
+         FireFrequencyMean = ifelse(is.na(FireFrequencyMean), 0 , FireFrequencyMean)
+         )
 
 fwrite(worldGridCovsDT, "data/processedData/cleanData/gridWithCovs.csv")
 
 worldGridCovs <- worldGridRawCovs %>% 
   left_join(biomeExtrFin) %>% 
-  mutate(iucnCat = ifelse(is.na(iucnCat), "Not Protected", iucnCat))
+  mutate(iucnCat = ifelse(is.na(iucnCat), "Not Protected", iucnCat),
+         FireFreqTrend = ifelse(is.na(FireFreqTrend), 0 , FireFreqTrend),
+         BurnedAreaMean = ifelse(is.na(BurnedAreaMean), 0 , BurnedAreaMean),
+         FireFrequencyMean = ifelse(is.na(FireFrequencyMean), 0 , FireFrequencyMean))
 
-write_sf(worldGridCovs, "data/spatialData/gridWithCovs.gpkg")
+write_sf(worldGridCovs, "data/spatialData/gridWithCovs.gpkg", append = FALSE)

@@ -280,7 +280,7 @@ currentMeanPaths <- data.frame(paths = currentMeanTPathsRaw,
   mutate(year = gsub("CHELSA_tas_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2000:2019))
+  filter(year %in% c(2001:2019))
 
 listMeanT <- list()
 
@@ -308,8 +308,8 @@ for(Year in unique(currentMeanPaths$year)){
 stackMeanT <- do.call(c, listMeanT)
 
 
-slopeMeanT <- app(stackMeanT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
-                  filename = "data/spatialData/climateData/slopeMeanTempChelsa20002019.tif")
+slopeMeanT <- app(stackMeanT, fun=fitRasterLm, allStats = FALSE, cores = 100, overwrite = TRUE,
+                  filename = "data/spatialData/climateData/slopeMeanTempChelsa20012019.tif")
 
 plot(slopeMeanT)
 
@@ -322,7 +322,7 @@ currentMaxPaths <- data.frame(paths = currentMaxTPathsRaw,
   mutate(year = gsub("CHELSA_tasmax_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2000:2019))
+  filter(year %in% c(2001:2019))
 
 listMaxT <- list()
 
@@ -352,8 +352,8 @@ for(Year in unique(currentMaxPaths$year)){
 stackMaxT <- do.call(c, listMaxT)
 
 
-slopeMaxT <- app(stackMaxT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
-                  filename = "data/spatialData/climateData/slopeMaxTempChelsa20002019.tif")
+slopeMaxT <- app(stackMaxT, fun=fitRasterLm, allStats = FALSE, cores = 100, overwrite = TRUE,
+                  filename = "data/spatialData/climateData/slopeMaxTempChelsa20012019.tif")
 
 plot(slopeMaxT)
 
@@ -365,7 +365,7 @@ currentMinPaths <- data.frame(paths = currentMinTPathsRaw,
   mutate(year = gsub("CHELSA_tasmin_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2000:2019))
+  filter(year %in% c(2001:2019))
 
 listMinT <- list()
 
@@ -393,8 +393,8 @@ for(Year in unique(currentMinPaths$year)){
 stackMinT <- do.call(c, listMinT)
 
 
-slopeMinT <- app(stackMinT, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
-                 filename = "data/spatialData/climateData/slopeMinTempChelsa20002019.tif")
+slopeMinT <- app(stackMinT, fun=fitRasterLm, allStats = FALSE, cores = 100, overwrite = TRUE,
+                 filename = "data/spatialData/climateData/slopeMinTempChelsa20012019.tif")
 
 plot(slopeMinT)
 
@@ -406,7 +406,7 @@ currentPrecPaths <- data.frame(paths = currentPrecPathsRaw,
   mutate(year = gsub("CHELSA_pr_", "", files),
          year = gsub("_V.2.1.tif", "", year), 
          year = str_split_i(year, "_", 2) ) %>%
-  filter(year %in% c(2000:2019))
+  filter(year %in% c(2001:2019))
 
 listPrec <- list()
 
@@ -433,7 +433,9 @@ for(Year in unique(currentPrecPaths$year)){
 stackPrec <- do.call(c, listPrec)
 
 
-slopePrec <- app(stackPrec, fun=fitRasterLm, allStats = FALSE, cores = 25, overwrite = TRUE,
-                 filename = "data/spatialData/climateData/slopePrecChelsa20002019.tif")
+slopePrec <- app(stackPrec, fun=fitRasterLm, allStats = FALSE, cores = 100, overwrite = TRUE,
+                 filename = "data/spatialData/climateData/slopePrecChelsa20012019.tif")
 
 plot(slopePrec)
+
+quantile(values(slopePrec), na.rm = T)
