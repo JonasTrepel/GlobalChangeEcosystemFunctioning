@@ -186,7 +186,7 @@ colNames <- c(
   "AbsMinTempDiff", ## Min temp change
   "RelMinTempDiff", ## Relative min temp change
   "AbsPrecDiff", ## Prec change
-  "RelprecDiff", ## Relative prec change
+  "RelPrecDiff", ## Relative prec change
   "SlopeMeanTemp", ## Mean temp slope
   "SlopeMaxTemp", ## Max temp slope
   "SlopeMinTemp", ## Min temp slope
@@ -294,7 +294,7 @@ biomeExtr <- exactextractr::exact_extract(biomeR,
                                           worldGridBiome,
                                        summarize_df = TRUE,
                                        fun = function(df){
-                                         dat <- df[!is.na(df$value) & df$coverage_fraction > 0.75, ]
+                                         dat <- df[!is.na(df$value) & df$coverage_fraction > 0.5, ]
                                          uniqueValues <- unique(dat$value)
                                          mode <- uniqueValues[which.max(tabulate(match(dat$value, uniqueValues)))]
                                          return(mode)
