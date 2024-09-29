@@ -6,6 +6,7 @@ library(mgcv)
 library(MuMIn)
 library(broom)
 library(tictoc)
+
 source("R/functions/partialPred.R")
 
 pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>% 
@@ -483,6 +484,7 @@ foreach.results <- foreach(modelGroup = unique(guide$modelGroup),
   return(resList)
   
 }
+
 
 print("loop done")
 toc()
