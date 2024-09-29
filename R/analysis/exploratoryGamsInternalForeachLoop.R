@@ -235,8 +235,9 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
+parallel::detectCores()
 # Create and register a cluster
-clust <- makeCluster(4)
+clust <- makeCluster(28)
 registerDoSNOW(clust)
 
 rbindLists <- function(x, y) {combined.list <- list(res = rbind(x$res, y$res),
@@ -498,7 +499,7 @@ toc()
 stopCluster(clust)
 
 modelResults <- list(bm.spec = bm.spec.out, res = res.out, pred = pred.out, pred.int = pred.int.out)
-#saveRDS(modelResults, "builds/modelOutputs/exploratoryGamRes.Rds")
+saveRDS(modelResults, "builds/modelOutputs/exploratoryGamRes.Rds")
 
 foreach.results
 stop(pb)
