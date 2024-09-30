@@ -77,7 +77,7 @@ table(pred$randomEffect)
 res[res$modelGroup == "EviTrendFullNonRandom",]$r_squared
 
 pEviFullNonR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.5) +
+  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullNonRandom") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -91,8 +91,8 @@ pEviFullNonR <- ggplot() +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
   facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
-  labs(title = "EVI Trend (Full Model Without Random Effects)", 
-       subtitle = bquote(R^2 == .(round(res[res$modelGroup == "EviTrendFullNonRandom",]$r_squared, 2)))) +
+  labs(title = bquote("EVI Trend (Full Model Without Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "EviTrendFullNonRandom",]$r_squared, 2)) * ")")) +
+  
   theme_bw() +
   theme(legend.position = "none", 
         plot.title = element_text(face = "bold", hjust = 0.5), 
@@ -106,7 +106,7 @@ pEviFullNonR
 res[res$modelGroup == "EviTrendFullRandom",]$r_squared
 
 pEviFullR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.5) +
+  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -120,12 +120,11 @@ pEviFullR <- ggplot() +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
   facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
-  labs(title = "EVI Trend (Full Model With Random Effects)", 
-       subtitle = bquote(R^2 == .(round(res[res$modelGroup == "EviTrendFullRandom",]$r_squared, 2)))) +
+  labs(title = bquote("EVI Trend (Full Model With Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "EviTrendFullRandom",]$r_squared, 2)) * ")")) +
   theme_bw() +
   theme(legend.position = "none", 
         plot.title = element_text(face = "bold", hjust = 0.5), 
-        plot.subtitle = element_text(hjust = 0.5, size = 12), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
         panel.grid = element_blank()
   )
 
@@ -135,7 +134,8 @@ pEviFullR
 res[res$modelGroup == "EviTrendBestModel",]$r_squared
 
 pEviBest <- ggplot() +
-  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.5) +
+  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
+             aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -149,18 +149,318 @@ pEviBest <- ggplot() +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
   facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
-  labs(title = "EVI Trend (Best Model)", 
-       subtitle = bquote(R^2 == .(round(res[res$modelGroup == "EviTrendBestModel",]$r_squared, 2)))) +
+  labs(title = bquote("EVI Trend (Best Model; " ~ R^2 == .(round(res[res$modelGroup == "EviTrendBestModel",]$r_squared, 2)) * ")")) +
   theme_bw() +
-  theme(
-        legend.position = c(0.85, 0.2), 
-        legend.justification = c(1, 0),
+  theme(legend.position = "bottom", 
+        legend.key.height = unit(0.3, "cm"),
+        legend.box = "vertical", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  ) +
+  guides(
+    color = guide_legend(nrow = 7, ncol = 2), 
+    fill = guide_legend(ncol = 2, nrow = 7),
+    linetype = guide_legend(nrow = 1)
+  )
+
+pEviBest
+
+pEvi <- grid.arrange(pEviFullR, pEviBest, ncol = 1, heights = c(1, 1.4))
+ggsave(plot = pEvi,  "builds/plots/exploratoryGams/EviTrendGamRes.png", dpi = 600, height = 12, width = 9)
+
+
+# Npp Trend ---------------------------------------
+
+## Full Non Random
+res[res$modelGroup == "NppTrendFullNonRandom",]$r_squared
+
+pNppFullNonR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("Npp Trend (Full Model Without Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "NppTrendFullNonRandom",]$r_squared, 2)) * ")")) +
+  
+  theme_bw() +
+  theme(legend.position = "none", 
         plot.title = element_text(face = "bold", hjust = 0.5), 
         plot.subtitle = element_text(hjust = 0.5, size = 12), 
         panel.grid = element_blank()
   )
 
-pEviBest
+pNppFullNonR
 
-pEvi <- grid.arrange(pEviFullNonR, pEviFullR, pEviBest, ncol = 1)
-ggsave(plot = pEvi,  "builds/plots/exploratoryGams/EviTrendGamRes.png", dpi = 600, height = 16, width = 10)
+## Full Random
+res[res$modelGroup == "NppTrendFullRandom",]$r_squared
+
+pNppFullR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("Npp Trend (Full Model With Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "NppTrendFullRandom",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  )
+
+pNppFullR
+
+## Best
+res[res$modelGroup == "NppTrendBestModel",]$r_squared
+
+pNppBest <- ggplot() +
+  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("NppTrendBestModel"), ]$cleanVar), ], 
+             aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("Npp Trend (Best Model; " ~ R^2 == .(round(res[res$modelGroup == "NppTrendBestModel",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        legend.key.height = unit(0.3, "cm"),
+        legend.box = "vertical", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  ) +
+  guides(
+    color = guide_legend(nrow = 7, ncol = 2), 
+    fill = guide_legend(ncol = 2, nrow = 7),
+    linetype = guide_legend(nrow = 1)
+  )
+
+pNppBest
+
+pNpp <- grid.arrange(pNppFullR, pNppBest, ncol = 1, heights = c(1, 1.4))
+ggsave(plot = pNpp,  "builds/plots/exploratoryGams/NppTrendGamRes.png", dpi = 600, height = 12, width = 9)
+
+# BurnedArea Trend ---------------------------------------
+
+## Full Non Random
+res[res$modelGroup == "BurnedAreaTrendFullNonRandom",]$r_squared
+
+pBurnedAreaFullNonR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("BurnedArea Trend (Full Model Without Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "BurnedAreaTrendFullNonRandom",]$r_squared, 2)) * ")")) +
+  
+  theme_bw() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 12), 
+        panel.grid = element_blank()
+  )
+
+pBurnedAreaFullNonR
+
+## Full Random
+res[res$modelGroup == "BurnedAreaTrendFullRandom",]$r_squared
+
+pBurnedAreaFullR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("BurnedArea Trend (Full Model With Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "BurnedAreaTrendFullRandom",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  )
+
+pBurnedAreaFullR
+
+## Best
+res[res$modelGroup == "BurnedAreaTrendBestModel",]$r_squared
+
+pBurnedAreaBest <- ggplot() +
+  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("BurnedAreaTrendBestModel"), ]$cleanVar), ], 
+             aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("BurnedArea Trend (Best Model; " ~ R^2 == .(round(res[res$modelGroup == "BurnedAreaTrendBestModel",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        legend.key.height = unit(0.3, "cm"),
+        legend.box = "vertical", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  ) +
+  guides(
+    color = guide_legend(nrow = 7, ncol = 2), 
+    fill = guide_legend(ncol = 2, nrow = 7),
+    linetype = guide_legend(nrow = 1)
+  )
+
+pBurnedAreaBest
+
+pBurnedArea <- grid.arrange(pBurnedAreaFullR, pBurnedAreaBest, ncol = 1, heights = c(1, 1.4))
+ggsave(plot = pBurnedArea,  "builds/plots/exploratoryGams/BurnedAreaTrendGamRes.png", dpi = 600, height = 12, width = 9)
+
+# Sos Trend ---------------------------------------
+
+## Full Non Random
+res[res$modelGroup == "SOSTrendFullNonRandom",]$r_squared
+
+pSOSFullNonR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("SOS Trend (Full Model Without Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "SOSTrendFullNonRandom",]$r_squared, 2)) * ")")) +
+  
+  theme_bw() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 12), 
+        panel.grid = element_blank()
+  )
+
+pSOSFullNonR
+
+## Full Random
+res[res$modelGroup == "SOSTrendFullRandom",]$r_squared
+
+pSOSFullR <- ggplot() +
+  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("SOS Trend (Full Model With Random Effects; " ~ R^2 == .(round(res[res$modelGroup == "SOSTrendFullRandom",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  )
+
+pSOSFullR
+
+## Best
+res[res$modelGroup == "SOSTrendBestModel",]$r_squared
+
+pSOSBest <- ggplot() +
+  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("SOSTrendBestModel"), ]$cleanVar), ], 
+             aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == TRUE, ], 
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+  geom_ribbon(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == TRUE, ],
+            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
+  facet_wrap(~ cleanVar, scales = "free_x", ncol = 4) +
+  labs(title = bquote("SOS Trend (Best Model; " ~ R^2 == .(round(res[res$modelGroup == "SOSTrendBestModel",]$r_squared, 2)) * ")")) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        legend.key.height = unit(0.3, "cm"),
+        legend.box = "vertical", 
+        plot.title = element_text(face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(hjust = 0.5, size = 10), 
+        panel.grid = element_blank()
+  ) +
+  guides(
+    color = guide_legend(nrow = 7, ncol = 2), 
+    fill = guide_legend(ncol = 2, nrow = 7),
+    linetype = guide_legend(nrow = 1)
+  )
+
+pSOSBest
+
+pSOS <- grid.arrange(pSOSFullR, pSOSBest, ncol = 1, heights = c(1, 1.4))
+ggsave(plot = pSOS,  "builds/plots/exploratoryGams/SOSTrendGamRes.png", dpi = 600, height = 12, width = 9)
+
