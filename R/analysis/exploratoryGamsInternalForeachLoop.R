@@ -55,9 +55,7 @@ vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're')",
           "s(Biome, SlopePrec_scaled, bs = 're')", 
           "s(Biome, NitrogenDepo_scaled, bs = 're')", 
           "s(Biome, HumanModification_scaled, bs = 're')", 
-          "s(Biome, PaAge_scaled, bs = 're')", 
           "s(Biome, PaAreaKm2_scaled, bs = 're')",
-          "s(PaAge_scaled)", 
           "s(PaAreaKm2_scaled)",
           "s(SlopeMeanTemp_scaled)",
           "s(SlopeMaxTemp_scaled)",
@@ -193,7 +191,7 @@ subGuideFullNonRandom <- guideRaw2 %>%
          exclude = case_when(
            .default = "no", 
            grepl("bs = 're')", formula) ~ "exclude",
-           nVar < 8 ~ "exclude")) %>% 
+           nVar < 7 ~ "exclude")) %>% 
   filter(exclude == "no") %>% mutate(modelGroup = paste0(response, "FullNonRandom")) %>% 
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE,FALSE)) 
 
@@ -209,7 +207,7 @@ subGuideFullRandom <- guideRaw2 %>%
            grepl("PaAge_scaled)", formula) ~ "exclude",
            grepl("PaAreaKm2_scaled)", formula) ~ "exclude",
            grepl("HumanModification_scaled)", formula) ~ "exclude",
-           nVar < 8 ~ "exclude")) %>%
+           nVar < 7 ~ "exclude")) %>%
   filter(exclude == "no") %>%
   mutate(modelGroup = paste0(response, "FullRandom")) %>%
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
@@ -498,10 +496,14 @@ print("loop done")
 toc()
 stopCluster(clust)
 
+bm.spec.out <- unique(bm.spec.out)
+res.out <- unique(res.out)
+pred.out <- unique(pred.out)
+pred.int.out <- unique(pred.int.out)
+
 modelResults <- list(bm.spec = bm.spec.out, res = res.out, pred = pred.out, pred.int = pred.int.out)
 saveRDS(modelResults, "builds/modelOutputs/exploratoryGamRes.Rds")
 
-foreach.results
 stop(pb)
 
 
