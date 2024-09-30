@@ -232,7 +232,7 @@ subGuideFullNonRandomNoHerbivores <- guideRaw %>%
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE,FALSE)) 
 
 
-subGuideFullRandom <- guideRaw2 %>%
+subGuideFullRandom <- guideRaw %>%
   mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
            .default = "no",
@@ -255,18 +255,18 @@ subGuideFullRandom <- guideRaw2 %>%
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
 
 
-subGuideRandomNoHerbivores <- guideRaw2 %>%
+subGuideRandomNoHerbivores <- guideRaw %>%
   mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
            .default = "no",
-           grepl("NitrogenDepo_scaled)", formula) ~ "exclude",
-           grepl("SlopeMeanTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopeMaxTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopeMinTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopePrec_scaled)", formula) ~ "exclude",
-           grepl("PaAge_scaled)", formula) ~ "exclude",
-           grepl("PaAreaKm2_scaled)", formula) ~ "exclude",
-           grepl("HumanModification_scaled)", formula) ~ "exclude",
+           grepl("NitrogenDepo_scaled\\)", formula) ~ "exclude",
+           grepl("SlopeMeanTemp_scaled\\)", formula) ~ "exclude",
+           grepl("SlopeMaxTemp_scaled\\)", formula) ~ "exclude",
+           grepl("SlopeMinTemp_scaled\\)", formula) ~ "exclude",
+           grepl("SlopePrec_scaled\\)", formula) ~ "exclude",
+           grepl("PaAge_scaled\\)", formula) ~ "exclude",
+           grepl("PaAreaKm2_scaled\\)", formula) ~ "exclude",
+           grepl("HumanModification_scaled\\)", formula) ~ "exclude",
            grepl("MaxBodyMass_scaled", formula) ~ "exclude",
            grepl("MeanBodyMassCwm_scaled", formula) ~ "exclude",
            grepl("HerbivoreSpeciesRichness_scaled", formula) ~ "exclude",
@@ -563,7 +563,6 @@ stopCluster(clust)
 modelResults <- list(bm.spec = bm.spec.out, res = res.out, pred = pred.out, pred.int = pred.int.out)
 saveRDS(modelResults, "builds/modelOutputs/exploratoryGamReserveRes.Rds")
 
-foreach.results
 stop(pb)
 
 
