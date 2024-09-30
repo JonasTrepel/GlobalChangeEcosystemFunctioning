@@ -42,7 +42,7 @@ dtMod <- pasCovsDTRaw %>%
 
 dtModLong <- dtMod %>% 
   pivot_longer(cols = c("SlopeMeanTemp", "SlopeMaxTemp", "SlopeMinTemp", "SlopePrec",
-                        "NitrogenDepo", "HumanModification", "PaAge","PaAreaKm2"), 
+                        "NitrogenDepo", "HumanModification", "PaAreaKm2"), 
                names_to = "cleanVar", values_to = "varValue")
 
 ## load model results 
