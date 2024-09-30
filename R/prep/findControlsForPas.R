@@ -94,8 +94,6 @@ paControls <- foreach(i = 1:nrow(paShapes),
   
   return(newPoly)
   
-  print(paste0(i, "/", nrow(paShapes), " done, ", nrow(paControls), " of them successful (", round((nrow(paControls)/i*100), 1), "%)"))
-  
 }
 
 
