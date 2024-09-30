@@ -30,12 +30,35 @@ paShapes <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>%
 gridNotProt <- read_sf("data/spatialData/gridWithCovs.gpkg") %>% 
   filter(iucnCat == "Not Protected")
 
-paShapes <- paShapes %>% sample_n(100)
+paShapes <- paShapes %>% sample_n(25)
+
+############### create cluster ####################
+library(doSNOW)
+library(foreach)
+library(tictoc)
+
+nCores <- parallel::detectCores()-3
+# Create and register a cluster
+clust <- makeCluster(nCores)
+registerDoSNOW(clust)
 
 paControls <- NULL
 
-for(i in 1:nrow(paShapes)){
-  
+## progress bar 
+iterations <- nrow(paShapes)
+pb <- txtProgressBar(max = iterations, style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+
+
+paControls <- NULL
+
+paControls <- foreach(i = 1:nrow(paShapes),
+               .packages = c('sf', 'ggplot2', 'data.table', 'tidyverse'),
+               .options.snow = opts,
+               .inorder = FALSE,
+               .combine = rbind) %dopar% {
+
   
   pa <- paShapes[i,]
   
@@ -53,37 +76,35 @@ for(i in 1:nrow(paShapes)){
   
   ## skip if there is equivalent at all
   bBox <- st_bbox(potentialSpace)
-  if(is.na(bBox$xmin)){next}
+  if(is.na(bBox$xmin)){return(NULL)}
  
   # mapview(potentialSpace) + mapview(pa, col.regions = "red")
   
-  newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 1000)
+  newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 5000)
  
   # mapview(potentialSpace) + mapview(newPoly, col.regions = "red")
   
-  
-  if(is.null(paControls)){
-   
-     newPoly <- newPoly %>% 
-      mutate(controlFor = paShapes[i,]$unique_id, 
-             continent = cont, 
-             Biome = biome)
-    
-    paControls <- newPoly
-  }
   if(!is.null(newPoly)){
    
      newPoly <- newPoly %>% 
        mutate(controlFor = paShapes[i,]$unique_id, 
               continent = cont, 
               Biome = biome)
-     
-     paControls <- rbind(paControls, newPoly)
   }
   
-  print(paste0(i, "/", nrow(paShapes), " done"))
+  return(newPoly)
+  
+  print(paste0(i, "/", nrow(paShapes), " done, ", nrow(paControls), " of them successful (", round((nrow(paControls)/i*100), 1), "%)"))
+  
 }
 
 
 
+print(paste0("Loop done! Found controls for ", 
+             round((nrow(paControls)/nrow(paShapes)*100), 1), "% of the PAs (", nrow(paControls), " in total)"))
+
+toc()
+stopCluster(clust)
 mapview(paControls)
+
+write_sf(paControls, "data/spatialData/protectedAreas/controlsForPas.gpkg")
