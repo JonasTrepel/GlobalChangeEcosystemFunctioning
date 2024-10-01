@@ -61,30 +61,32 @@ responses<- c("BurnedAreaTrend",
 
 names(dtMod %>% dplyr::select(contains("scaled")))
 
-vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're')",
-          "s(Biome, SlopeMaxTemp_scaled, bs = 're')",
-          "s(Biome, SlopeMinTemp_scaled, bs = 're')",
-          "s(Biome, SlopePrec_scaled, bs = 're')", 
-          "s(Biome, NitrogenDepo_scaled, bs = 're')", 
-          "s(Biome, HumanModification_scaled, bs = 're')", 
-          "s(Biome, PaAreaKm2_scaled, bs = 're')",
-          "s(Biome, MaxBodyMass_scaled, bs = 're')",
-          "s(Biome, MeanBodyMassCwm_scaled, bs = 're')",
-          "s(Biome, HerbivoreSpeciesRichness_scaled, bs = 're')",
-          "s(Biome, HerbivoreFunDiv_scaled, bs = 're')",
-          "s(Biome, HerbivoreBiomassKgKm2_scaled, bs = 're')",
-          "s(PaAreaKm2_scaled)",
-          "s(SlopeMeanTemp_scaled)",
-          "s(SlopeMaxTemp_scaled)",
-          "s(SlopeMinTemp_scaled)",
-          "s(SlopePrec_scaled)", 
-          "s(NitrogenDepo_scaled)", 
-          "s(HumanModification_scaled)", 
-          "s(MaxBodyMass_scaled)",
-          "s(MeanBodyMassCwm_scaled)",
-          "s(HerbivoreSpeciesRichness_scaled)",
-          "s(HerbivoreFunDiv_scaled)",
-          "s(HerbivoreBiomassKgKm2_scaled)"
+vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're', k = 4)",
+          "s(Biome, SlopeMaxTemp_scaled, bs = 're', k = 4)",
+          "s(Biome, SlopeMinTemp_scaled, bs = 're', k = 4)",
+          "s(Biome, SlopePrec_scaled, bs = 're', k = 4)", 
+          "s(Biome, NitrogenDepo_scaled, bs = 're', k = 4)", 
+          "s(Biome, HumanModification_scaled, bs = 're', k = 4)", 
+          "s(Biome, PaAreaKm2_scaled, bs = 're', k = 4)",
+          "s(Biome, MaxBodyMass_scaled, bs = 're', k = 4)",
+          "s(Biome, MeanBodyMassCwm_scaled, bs = 're', k = 4)",
+          "s(Biome, HerbivoreSpeciesRichness_scaled, bs = 're', k = 4)",
+          "s(Biome, HerbivoreFunDiv_scaled, bs = 're', k = 4)",
+          "s(Biome, HerbivoreBiomassKgKm2_scaled, bs = 're', k = 4)",
+          "s(PaAreaKm2_scaled, k = 4)",
+          "s(SlopeMeanTemp_scaled, k = 4)",
+          "s(SlopeMaxTemp_scaled, k = 4)",
+          "s(SlopeMinTemp_scaled, k = 4)",
+          "s(SlopePrec_scaled, k = 4)", 
+          "s(NitrogenDepo_scaled, k = 4)", 
+          "s(HumanModification_scaled, k = 4)", 
+          "s(MaxBodyMass_scaled, k = 4)",
+          "s(MeanBodyMassCwm_scaled, k = 4)",
+          "s(HerbivoreSpeciesRichness_scaled, k = 4)",
+          "s(HerbivoreFunDiv_scaled, k = 4)",
+          "s(HerbivoreBiomassKgKm2_scaled, k = 4)", 
+          "s(Longitude, Latitude)"
+          
 )
 
 
@@ -102,7 +104,7 @@ generateCombinations <- function(vars, max.n) {
 }
 
 # Generate all combinations
-combinations <- generateCombinations(vars, max.n = 12)
+combinations <- generateCombinations(vars, max.n = 13)
 
 c.comb <- sapply(combinations, function(x) paste(x, collapse = " + "))
 
@@ -114,27 +116,22 @@ guideRawRaw <- CJ(vars = c.comb,
          nVar =  sapply(vars, function(x) length(unlist(strsplit(x, " \\+ ")))), 
          formula = paste0(response, " ~ ", vars)) 
 
-#inter.var <- c(1)
-# guideInter <-  CJ(vars = inter.var, 
-#                    response = responses) %>% 
-#   mutate(formulaID = paste0("intercept_formula_", 1:nrow(.)), 
-#          nVar = 0, 
-#          formula = paste0(response, " ~ ", vars))
 
 guideRaw<- guideRawRaw
-#guideRaw <- rbind(guideRawRaw, guideInter)
 
 #### check correlations ---------------
 vars
 vars.clean <- gsub("s\\(", "", vars)
 vars.clean <- gsub("\\)", "", vars.clean)
 vars.clean <- gsub(", k = 3", "", vars.clean)
+vars.clean <- gsub(", k = 4", "", vars.clean)
 vars.clean <- gsub("Biome, ", "", vars.clean)
 vars.clean <- gsub("\\, bs = 're'", "", vars.clean)
 
 vars.clean <- data.table(
   vars.clean = vars.clean) %>%
   filter(!grepl("Biome", vars.clean)) %>%
+  filter(!grepl("Longitude", vars.clean)) %>%
   pull() %>%
   unique()
 vars.clean
@@ -187,92 +184,127 @@ for(i in 1:length(pair.combs)){
   print(i)
 }
 
+#guideRawBackup <- guideRaw
 guideRaw2 <- guideRaw %>% filter(!formulaID %in% c(exclusions)) 
 
 
 #build separate guides for the best model, the full model without random effects and the full model with only random effects (except PA size and age)
-subGuideBest <- guideRaw2 %>% 
-  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE), 
+
+#guideRaw <- guideRaw %>% sample_n(5000)
+# Best Model
+subGuideBest <- guideRaw2 %>%
+  # Add the `interaction` column based on "by" keyword
+  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
+         # Define the exclude conditions
          exclude = case_when(
-           .default = "no", 
-           grepl("s(NitrogenDepo_scaled)", formula) & grepl("s(Biome, NitrogenDepo_scaled, bs = 're')", formula) ~ "exclude",
-           grepl("s(SlopeMeanTemp_scaled)", formula) & grepl("s(Biome, SlopeMeanTemp_scaled, bs = 're')", formula) ~ "exclude",
-           grepl("s(SlopeMaxTemp_scaled)", formula) & grepl("s(Biome, SlopeMaxTemp_scaled, bs = 're')", formula) ~ "exclude",
-           grepl("s(SlopeMinTemp_scaled)", formula) & grepl("s(Biome, SlopeMinTemp_scaled, bs = 're')", formula) ~ "exclude",
-           grepl("s(SlopePrec_scaled)", formula) & grepl("s(Biome, SlopePrec_scaled, bs = 're')", formula) ~ "exclude",
-           grepl("s(HumanModification_scaled)", formula) & grepl("s(Biome, HumanModification_scaled, bs = 're')", formula) ~ "exclude", 
-           grepl("s(PaAge_scaled)", formula) & grepl("s(Biome, PaAge_scaled, bs = 're')", formula) ~ "exclude", 
-           grepl("s(PaAreaKm2_scaled)", formula) & grepl("s(Biome, PaAreaKm2_scaled, bs = 're')", formula) ~ "exclude")
-  ) %>% 
-  filter(exclude == "no") %>% mutate(modelGroup = paste0(response, "BestModel")) %>% 
-  mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE,FALSE)) 
+           grepl("s\\(NitrogenDepo_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(SlopeMeanTemp_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(SlopeMaxTemp_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(SlopeMinTemp_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(SlopePrec_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(HumanModification_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(PaAge_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           grepl("s\\(PaAreaKm2_scaled, k \\= 4\\)", formula) & 
+             grepl("s\\(Biome, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+           
+           .default = "no"  # Default case if no exclusions match
+         )) %>%
+  # Filter the rows where exclude is "no"
+  filter(exclude == "no") %>%
+  # Add modelGroup and randomEffect columns
+  mutate(modelGroup = paste0(response, "BestModel"),
+         randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
 
 
-subGuideFullNonRandom <- guideRaw %>% 
-  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE), 
+# Full Model without Random Effects
+subGuideFullNonRandom <- guideRaw %>%
+  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
-           .default = "no", 
-           grepl("bs = 're')", formula) ~ "exclude",
-           nVar < 12 ~ "exclude")) %>% 
-  filter(exclude == "no") %>% mutate(modelGroup = paste0(response, "FullNonRandom")) %>% 
-  mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE,FALSE)) 
+           grepl("bs = 're'", formula) ~ "exclude",
+           nVar < 13 ~ "exclude",
+           .default = "no"
+         )) %>%
+  filter(exclude == "no") %>%
+  mutate(modelGroup = paste0(response, "FullNonRandom")) %>%
+  mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
 
-subGuideFullNonRandomNoHerbivores <- guideRaw %>% 
-  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE), 
+max(guideRaw[!grepl("bs = ", guideRaw$formula), ]$nVar)
+any(!grepl("bs = ", guideRaw$formula))
+
+guideRaw[4172,]$formula
+
+# Full Model without Random Effects and No Herbivores
+subGuideFullNonRandomNoHerbivores <- guideRaw %>%
+  mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
-           .default = "no", 
-           grepl("bs = 're')", formula) ~ "exclude",
+           grepl("bs \\= 're'", formula) ~ "exclude",
            grepl("MaxBodyMass_scaled", formula) ~ "exclude",
            grepl("MeanBodyMassCwm_scaled", formula) ~ "exclude",
            grepl("HerbivoreSpeciesRichness_scaled", formula) ~ "exclude",
            grepl("HerbivoreFunDiv_scaled", formula) ~ "exclude",
            grepl("HerbivoreBiomassKgKm2_scaled", formula) ~ "exclude",
-           nVar < 7 ~ "exclude")) %>% 
-  filter(exclude == "no") %>% mutate(modelGroup = paste0(response, "NonRandomNoHerbivores")) %>% 
-  mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE,FALSE)) 
+           nVar < 8 ~ "exclude", 
+           .default = "no")) %>%
+  filter(exclude == "no") %>%
+  mutate(modelGroup = paste0(response, "NonRandomNoHerbivores")) %>%
+  mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
 
-
+# Full Model with Random Effects
 subGuideFullRandom <- guideRaw %>%
   mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
            .default = "no",
-           grepl("NitrogenDepo_scaled)", formula) ~ "exclude",
-           grepl("SlopeMeanTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopeMaxTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopeMinTemp_scaled)", formula) ~ "exclude",
-           grepl("SlopePrec_scaled)", formula) ~ "exclude",
-           grepl("PaAge_scaled)", formula) ~ "exclude",
-           grepl("PaAreaKm2_scaled)", formula) ~ "exclude",
-           grepl("HumanModification_scaled)", formula) ~ "exclude",
-           grepl("MaxBodyMass_scaled)", formula) ~ "exclude",
-           grepl("MeanBodyMassCwm_scaled)", formula) ~ "exclude",
-           grepl("HerbivoreSpeciesRichness_scaled)", formula) ~ "exclude",
-           grepl("HerbivoreFunDiv_scaled)", formula) ~ "exclude",
-           grepl("HerbivoreBiomassKgKm2_scaled)", formula) ~ "exclude",
-           nVar < 12 ~ "exclude")) %>%
+           grepl("NitrogenDepo_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMeanTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMaxTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMinTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopePrec_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("PaAge_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("PaAreaKm2_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("HumanModification_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("MaxBodyMass_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("MeanBodyMassCwm_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("HerbivoreSpeciesRichness_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("HerbivoreFunDiv_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("HerbivoreBiomassKgKm2_scaled, k \\= 4\\)", formula) ~ "exclude",
+           nVar < 13 ~ "exclude")) %>%
   filter(exclude == "no") %>%
   mutate(modelGroup = paste0(response, "FullRandom")) %>%
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
 
-
+# Random Effects without Herbivores
 subGuideRandomNoHerbivores <- guideRaw %>%
   mutate(interaction = ifelse(grepl("by", vars), TRUE, FALSE),
          exclude = case_when(
            .default = "no",
-           grepl("NitrogenDepo_scaled\\)", formula) ~ "exclude",
-           grepl("SlopeMeanTemp_scaled\\)", formula) ~ "exclude",
-           grepl("SlopeMaxTemp_scaled\\)", formula) ~ "exclude",
-           grepl("SlopeMinTemp_scaled\\)", formula) ~ "exclude",
-           grepl("SlopePrec_scaled\\)", formula) ~ "exclude",
-           grepl("PaAge_scaled\\)", formula) ~ "exclude",
-           grepl("PaAreaKm2_scaled\\)", formula) ~ "exclude",
-           grepl("HumanModification_scaled\\)", formula) ~ "exclude",
+           grepl("NitrogenDepo_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMeanTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMaxTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopeMinTemp_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("SlopePrec_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("PaAge_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("PaAreaKm2_scaled, k \\= 4\\)", formula) ~ "exclude",
+           grepl("HumanModification_scaled, k \\= 4\\)", formula) ~ "exclude",
            grepl("MaxBodyMass_scaled", formula) ~ "exclude",
            grepl("MeanBodyMassCwm_scaled", formula) ~ "exclude",
            grepl("HerbivoreSpeciesRichness_scaled", formula) ~ "exclude",
            grepl("HerbivoreFunDiv_scaled", formula) ~ "exclude",
            grepl("HerbivoreBiomassKgKm2_scaled", formula) ~ "exclude",
-           nVar < 7 ~ "exclude")) %>%
+           nVar < 8 ~ "exclude")) %>%
   filter(exclude == "no") %>%
   mutate(modelGroup = paste0(response, "RandomNoHerbivores")) %>%
   mutate(randomEffect = ifelse(grepl("'re'", vars), TRUE, FALSE))
@@ -297,7 +329,7 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()-4
+nCores <- parallel::detectCores()-10
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
@@ -415,13 +447,16 @@ for(modelGroup in unique(guide$modelGroup)){
   
   vars.clean <- gsub("s\\(", "", var.names)
   vars.clean <- gsub("\\)", "", vars.clean)
-  vars.clean <- gsub(", k = 3", "", vars.clean)
+  vars.clean <- gsub(", k = 3\\)", "", vars.clean)
+  vars.clean <- gsub(", k = 4", "", vars.clean)
   vars.clean <- gsub("Biome, ", "", vars.clean)
   vars.clean <- gsub("\\, bs = 're'", "", vars.clean)
   
   var.names <- data.table(
     vars.clean = vars.clean) %>%
     filter(!grepl("Biome", vars.clean)) %>%
+    filter(!grepl("Longitude", vars.clean)) %>%
+    
     pull() %>%
     trimws() %>% 
     unique()
@@ -482,15 +517,18 @@ for(modelGroup in unique(guide$modelGroup)){
     tidyNonPara <- tidy(m, parametric = FALSE) %>% 
       mutate(cleanVar = gsub("s\\(Biome,", "", term),   
              cleanVar = gsub("_scaled\\)", "", cleanVar),
-             cleanVar = gsub("s\\(", "", cleanVar)) %>% 
+             cleanVar = gsub("s\\(", "", cleanVar), 
+             cleanVar = gsub("\\)", "", cleanVar)) %>% 
       rename(pValue = p.value) %>% 
       dplyr::select(pValue, cleanVar)
     
     
     tidyPara <- tidy(m, parametric = TRUE) %>% 
-      mutate(cleanVar = gsub("\\(", "", term),  
+      mutate(cleanVar = gsub("s\\(Biome,", "", term),   
              cleanVar = gsub("_scaled\\)", "", cleanVar),
-             cleanVar = gsub("\\)", "", cleanVar)) %>% 
+             cleanVar = gsub("s\\(", "", cleanVar), 
+             cleanVar = gsub("\\)", "", cleanVar),
+             cleanVar = gsub("\\(", "", cleanVar)) %>% 
       rename(pValue = p.value) %>% 
       dplyr::select(pValue, cleanVar)
     

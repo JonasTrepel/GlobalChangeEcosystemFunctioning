@@ -256,7 +256,7 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
-n.cores <- parallel::detectCores() - 5
+n.cores <- parallel::detectCores() - 10
 # Create and register a cluster
 clust <- makeCluster(n.cores)
 registerDoSNOW(clust)

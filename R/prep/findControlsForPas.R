@@ -37,7 +37,7 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()-40
+nCores <- parallel::detectCores()-52
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
@@ -79,9 +79,10 @@ paControls <- foreach(i = 1:nrow(paShapes),
   if(is.na(bBox$xmin)){return(NULL)}
  
   # mapview(potentialSpace) + mapview(pa, col.regions = "red")
-  
+  sf_use_s2(FALSE)
   newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 5000)
- 
+  sf_use_s2(TRUE)
+  
   # mapview(potentialSpace) + mapview(newPoly, col.regions = "red")
   
   if(!is.null(newPoly)){
