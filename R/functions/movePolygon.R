@@ -9,10 +9,9 @@ movePolygon <- function(ogPoly, potSpace, maxAttempts = 1000, seed = 161) {
   polyCenter <- sf::st_centroid(newPoly)
   potSpaceCenter <- sf::st_centroid(potSpace)
   
-  # Center the polygon on its centroid
   centeredPoly <- newPoly - polyCenter
   
-  # Attempt to place the polygon inside the bounding polygon
+  ## Try to place the polygon shape in the potential space. If it hasn't worked in a 1000 attempts, stop it
   attempt <- 0
   placedPoly <- NULL
   
@@ -29,7 +28,7 @@ movePolygon <- function(ogPoly, potSpace, maxAttempts = 1000, seed = 161) {
     translatedPolyRaw <- centeredPoly + c(xShift, yShift)
     translatedPoly <- st_as_sf(translatedPolyRaw, crs = st_crs(potSpace))
     
-    # Check if the translated polygon is within the bounding polygon
+    # 
     if (all(sf::st_within(translatedPoly, potSpace, sparse = FALSE))) {
       placedPoly <- translatedPoly
       break
