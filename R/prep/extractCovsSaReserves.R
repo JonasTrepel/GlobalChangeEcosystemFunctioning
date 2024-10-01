@@ -261,15 +261,22 @@ lcExtrFin <- data.table(lcMode = lcExtr) %>%
   left_join(lcLeg, by = "lcNum") %>% 
   dplyr::select(reserve_name, LandCover) 
 
-### load more covariates 
+### get coordinates  
+sf_use_s2(FALSE)
+coords <- st_coordinates(st_centroid(pas)) %>% as.data.table()
+pas$Longitude <- coords$X
+pas$Latitude <- coords$Y
 
-#megafaunaCovs <- fread("data/processedData/cleanData/pasWithMegafauna.csv")
+dtCoords <- pas %>% as.data.table() %>% 
+  mutate(geom = NULL) %>% 
+  dplyr::select(Longitude, Latitude, reserve_name)
+
 
 ######## Summarize and Write Out
 pasCovsDT <- pasRawCovs %>% 
   left_join(biomeExtrFin) %>% 
   left_join(lcExtrFin) %>% 
- # left_join(megafaunaCovs) %>% 
+  left_join(dtCoords) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL, 

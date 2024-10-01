@@ -30,14 +30,14 @@ paShapes <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>%
 gridNotProt <- read_sf("data/spatialData/gridWithCovs.gpkg") %>% 
   filter(iucnCat == "Not Protected")
 
-paShapes <- paShapes %>% sample_n(25)
+#paShapes <- paShapes %>% sample_n(25)
 
 ############### create cluster ####################
 library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()-3
+nCores <- parallel::detectCores()-40
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
