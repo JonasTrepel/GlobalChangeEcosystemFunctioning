@@ -337,7 +337,7 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()-10
+nCores <- parallel::detectCores()/2
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
@@ -605,6 +605,11 @@ print("loop done")
 
 toc()
 stopCluster(clust)
+
+bm.spec.out <- unique(bm.spec.out)
+res.out <- unique(res.out)
+pred.out <- unique(pred.out)
+pred.int.out <- unique(pred.int.out)
 
 modelResults <- list(bm.spec = bm.spec.out, res = res.out, pred = pred.out, pred.int = pred.int.out)
 saveRDS(modelResults, "builds/modelOutputs/exploratoryGamReserveRes.Rds")
