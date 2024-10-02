@@ -53,7 +53,9 @@ dtCorr <- dtMod %>%
 corr <- round(cor(dtCorr), 1)
 ggcorrplot::ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE)
-#Build model guide 
+
+
+##### Build model guide ######
 
 responses<- c("BurnedAreaTrend",
               "EviTrend",
