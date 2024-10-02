@@ -371,6 +371,12 @@ for(modelGroup in unique(guide$modelGroup)){
   
   #guide.sub <- guide.sub %>% sample_n(1)
   
+  if(filter.resp == "BurnedAreaTrend"){
+    dtSub <- dtMod %>% filter(!BurnedAreaMean == 0)
+  }else{
+    dtSub <- dtMod
+  }
+  
   ## progress bar 
   iterations <- nrow(guide.sub)
   pb <- txtProgressBar(max = iterations, style = 3)
@@ -387,7 +393,7 @@ for(modelGroup in unique(guide$modelGroup)){
                    formula <- as.formula(guide.sub[i,]$formula)
                    
                    m <- tryCatch(
-                     {bam(formula, data = dtMod, select = TRUE, method = "fREML")},
+                     {bam(formula, data = dtSub, select = TRUE, method = "fREML")},
                      error = function(e) {cat("Model", i, "failed: ", e$message, "\n") 
                        return(NULL) })
                    
@@ -438,7 +444,7 @@ for(modelGroup in unique(guide$modelGroup)){
   
   
   m <- tryCatch(
-    {gam(formula.bm, data = dtMod, select = TRUE, method = "REML")},
+    {gam(formula.bm, data = dtSub, select = TRUE, method = "REML")},
     error = function(e) {cat("Model", i, "failed: ", e$message, "\n") 
       return(NULL) })
   
@@ -507,13 +513,13 @@ for(modelGroup in unique(guide$modelGroup)){
       
       marg.tmp <- partialPred(model = m, response = filter.resp,
                               var = var,
-                              data = dtMod, newdata = dtMod %>% dplyr::select(-c(all_of(filter.resp)))) 
+                              data = dtSub, newdata = dtSub %>% dplyr::select(-c(all_of(filter.resp)))) 
       
       marg.tmp <- marg.tmp %>% rename(varValue = paste0(gsub("_scaled", "", var))) %>% mutate(term = var,
                                                                                               cleanVar = gsub("log_", "", term),
                                                                                               cleanVar = gsub("_scaled", "", cleanVar), 
-                                                                                              responseValue = dtMod %>% dplyr::select(c(all_of(filter.resp)))%>% pull(), 
-                                                                                              Biome = dtMod$Biome)
+                                                                                              responseValue = dtSub %>% dplyr::select(c(all_of(filter.resp)))%>% pull(), 
+                                                                                              Biome = dtSub$Biome)
       
       ggplot() + geom_line(aes(x = marg.tmp$varValue, y = marg.tmp$fit))
       
@@ -564,7 +570,7 @@ for(modelGroup in unique(guide$modelGroup)){
       
       marg.tmp <- partialPred(model = m, response = filter.resp,
                               var = var.int, interaction = TRUE, moderator = moderator,
-                              data = dtMod, newdata = dtMod %>% dplyr::select(-c(all_of(filter.resp))))
+                              data = dtSub, newdata = dtSub %>% dplyr::select(-c(all_of(filter.resp))))
       
       moderator.clean <-  gsub("_scaled", "", moderator)
       
@@ -572,9 +578,9 @@ for(modelGroup in unique(guide$modelGroup)){
                                                                                                       cleanVar = gsub("log_", "", term),
                                                                                                       cleanVar = gsub("_scaled", "", cleanVar),
                                                                                                       moderator = moderator.clean,
-                                                                                                      Biome = dtMod$Biome,
-                                                                                                      responseValue = dtMod %>% dplyr::select(c(all_of(filter.resp)))%>% pull(),
-                                                                                                      moderatorValue = dtMod %>% dplyr::select(c(all_of(moderator.clean)))%>% pull())
+                                                                                                      Biome = dtSub$Biome,
+                                                                                                      responseValue = dtSub %>% dplyr::select(c(all_of(filter.resp)))%>% pull(),
+                                                                                                      moderatorValue = dtSub %>% dplyr::select(c(all_of(moderator.clean)))%>% pull())
       if(k==1){
         marg.int <- marg.tmp.int}else{
           marg.int <- rbind(marg.int, marg.tmp.int)}

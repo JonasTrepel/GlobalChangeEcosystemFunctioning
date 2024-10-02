@@ -4,7 +4,7 @@
 ## also naming scheme must be: scaled variables contain "_scaled" and log-transformed variables contain "log_"
 
 
-#### IMPORTANT: All variables used in the model must have the ending "_scaled" - even it they are not. Otherwise the code won#t take the median/Mode
+#### IMPORTANT: All variables used in the model must have the ending "_scaled" - even it they are not. Otherwise the code won#t take the mean/Mode
 
 
 partialPred <- function(newdata, var, data, response, model,
@@ -31,11 +31,11 @@ partialPred <- function(newdata, var, data, response, model,
     
     for(name in names(newdata)){
       
-      #don't take the median if it's our variable of interest
+      #don't take the mean if it's our variable of interest
       if(name == var){next}
 
       
-      #only take the median if the name doesn't contain scaled
+      #only take the mean if the name doesn't contain scaled
       if(!grepl("scaled", name)){next}
       
       x_col <- newdata %>% 
@@ -56,21 +56,21 @@ partialPred <- function(newdata, var, data, response, model,
       if(is.character(vect[[1]])){
         
         tmp <- newdata %>% 
-          mutate(median_col = Mode(vect, na.rm = TRUE)) %>%
+          mutate(mean_col = Mode(vect, na.rm = TRUE)) %>%
           as.data.table() %>% 
-          dplyr::select(median_col)
+          dplyr::select(mean_col)
         
       }else{
         
         tmp <- newdata %>% 
-          mutate(median_col = median(vect, na.rm = TRUE)) %>%
+          mutate(mean_col = mean(vect, na.rm = TRUE)) %>%
           as.data.table() %>% 
-          dplyr::select(median_col)
+          dplyr::select(mean_col)
       }
       
       var_name <- paste0(name)
       
-      setnames(tmp, "median_col", (var_name))
+      setnames(tmp, "mean_col", (var_name))
       
       newdata <- newdata %>% 
         dplyr::select(-c({{var_name}})) %>% 
@@ -78,7 +78,7 @@ partialPred <- function(newdata, var, data, response, model,
       
     }
     
-    ## now new data should contain the median of all columns, expect of the variable of interest 
+    ## now new data should contain the mean of all columns, expect of the variable of interest 
     
     ## predict -----------
     pred <- as.data.frame(predict(model, newdata, se.fit = TRUE))
@@ -103,10 +103,10 @@ partialPred <- function(newdata, var, data, response, model,
     
     for(name in names(newdata.high)){
       
-      #don't take the median if it's our variable of interest
+      #don't take the mean if it's our variable of interest
       if(name == var){next}
       
-      #only take the median if the name contains scaled
+      #only take the mean if the name contains scaled
       if(!grepl("scaled", name)){next}
 
       if(name == moderator){
@@ -129,9 +129,9 @@ partialPred <- function(newdata, var, data, response, model,
         if(sum(is.na(vect)) == nrow(data)){next}
         
         tmp.high <- newdata.high %>% 
-          mutate(median_col = median(vect, na.rm = TRUE) + sd(vect, na.rm = TRUE)) %>%
+          mutate(mean_col = mean(vect, na.rm = TRUE) + sd(vect, na.rm = TRUE)) %>%
           as.data.table() %>% 
-          dplyr::select(median_col)
+          dplyr::select(mean_col)
         
       }else{
         
@@ -153,16 +153,16 @@ partialPred <- function(newdata, var, data, response, model,
         if(is.character(vect[[1]])){
           
           tmp.high <- newdata.high %>% 
-            mutate(median_col = Mode(vect, na.rm = TRUE)) %>%
+            mutate(mean_col = Mode(vect, na.rm = TRUE)) %>%
             as.data.table() %>% 
-            dplyr::select(median_col)
+            dplyr::select(mean_col)
           
         }else{
           
           tmp.high <- newdata.high %>% 
-            mutate(median_col = median(vect, na.rm = TRUE)) %>%
+            mutate(mean_col = mean(vect, na.rm = TRUE)) %>%
             as.data.table() %>% 
-            dplyr::select(median_col)
+            dplyr::select(mean_col)
         }
         
       }
@@ -170,7 +170,7 @@ partialPred <- function(newdata, var, data, response, model,
       
       var_name <- paste0(name)
       
-      setnames(tmp.high, "median_col", (var_name))
+      setnames(tmp.high, "mean_col", (var_name))
       
       newdata.high <- newdata.high %>% 
         dplyr::select(-c({{var_name}})) %>% 
@@ -178,7 +178,7 @@ partialPred <- function(newdata, var, data, response, model,
       
     } ### end for loop high names 
     
-    ## now new data should contain the median of all columns, expect of the variable of interest 
+    ## now new data should contain the mean of all columns, expect of the variable of interest 
     
     ## predict for high -----------
     pred.high <- as.data.frame(predict(model, newdata.high, se.fit = TRUE))
@@ -202,10 +202,10 @@ partialPred <- function(newdata, var, data, response, model,
     
     for(name in names(newdata.low)){
       
-      #don't take the median if it's our variable of interest
+      #don't take the mean if it's our variable of interest
       if(name == var){next}
       
-      #only take the median if the name contains scaled
+      #only take the mean if the name contains scaled
       if(!grepl("scaled", name)){next}
       
       
@@ -229,9 +229,9 @@ partialPred <- function(newdata, var, data, response, model,
         if(sum(is.na(vect)) == nrow(data)){next}
         
         tmp.low <- newdata.low %>% 
-          mutate(median_col = median(vect, na.rm = TRUE) - sd(vect, na.rm = TRUE)) %>%
+          mutate(mean_col = mean(vect, na.rm = TRUE) - sd(vect, na.rm = TRUE)) %>%
           as.data.table() %>% 
-          dplyr::select(median_col)
+          dplyr::select(mean_col)
         
       }else{
         
@@ -253,16 +253,16 @@ partialPred <- function(newdata, var, data, response, model,
         if(is.character(vect[[1]])){
           
           tmp.low <- newdata.low %>% 
-            mutate(median_col = Mode(vect, na.rm = TRUE)) %>%
+            mutate(mean_col = Mode(vect, na.rm = TRUE)) %>%
             as.data.table() %>% 
-            dplyr::select(median_col)
+            dplyr::select(mean_col)
           
         }else{
           
           tmp.low <- newdata.low %>% 
-            mutate(median_col = median(vect, na.rm = TRUE)) %>%
+            mutate(mean_col = mean(vect, na.rm = TRUE)) %>%
             as.data.table() %>% 
-            dplyr::select(median_col)
+            dplyr::select(mean_col)
         }
         
       }
@@ -270,7 +270,7 @@ partialPred <- function(newdata, var, data, response, model,
       
       var_name <- paste0(name)
       
-      setnames(tmp.low, "median_col", (var_name))
+      setnames(tmp.low, "mean_col", (var_name))
       
       newdata.low <- newdata.low %>% 
         dplyr::select(-c({{var_name}})) %>% 
@@ -278,7 +278,7 @@ partialPred <- function(newdata, var, data, response, model,
       
     } ### end for loop low names 
     
-    ## now new data should contain the median of all columns, expect of the variable of interest and the moderator 
+    ## now new data should contain the mean of all columns, expect of the variable of interest and the moderator 
     
     ####predict for low ------------------
     pred.low <- as.data.frame(predict(model, newdata.low, se.fit = TRUE))
