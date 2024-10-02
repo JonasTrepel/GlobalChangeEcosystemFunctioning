@@ -51,7 +51,9 @@ dtMod <- pasCovsDTRaw %>%
          NitrogenDepo_scaled = as.numeric(scale(NitrogenDepo)), 
          HumanModification_scaled = as.numeric(scale(HumanModification)), 
          PaAge_scaled = as.numeric(scale(PaAge)),
-         PaAreaKm2_scaled = as.numeric(scale(PaAreaKm2)))
+         PaAreaKm2_scaled = as.numeric(scale(PaAreaKm2)), 
+         Latitude_scaled = as.numeric(scale(Latitude)), 
+         Longitude_scaled = as.numeric(scale(Longitude)))
 
 #Build model guide 
 
@@ -77,7 +79,7 @@ vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're', k = 4)",
           "s(SlopePrec_scaled, k = 4)", 
           "s(NitrogenDepo_scaled, k = 4)", 
           "s(HumanModification_scaled, k = 4)", 
-          "s(Longitude, Latitude)"
+          "s(Longitude_scaled, Latitude_scaled)"
 )
 
 

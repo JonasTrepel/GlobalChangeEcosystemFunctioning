@@ -41,7 +41,9 @@ dtMod <- pasCovsDTRaw %>%
          MaxBodyMass_scaled = as.numeric(scale(MaxBodyMass)),
          HerbivoreSpeciesRichness_scaled = as.numeric(scale(HerbivoreSpeciesRichness)),
          HerbivoreFunDiv_scaled = as.numeric(scale(HerbivoreFunDiv)),
-         HerbivoreBiomassKgKm2_scaled = as.numeric(scale(HerbivoreBiomassKgKm2)))
+         HerbivoreBiomassKgKm2_scaled = as.numeric(scale(HerbivoreBiomassKgKm2)),
+         Latitude_scaled = as.numeric(scale(Latitude)), 
+         Longitude_scaled = as.numeric(scale(Longitude)))
 
 dtCorr <- dtMod %>%
   dplyr::select(SlopeMeanTemp, SlopeMaxTemp, SlopeMinTemp, SlopePrec, 
@@ -85,7 +87,7 @@ vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're', k = 4)",
           "s(HerbivoreSpeciesRichness_scaled, k = 4)",
           "s(HerbivoreFunDiv_scaled, k = 4)",
           "s(HerbivoreBiomassKgKm2_scaled, k = 4)", 
-          "s(Longitude, Latitude)"
+          "s(Longitude_scaled, Latitude_scaled)"
           
 )
 
@@ -312,6 +314,10 @@ subGuideRandomNoHerbivores <- guideRaw %>%
 guide <- rbind(subGuideFullRandom, subGuideFullNonRandom, subGuideBest, subGuideRandomNoHerbivores, subGuideFullNonRandomNoHerbivores) 
 unique(guide$modelGroup)
 
+
+### LOAD GUIDE AND START MODELING
+#saveRDS(guide, "builds/modelGuides/saReserveModelGuide.Rds")
+guide <- readRDS("builds/modelGuides/saReserveModelGuide.Rds")
 
 res <- data.table()
 pred <- data.table()

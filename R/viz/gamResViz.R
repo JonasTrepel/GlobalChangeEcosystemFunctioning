@@ -60,14 +60,14 @@ pred <- foreach.results$pred %>%
   left_join(res) %>% 
   mutate(randomEffect = case_when(
     .default = FALSE,
-    cleanVar == "SlopeMeanTemp" & grepl("s\\(Biome, SlopeMeanTemp_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "SlopeMaxTemp" & grepl("s\\(Biome, SlopeMaxTemp_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "SlopeMinTemp" & grepl("s\\(Biome, SlopeMinTemp_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "SlopePrec" & grepl("s\\(Biome, SlopePrec_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "NitrogenDepo" & grepl("s\\(Biome, NitrogenDepo_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "HumanModification" & grepl("s\\(Biome, HumanModification_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "PaAge" & grepl("s\\(Biome, PaAge_scaled, bs \\= 're'\\)", formula) ~ TRUE,
-    cleanVar == "PaAreaKm2" & grepl("s\\(Biome, PaAreaKm2_scaled, bs \\= 're'\\)", formula) ~ TRUE
+    cleanVar == "SlopeMeanTemp" & grepl("s\\(Biome, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopeMaxTemp" & grepl("s\\(Biome, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopeMinTemp" & grepl("s\\(Biome, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopePrec" & grepl("s\\(Biome, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "NitrogenDepo" & grepl("s\\(Biome, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "HumanModification" & grepl("s\\(Biome, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "PaAge" & grepl("s\\(Biome, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "PaAreaKm2" & grepl("s\\(Biome, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE
   ))
 
 table(pred$randomEffect)

@@ -26,7 +26,7 @@ paShapes <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>%
   filter(unique_id %in% unique(pasCovsDTRaw$unique_id)) %>%
   left_join(pasCovsDTRaw)
 
-
+file.exists("data/spatialData/gridWithCovs.gpkg")
 gridNotProt <- read_sf("data/spatialData/gridWithCovs.gpkg") %>% 
   filter(iucnCat == "Not Protected")
 
@@ -37,7 +37,7 @@ library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()-52
+nCores <- parallel::detectCores()/2
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
@@ -80,7 +80,7 @@ paControls <- foreach(i = 1:nrow(paShapes),
  
   # mapview(potentialSpace) + mapview(pa, col.regions = "red")
   sf_use_s2(FALSE)
-  newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 5000)
+  newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 1000)
   sf_use_s2(TRUE)
   
   # mapview(potentialSpace) + mapview(newPoly, col.regions = "red")
@@ -101,7 +101,7 @@ paControls <- foreach(i = 1:nrow(paShapes),
 
 print(paste0("Loop done! Found controls for ", 
              round((nrow(paControls)/nrow(paShapes)*100), 1), "% of the PAs (", nrow(paControls), " in total)"))
-
+#Found controls for 75.9% of the PAs (11184 in total)"
 toc()
 stopCluster(clust)
 mapview(paControls)
