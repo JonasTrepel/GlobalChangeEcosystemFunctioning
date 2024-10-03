@@ -3,6 +3,7 @@ data/spatialData/
 data/processedData/cleanData/gridWithCovs.csv
 data/spatialData/protectedAreas/reserve_shapes.gpkg
 data/processedData/dataFragments/ReserveDataSouthAfricaFinal.csv
+builds/modelOutputs/exploratoryGamReserveRes.Rds
 ##################
 # History files
 .Rhistory
