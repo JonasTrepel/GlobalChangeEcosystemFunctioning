@@ -21,15 +21,15 @@ pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>%
 
 table(pasCovsDTRaw$PaYear)
 
-biomeN <- pasCovsDTRaw %>% 
-  group_by(Biome) %>% 
-  summarize(nPerBiome = n()) 
+ClimaticRegionN <- pasCovsDTRaw %>% 
+  group_by(ClimaticRegion) %>% 
+  summarize(nPerClimaticRegion = n()) 
 
 dtMod <- pasCovsDTRaw %>% 
-  left_join(biomeN) %>% 
-  mutate(BiomeN = paste0(Biome, " (n = ", nPerBiome, ")"), 
-         Biome = as.factor(Biome))  %>% 
-  filter(nPerBiome > 50) %>% 
+  left_join(ClimaticRegionN) %>% 
+  mutate(ClimaticRegionN = paste0(ClimaticRegion, " (n = ", nPerClimaticRegion, ")"), 
+         ClimaticRegion = as.factor(ClimaticRegion))  %>% 
+  filter(nPerClimaticRegion > 50) %>% 
   as.data.table() %>% 
   mutate(SlopeMeanTemp_scaled = as.numeric(scale(SlopeMeanTemp)), 
          SlopeMaxTemp_scaled = as.numeric(scale(SlopeMaxTemp)), 
@@ -62,14 +62,14 @@ pred <- foreach.results$pred %>%
   left_join(res) %>% 
   mutate(randomEffect = case_when(
     .default = FALSE,
-    cleanVar == "SlopeMeanTemp" & grepl("s\\(Biome, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "SlopeMaxTemp" & grepl("s\\(Biome, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "SlopeMinTemp" & grepl("s\\(Biome, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "SlopePrec" & grepl("s\\(Biome, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "NitrogenDepo" & grepl("s\\(Biome, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "HumanModification" & grepl("s\\(Biome, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "PaAge" & grepl("s\\(Biome, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
-    cleanVar == "PaAreaKm2" & grepl("s\\(Biome, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE
+    cleanVar == "SlopeMeanTemp" & grepl("s\\(ClimaticRegion, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopeMaxTemp" & grepl("s\\(ClimaticRegion, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopeMinTemp" & grepl("s\\(ClimaticRegion, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "SlopePrec" & grepl("s\\(ClimaticRegion, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "NitrogenDepo" & grepl("s\\(ClimaticRegion, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "HumanModification" & grepl("s\\(ClimaticRegion, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "PaAge" & grepl("s\\(ClimaticRegion, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE,
+    cleanVar == "PaAreaKm2" & grepl("s\\(ClimaticRegion, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ TRUE
   ))
 
 table(pred$randomEffect)
@@ -106,16 +106,16 @@ for(clean.var in unique(predictorLimits$cleanVar)){
 res[res$modelGroup == "EviTrendFullNonRandom",]$r_squared
 
 pEviFullNonR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullNonRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullNonRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("EviTrendFullNonRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("EviTrendFullNonRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -135,16 +135,16 @@ pEviFullNonR
 res[res$modelGroup == "EviTrendFullRandom",]$r_squared
 
 pEviFullR <- ggplot() +
- # geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+ # geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -164,16 +164,16 @@ res[res$modelGroup == "EviTrendBestModel",]$r_squared
 
 pEviBest <- ggplot() +
   # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
-  #            aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+  #            aes(x = varValue, y = EviTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -205,16 +205,16 @@ ggsave(plot = pEvi,  "builds/plots/exploratoryGams/EviTrendGamRes.png", dpi = 60
 res[res$modelGroup == "NppTrendFullNonRandom",]$r_squared
 
 pNppFullNonR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("NppTrendFullNonRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -234,16 +234,16 @@ pNppFullNonR
 res[res$modelGroup == "NppTrendFullRandom",]$r_squared
 
 pNppFullR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = NppTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("NppTrendFullRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -263,16 +263,16 @@ res[res$modelGroup == "NppTrendBestModel",]$r_squared
 
 pNppBest <- ggplot() +
 #  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("NppTrendBestModel"), ]$cleanVar), ], 
- #            aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+ #            aes(x = varValue, y = NppTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -303,16 +303,16 @@ ggsave(plot = pNpp,  "builds/plots/exploratoryGams/NppTrendGamRes.png", dpi = 60
 res[res$modelGroup == "BurnedAreaTrendFullNonRandom",]$r_squared
 
 pBurnedAreaFullNonR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullNonRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -332,16 +332,16 @@ pBurnedAreaFullNonR
 res[res$modelGroup == "BurnedAreaTrendFullRandom",]$r_squared
 
 pBurnedAreaFullR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = BurnedAreaTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendFullRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -361,16 +361,16 @@ res[res$modelGroup == "BurnedAreaTrendBestModel",]$r_squared
 
 pBurnedAreaBest <- ggplot() +
   # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("BurnedAreaTrendBestModel"), ]$cleanVar), ], 
-  #            aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  #            aes(x = varValue, y = BurnedAreaTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -401,16 +401,16 @@ ggsave(plot = pBurnedArea,  "builds/plots/exploratoryGams/BurnedAreaTrendGamRes.
 res[res$modelGroup == "SOSTrendFullNonRandom",]$r_squared
 
 pSOSFullNonR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("SOSTrendFullNonRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -430,16 +430,16 @@ pSOSFullNonR
 res[res$modelGroup == "SOSTrendFullRandom",]$r_squared
 
 pSOSFullR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = SOSTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("SOSTrendFullRandom") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
@@ -459,16 +459,16 @@ res[res$modelGroup == "SOSTrendBestModel",]$r_squared
 
 pSOSBest <- ggplot() +
   # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("SOSTrendBestModel"), ]$cleanVar), ], 
-  #            aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  #            aes(x = varValue, y = SOSTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == TRUE, ], 
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == FALSE, ],
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
   geom_line(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == FALSE, ], 
             aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
   geom_line(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == TRUE, ],
-            aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
+            aes(x = varValue, y = fit, color = ClimaticRegion, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   scale_linetype_manual(values = c("significant" = "solid", "non significant" = "dotted")) + 
