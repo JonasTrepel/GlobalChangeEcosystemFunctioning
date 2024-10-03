@@ -163,8 +163,8 @@ pEviFullR
 res[res$modelGroup == "EviTrendBestModel",]$r_squared
 
 pEviBest <- ggplot() +
- # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
-  #           aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+  # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
+  #            aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -265,13 +265,13 @@ pNppBest <- ggplot() +
 #  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("NppTrendBestModel"), ]$cleanVar), ], 
  #            aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
-  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel"), ], 
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
-  # geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
-  #             aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
-  # geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
-  #           aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
-  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel"), ],
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
+              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
+            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ],
             aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
@@ -360,8 +360,8 @@ pBurnedAreaFullR
 res[res$modelGroup == "BurnedAreaTrendBestModel",]$r_squared
 
 pBurnedAreaBest <- ggplot() +
-  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("BurnedAreaTrendBestModel"), ]$cleanVar), ], 
-             aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
+  # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("BurnedAreaTrendBestModel"), ]$cleanVar), ], 
+  #            aes(x = varValue, y = BurnedAreaTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("BurnedAreaTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -458,8 +458,8 @@ pSOSFullR
 res[res$modelGroup == "SOSTrendBestModel",]$r_squared
 
 pSOSBest <- ggplot() +
-  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("SOSTrendBestModel"), ]$cleanVar), ], 
-             aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
+  # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("SOSTrendBestModel"), ]$cleanVar), ], 
+  #            aes(x = varValue, y = SOSTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("SOSTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
