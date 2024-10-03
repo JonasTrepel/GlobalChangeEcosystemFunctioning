@@ -45,6 +45,8 @@ dtModLong <- dtMod %>%
                         "NitrogenDepo", "HumanModification", "PaAreaKm2"), 
                names_to = "cleanVar", values_to = "varValue")
 
+
+
 ## load model results 
 
 foreach.results <- readRDS("builds/modelOutputs/exploratoryGamRes.Rds")
@@ -71,6 +73,33 @@ pred <- foreach.results$pred %>%
   ))
 
 table(pred$randomEffect)
+
+### limit the predictor X axis to the 95 % interval 
+predictorLimits <- dtModLong %>%
+  group_by(cleanVar) %>%
+  summarize(
+    lowerQuantile = quantile(varValue, 0.025, na.rm = T),
+    upperQuantile = quantile(varValue, 0.975, na.rm = T),
+  ) 
+
+for(clean.var in unique(predictorLimits$cleanVar)){
+  
+  upperLim <- predictorLimits[predictorLimits$cleanVar == clean.var, ]$upperQuantile
+  lowerLim <- predictorLimits[predictorLimits$cleanVar == clean.var, ]$lowerQuantile
+  
+  dtModLongSub <- dtModLong[dtModLong$cleanVar == clean.var,] %>% filter(varValue > lowerLim & varValue < upperLim)
+  dtModLong <- dtModLong %>% 
+    filter(!cleanVar == clean.var) %>% 
+    rbind(dtModLongSub)
+  
+  predSub <- pred[pred$cleanVar == clean.var,] %>% filter(varValue > lowerLim & varValue < upperLim)
+  pred <- pred %>% 
+    filter(!cleanVar == clean.var) %>% 
+    rbind(predSub)
+  
+  print(clean.var)
+  
+}
 # EVI Trend ---------------------------------------
 
 ## Full Non Random
@@ -106,7 +135,7 @@ pEviFullNonR
 res[res$modelGroup == "EviTrendFullRandom",]$r_squared
 
 pEviFullR <- ggplot() +
-  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+ # geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -134,8 +163,8 @@ pEviFullR
 res[res$modelGroup == "EviTrendBestModel",]$r_squared
 
 pEviBest <- ggplot() +
-  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
-             aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
+ # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("EviTrendBestModel"), ]$cleanVar), ], 
+  #           aes(x = varValue, y = EviTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendBestModel") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
@@ -233,16 +262,16 @@ pNppFullR
 res[res$modelGroup == "NppTrendBestModel",]$r_squared
 
 pNppBest <- ggplot() +
-  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("NppTrendBestModel"), ]$cleanVar), ], 
-             aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
+#  geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("NppTrendBestModel"), ]$cleanVar), ], 
+ #            aes(x = varValue, y = NppTrend, color = Biome), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
-  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ], 
+  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel"), ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = Biome), alpha = 0.5) +
-  geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
-              aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
-  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
-            aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
-  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == TRUE, ],
+  # geom_ribbon(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ],
+  #             aes(x = varValue, ymin =  ci.lb, ymax = ci.ub), alpha = 0.5, fill = "grey50") +
+  # geom_line(data = pred[modelGroup %in% c("NppTrendBestModel") & randomEffect == FALSE, ], 
+  #           aes(x = varValue, y = fit, linetype = significance), color = "black", linewidth = 1.15) +
+  geom_line(data = pred[modelGroup %in% c("NppTrendBestModel"), ],
             aes(x = varValue, y = fit, color = Biome, linetype = significance),linewidth = 1.15) +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
