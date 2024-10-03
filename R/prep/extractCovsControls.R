@@ -218,8 +218,6 @@ climRegExtrFin <- data.table(ClimRegNum = climRegExtr) %>%
   left_join(climRegLeg) %>% 
   dplyr::select(unique_id, ClimaticRegion) 
 
-table(ClimaticRegion)
-sum(is.na(ClimaticRegion))
 
 
 ## Land cover 
@@ -282,12 +280,23 @@ lcExtrFin <- data.table(lcMode = lcExtr) %>%
   left_join(lcLeg, by = "lcNum") %>% 
   dplyr::select(unique_id, LandCover) 
 
+### get coordinates  
+sf_use_s2(FALSE)
+coords <- st_coordinates(st_centroid(pas)) %>% as.data.table()
+pas$Longitude <- coords$X
+pas$Latitude <- coords$Y
+
+dtCoords <- pas %>% as.data.table() %>% 
+  mutate(geom = NULL) %>% 
+  dplyr::select(Longitude, Latitude, unique_id)
+
 
 ######## Summarize and Write Out
 pasCovsDT <- pasRawCovs %>% 
   left_join(biomeExtrFin) %>% 
   left_join(lcExtrFin) %>% 
   left_join(climRegExtrFin) %>%
+  left_join(dtCoords) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL, 

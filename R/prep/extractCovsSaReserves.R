@@ -236,9 +236,6 @@ climRegExtrFin <- data.table(ClimRegNum = climRegExtr) %>%
   left_join(climRegLeg) %>% 
   dplyr::select(reserve_name, ClimaticRegion) 
 
-table(ClimaticRegion)
-sum(is.na(ClimaticRegion))
-
 
 ## Land cover 
 
@@ -316,6 +313,7 @@ pasCovsDT <- pasRawCovs %>%
   left_join(biomeExtrFin) %>% 
   left_join(lcExtrFin) %>% 
   left_join(dtCoords) %>% 
+  left_join(climRegExtrFin) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL, 
