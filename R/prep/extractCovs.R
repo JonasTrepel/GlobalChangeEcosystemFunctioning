@@ -215,10 +215,6 @@ climRegExtrFin <- data.table(ClimRegNum = climRegExtr) %>%
   left_join(climRegLeg) %>% 
   dplyr::select(unique_id, ClimaticRegion) 
 
-table(ClimaticRegion)
-sum(is.na(ClimaticRegion))
-
-
 
 ## Land cover 
 
