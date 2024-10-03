@@ -310,6 +310,8 @@ pasCovsDT <- pasRawCovs %>%
 
 fwrite(pasCovsDT, "data/processedData/cleanData/pasWithCovs.csv")
 table(pasCovsDT$Biome)
+table(pasCovsDT$ClimaticRegion)
+
 
 pa.shapes <- pasCovsDT %>% left_join(pas) %>% st_as_sf
 

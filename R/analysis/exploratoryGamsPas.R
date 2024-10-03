@@ -20,29 +20,15 @@ pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>%
                         SlopePrec, PaAge, PaAreaKm2, EviTrend))
 
 
-paShapes <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>% 
-  filter(unique_id %in% unique(pasCovsDTRaw$unique_id)) %>%
-  left_join(pasCovsDTRaw)
-
-sf_use_s2(FALSE)
-coords <- st_coordinates(st_centroid(paShapes)) %>% as.data.table()
-paShapes$Longitude <- coords$X
-paShapes$Latitude <- coords$Y
-
-dtCoords <- paShapes %>% as.data.table() %>% 
-  mutate(geom = NULL) %>% 
-  dplyr::select(Longitude, Latitude, unique_id)
-
-biomeN <- pasCovsDTRaw %>% 
-  group_by(Biome) %>% 
-  summarize(nPerBiome = n()) 
+ClimaticRegionN <- pasCovsDTRaw %>% 
+  group_by(ClimaticRegion) %>% 
+  summarize(nPerClimaticRegion = n()) 
 
 dtMod <- pasCovsDTRaw %>% 
-  left_join(biomeN) %>% 
-  left_join(dtCoords) %>% 
-  mutate(BiomeN = paste0(Biome, " (n = ", nPerBiome, ")"), 
-         Biome = as.factor(Biome))  %>% 
-  filter(nPerBiome > 50) %>% 
+  left_join(ClimaticRegionN) %>% 
+  mutate(ClimaticRegionN = paste0(ClimaticRegion, " (n = ", nPerClimaticRegion, ")"), 
+         ClimaticRegion = as.factor(ClimaticRegion))  %>% 
+  filter(nPerClimaticRegion > 45) %>% 
   as.data.table() %>% 
   mutate(SlopeMeanTemp_scaled = as.numeric(scale(SlopeMeanTemp)), 
          SlopeMaxTemp_scaled = as.numeric(scale(SlopeMaxTemp)), 
@@ -65,13 +51,13 @@ responses<- c("BurnedAreaTrend",
 
 names(dtMod %>% dplyr::select(contains("scaled")))
 
-vars <- c("s(Biome, SlopeMeanTemp_scaled, bs = 're', k = 4)",
-          "s(Biome, SlopeMaxTemp_scaled, bs = 're', k = 4)",
-          "s(Biome, SlopeMinTemp_scaled, bs = 're', k = 4)",
-          "s(Biome, SlopePrec_scaled, bs = 're', k = 4)", 
-          "s(Biome, NitrogenDepo_scaled, bs = 're', k = 4)", 
-          "s(Biome, HumanModification_scaled, bs = 're', k = 4)", 
-          "s(Biome, PaAreaKm2_scaled, bs = 're', k = 4)",
+vars <- c("s(ClimaticRegion, SlopeMeanTemp_scaled, bs = 're', k = 4)",
+          "s(ClimaticRegion, SlopeMaxTemp_scaled, bs = 're', k = 4)",
+          "s(ClimaticRegion, SlopeMinTemp_scaled, bs = 're', k = 4)",
+          "s(ClimaticRegion, SlopePrec_scaled, bs = 're', k = 4)", 
+          "s(ClimaticRegion, NitrogenDepo_scaled, bs = 're', k = 4)", 
+          "s(ClimaticRegion, HumanModification_scaled, bs = 're', k = 4)", 
+          "s(ClimaticRegion, PaAreaKm2_scaled, bs = 're', k = 4)",
           "s(PaAreaKm2_scaled, k = 4)",
           "s(SlopeMeanTemp_scaled, k = 4)",
           "s(SlopeMaxTemp_scaled, k = 4)",
@@ -125,12 +111,12 @@ vars.clean <- gsub("s\\(", "", vars)
 vars.clean <- gsub("\\)", "", vars.clean)
 vars.clean <- gsub(", k = 3", "", vars.clean)
 vars.clean <- gsub(", k = 4", "", vars.clean)
-vars.clean <- gsub("Biome, ", "", vars.clean)
+vars.clean <- gsub("ClimaticRegion, ", "", vars.clean)
 vars.clean <- gsub("\\, bs = 're'", "", vars.clean)
 
 vars.clean <- data.table(
   vars.clean = vars.clean) %>%
-  filter(!grepl("Biome", vars.clean)) %>%
+  filter(!grepl("ClimaticRegion", vars.clean)) %>%
   filter(!grepl("Longitude", vars.clean)) %>%
   pull() %>%
   unique()
@@ -192,14 +178,14 @@ subGuideBest <- guideRaw2 %>%
   mutate(
     interaction = ifelse(grepl("by", vars), TRUE, FALSE),
     exclude = case_when(
-      grepl("s\\(NitrogenDepo_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(SlopeMeanTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(SlopeMaxTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(SlopeMinTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(SlopePrec_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(HumanModification_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(PaAge_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
-      grepl("s\\(PaAreaKm2_scaled, k \\= 4\\)", formula) & grepl("s\\(Biome, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(NitrogenDepo_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, NitrogenDepo_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(SlopeMeanTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, SlopeMeanTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(SlopeMaxTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, SlopeMaxTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(SlopeMinTemp_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, SlopeMinTemp_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(SlopePrec_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, SlopePrec_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(HumanModification_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, HumanModification_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(PaAge_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, PaAge_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
+      grepl("s\\(PaAreaKm2_scaled, k \\= 4\\)", formula) & grepl("s\\(ClimaticRegion, PaAreaKm2_scaled, bs \\= 're', k \\= 4\\)", formula) ~ "exclude",
       TRUE ~ "no"  # This acts as the default case
     )) %>%
   filter(exclude == "no") %>%
@@ -387,12 +373,12 @@ for(modelGroup in unique(guide$modelGroup)){
                              vars.clean <- gsub("\\)", "", vars.clean)
                              vars.clean <- gsub(", k = 3\\)", "", vars.clean)
                              vars.clean <- gsub(", k = 4", "", vars.clean)
-                             vars.clean <- gsub("Biome, ", "", vars.clean)
+                             vars.clean <- gsub("ClimaticRegion, ", "", vars.clean)
                              vars.clean <- gsub("\\, bs = 're'", "", vars.clean)
                              
                              var.names <- data.table(
                                vars.clean = vars.clean) %>%
-                               filter(!grepl("Biome", vars.clean)) %>%
+                               filter(!grepl("ClimaticRegion", vars.clean)) %>%
                                filter(!grepl("Longitude", vars.clean)) %>%
                                
                                pull() %>%
@@ -443,7 +429,7 @@ for(modelGroup in unique(guide$modelGroup)){
                                                                                                                          cleanVar = gsub("log_", "", term),
                                                                                                                          cleanVar = gsub("_scaled", "", cleanVar), 
                                                                                                                          responseValue = dtSub %>% dplyr::select(c(all_of(filter.resp)))%>% pull(), 
-                                                                                                                         Biome = dtSub$Biome)
+                                                                                                                         ClimaticRegion = dtSub$ClimaticRegion)
                                  
                                  ggplot() + geom_line(aes(x = marg.tmp$varValue, y = marg.tmp$fit))
                                  
@@ -453,7 +439,7 @@ for(modelGroup in unique(guide$modelGroup)){
                                }
                                
                                tidyNonPara <- tidy(m, parametric = FALSE) %>% 
-                                 mutate(cleanVar = gsub("s\\(Biome,", "", term),   
+                                 mutate(cleanVar = gsub("s\\(ClimaticRegion,", "", term),   
                                         cleanVar = gsub("_scaled\\)", "", cleanVar),
                                         cleanVar = gsub("s\\(", "", cleanVar)) %>% 
                                  rename(pValue = p.value) %>% 
@@ -499,7 +485,7 @@ for(modelGroup in unique(guide$modelGroup)){
                                                                                                                                  cleanVar = gsub("log_", "", term),
                                                                                                                                  cleanVar = gsub("_scaled", "", cleanVar),
                                                                                                                                  moderator = moderator.clean,
-                                                                                                                                 Biome = dtSub$Biome,
+                                                                                                                                 ClimaticRegion = dtSub$ClimaticRegion,
                                                                                                                                  responseValue = dtSub %>% dplyr::select(c(all_of(filter.resp)))%>% pull(),
                                                                                                                                  moderatorValue = dtSub %>% dplyr::select(c(all_of(moderator.clean)))%>% pull())
                                  if(k==1){
