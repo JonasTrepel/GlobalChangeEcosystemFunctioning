@@ -201,6 +201,45 @@ biomeExtrFin <- data.table(BIOME = biomeExtr) %>%
 
 table(biomeExtr)
 sum(is.na(biomeExtr))
+
+## Koppen Geiger Climatic Regions
+
+climaticRegionsR <- rast("data/spatialData/otherCovariates/KoppenGeigerClimaticRegions1km.tif")
+
+climRegLeg <- data.frame(ClimRegNum = 1:30,
+                         ClimaticRegion = c(
+                           rep("Tropical", 3),
+                           rep("Arid", 4),
+                           rep("Temperate", 9),
+                           rep("Cold", 12),
+                           rep("Polar", 2)
+                         ))
+
+sfClimRegTrans <- pas %>%
+  st_transform(crs(climaticRegionsR))
+
+climRegExtr <- exactextractr::exact_extract(climaticRegionsR,
+                                            sfClimRegTrans,
+                                            summarize_df = TRUE,
+                                            fun = function(df){
+                                              dat <- df[!is.na(df$value) & df$coverage_fraction > 0.25, ]
+                                              uniqueValues <- unique(dat$value)
+                                              mode <- uniqueValues[which.max(tabulate(match(dat$value, uniqueValues)))]
+                                              return(mode)
+                                            } #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
+)
+
+
+climRegExtrFin <- data.table(ClimRegNum = climRegExtr) %>% 
+  cbind(sfClimRegTrans[, "reserve_name"]) %>% 
+  mutate(geometry = NULL) %>% 
+  left_join(climRegLeg) %>% 
+  dplyr::select(reserve_name, ClimaticRegion) 
+
+table(ClimaticRegion)
+sum(is.na(ClimaticRegion))
+
+
 ## Land cover 
 
 # extract land cover and remove urban and cultivated pixels

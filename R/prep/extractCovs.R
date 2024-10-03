@@ -82,7 +82,7 @@ covPaths <- c(
   "data/spatialData/otherCovariates/FireMeanFreqTrend20012023.tif", ## Fire Frequency
   "data/spatialData/otherCovariates/EviMean20012023.tif", ## EVI
   "data/spatialData/otherCovariates/NppMean20012023.tif", ##NPP
-  "data/spatialData/otherCovariates/EviSdMean20012023.tif", ## EVI Sd trend
+  "data/spatialData/otherCovariates/EviSdMean20012023.tif", ## EVI Sd
   
   #### Trends ####
   "data/spatialData/trendData/EviTrend20012023.tif", ## EVI trend
@@ -180,6 +180,46 @@ biomeExtrFin <- data.table(BIOME = biomeExtr) %>%
 
 table(biomeExtr)
 sum(is.na(biomeExtr))
+
+## Koppen Geiger Climatic Regions
+
+climaticRegionsR <- rast("data/spatialData/otherCovariates/KoppenGeigerClimaticRegions1km.tif")
+
+climRegLeg <- data.frame(ClimRegNum = 1:30,
+                            ClimaticRegion = c(
+                              rep("Tropical", 3),
+                              rep("Arid", 4),
+                              rep("Temperate", 9),
+                              rep("Cold", 12),
+                              rep("Polar", 2)
+                            ))
+
+sfClimRegTrans <- pas %>%
+  st_transform(crs(climaticRegionsR))
+
+climRegExtr <- exactextractr::exact_extract(climaticRegionsR,
+                                            sfClimRegTrans,
+                                          summarize_df = TRUE,
+                                          fun = function(df){
+                                            dat <- df[!is.na(df$value) & df$coverage_fraction > 0.25, ]
+                                            uniqueValues <- unique(dat$value)
+                                            mode <- uniqueValues[which.max(tabulate(match(dat$value, uniqueValues)))]
+                                            return(mode)
+                                          } #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
+)
+
+
+climRegExtrFin <- data.table(ClimRegNum = climRegExtr) %>% 
+  cbind(sfClimRegTrans[, "unique_id"]) %>% 
+  mutate(geometry = NULL) %>% 
+  left_join(climRegLeg) %>% 
+  dplyr::select(unique_id, ClimaticRegion) 
+
+table(ClimaticRegion)
+sum(is.na(ClimaticRegion))
+
+
+
 ## Land cover 
 
 # extract land cover and remove urban and cultivated pixels
@@ -249,6 +289,7 @@ pasCovsDT <- pasRawCovs %>%
   left_join(biomeExtrFin) %>% 
   left_join(lcExtrFin) %>% 
   left_join(megafaunaCovs) %>% 
+  left_join(climRegExtrFin) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL, 

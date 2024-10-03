@@ -620,6 +620,9 @@ pred.int.out <- unique(pred.int.out)
 modelResults <- list(bm.spec = bm.spec.out, res = res.out, pred = pred.out, pred.int = pred.int.out)
 saveRDS(modelResults, "builds/modelOutputs/exploratoryGamReserveRes.Rds")
 
+modelResultsPredAndSpec <- list(bm.spec = bm.spec.out, pred = pred.out, pred.int = pred.int.out)
+saveRDS(modelResultsPredAndSpec, "builds/modelOutputs/exploratoryGamReserveResPredAndSpecOnly.Rds")
+
 stop(pb)
 
 
