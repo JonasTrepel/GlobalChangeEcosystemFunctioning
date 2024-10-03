@@ -135,7 +135,7 @@ pEviFullNonR
 res[res$modelGroup == "EviTrendFullRandom",]$r_squared
 
 pEviFullR <- ggplot() +
- # geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = ClimaticRegion), alpha = 0.25) +
+  geom_point(data = dtModLong, aes(x = varValue, y = EviTrend, color = ClimaticRegion), alpha = 0.25) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 1.1) +
   geom_ribbon(data = pred[modelGroup %in% c("EviTrendFullRandom") & randomEffect == TRUE, ], 
               aes(x = varValue, ymin =  ci.lb, ymax = ci.ub, fill = ClimaticRegion), alpha = 0.5) +
@@ -287,8 +287,8 @@ pNppBest <- ggplot() +
         panel.grid = element_blank()
   ) +
   guides(
-    color = guide_legend(nrow = 7, ncol = 2), 
-    fill = guide_legend(ncol = 2, nrow = 7),
+    color = guide_legend(ncol = 3), 
+    fill = guide_legend(ncol = 3),
     linetype = guide_legend(nrow = 1)
   )
 
@@ -358,6 +358,7 @@ pBurnedAreaFullR
 
 ## Best
 res[res$modelGroup == "BurnedAreaTrendBestModel",]$r_squared
+res[res$modelGroup == "BurnedAreaTrendBestModel",]$formula
 
 pBurnedAreaBest <- ggplot() +
   # geom_point(data = dtModLong[dtModLong$cleanVar %in% unique(pred[modelGroup %in% c("BurnedAreaTrendBestModel"), ]$cleanVar), ], 
