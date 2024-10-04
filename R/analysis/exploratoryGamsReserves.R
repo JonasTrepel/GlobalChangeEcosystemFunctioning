@@ -29,7 +29,7 @@ ClimaticRegionsN <- pasCovsDTRaw %>%
   group_by(ClimaticRegion) %>% 
   summarize(nPerClimReg = n()) 
 
-dtMod <- pasCovsDTRaw %>% 
+dtModRaw <- pasCovsDTRaw %>% 
   left_join(biomeN) %>% 
   left_join(ClimaticRegionsN) %>% 
   mutate(ClimaticRegionN = paste0(ClimaticRegion, " (n = ", nPerClimReg, ")"), 
@@ -43,14 +43,53 @@ dtMod <- pasCovsDTRaw %>%
          NitrogenDepo_scaled = as.numeric(scale(NitrogenDepo)), 
          HumanModification_scaled = as.numeric(scale(HumanModification)), 
          PaAge_scaled = as.numeric(scale(PaAge)),
-         PaAreaKm2_scaled = as.numeric(scale(PaAreaKm2)),
-         MeanBodyMassCwm_scaled = as.numeric(scale(MeanBodyMassCwm)),
-         MaxBodyMass_scaled = as.numeric(scale(MaxBodyMass)),
+         PaAreaKm2_scaled = as.numeric(scale(log(PaAreaKm2))),
+         MeanBodyMassCwm_scaled = as.numeric(scale(log(MeanBodyMassCwm))),
+         MaxBodyMass_scaled = as.numeric(scale(log(MaxBodyMass))),
          HerbivoreSpeciesRichness_scaled = as.numeric(scale(HerbivoreSpeciesRichness)),
          HerbivoreFunDiv_scaled = as.numeric(scale(HerbivoreFunDiv)),
          HerbivoreBiomassKgKm2_scaled = as.numeric(scale(HerbivoreBiomassKgKm2)),
          Latitude_scaled = as.numeric(scale(Latitude)), 
-         Longitude_scaled = as.numeric(scale(Longitude)))
+         Longitude_scaled = as.numeric(scale(Longitude)), 
+         ClimaticRegion = as.factor(ClimaticRegion))
+glimpse(dtModRaw)
+
+### Extract LonLat residuals 
+allVars <- c("s(ClimaticRegion, SlopeMeanTemp_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, SlopeMaxTemp_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, SlopeMinTemp_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, SlopePrec_scaled, bs = 're', k = 4)", 
+             "s(ClimaticRegion, NitrogenDepo_scaled, bs = 're', k = 4)", 
+             "s(ClimaticRegion, HumanModification_scaled, bs = 're', k = 4)", 
+             "s(ClimaticRegion, PaAreaKm2_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, MaxBodyMass_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, MeanBodyMassCwm_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, HerbivoreSpeciesRichness_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, HerbivoreFunDiv_scaled, bs = 're', k = 4)",
+             "s(ClimaticRegion, HerbivoreBiomassKgKm2_scaled, bs = 're', k = 4)"
+)
+
+predictorFormula <- paste(allVars, collapse = " + ")
+
+# Function by Oliver Baines 
+# First fitting a multivariate model on X and Y
+# Creating RHS of formula using N variables (assuming)
+X_Y_resids <- gam(list(
+  as.formula(paste0('Longitude ~', predictorFormula)),
+  as.formula(paste0('Latitude ~', predictorFormula))
+),
+data = dtModRaw,
+family = mvn(d = 2),
+method = 'REML') %>%
+  residuals(type = 'deviance')
+
+
+dtMod <- dtModRaw %>% 
+  mutate(LongitudeResid = X_Y_resids[,1], 
+         LatitudeResid = X_Y_resids[,2], 
+         LongitudeResid_scaled = LongitudeResid, ## just nameing them scaled because it makes the prediction function easier 
+         LatitudeResid_scaled = LatitudeResid
+  )
 
 dtCorr <- dtMod %>%
   dplyr::select(SlopeMeanTemp, SlopeMaxTemp, SlopeMinTemp, SlopePrec, 
