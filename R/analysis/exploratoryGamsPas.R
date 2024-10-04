@@ -237,7 +237,7 @@ res.out <- data.table()
 pred.out <- data.table()
 pred.int.out <- data.table()
 
-modelGroup <- "BurnedAreaTrendFullRandom"
+modelGroup <- "BurnedAreaTrendBestModel"
 
 ############### create cluster ####################
 library(doSNOW)
@@ -291,7 +291,7 @@ for(modelGroup in unique(guide$modelGroup)){
                                dtSub <- dtMod
                              }
                              
-                             
+                            # guide.sub <- guide.sub %>% filter(formula == "BurnedAreaTrend ~ s(ClimaticRegion, SlopeMinTemp_scaled, bs = 're', k = 4) + s(PaAreaKm2_scaled, k = 4) + s(SlopeMaxTemp_scaled, k = 4) + s(SlopePrec_scaled, k = 4) + s(NitrogenDepo_scaled, k = 4) + s(HumanModification_scaled, k = 4) + s(Longitude_scaled, Latitude_scaled)")     
                              
            res <- foreach(i = 1:nrow(guide.sub),
                                    .packages = c('mgcv', 'ggplot2', 'tidyr', 'data.table', 'tidyverse', 'MuMIn', 'broom'),
@@ -354,7 +354,7 @@ for(modelGroup in unique(guide$modelGroup)){
                              
                              
                              m <- tryCatch(
-                               {gam(formula.bm, data = dtSub, select = TRUE, method = "REML")},
+                               {bam(formula.bm, data = dtSub, select = TRUE, method = "fREML")},
                                error = function(e) {cat("Model", i, "failed: ", e$message, "\n") 
                                  return(NULL) })
                              
