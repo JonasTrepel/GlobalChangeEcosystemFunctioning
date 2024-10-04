@@ -453,7 +453,7 @@ for(modelGroup in unique(guide$modelGroup)){
   
   
   m <- tryCatch(
-    {gam(formula.bm, data = dtSub, select = TRUE, method = "REML")},
+    {bam(formula.bm, data = dtSub, select = TRUE, method = "fREML")},
     error = function(e) {cat("Model", i, "failed: ", e$message, "\n") 
       return(NULL) })
   
