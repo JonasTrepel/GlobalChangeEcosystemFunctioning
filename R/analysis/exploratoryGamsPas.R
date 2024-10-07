@@ -20,12 +20,11 @@ pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>%
                         SlopePrec, PaAge, PaAreaKm2, EviTrend))
 
 
-ClimaticRegionN <- pasCovsDTRaw %>% 
+ClimaticRegionsN <- pasCovsDTRaw %>% 
   group_by(ClimaticRegion) %>% 
-  summarize(nPerClimaticRegion = n()) 
+  summarize(nPerClimReg = n()) 
 
 dtModRaw <- pasCovsDTRaw %>% 
-  left_join(biomeN) %>% 
   left_join(ClimaticRegionsN) %>% 
   mutate(ClimaticRegionN = paste0(ClimaticRegion, " (n = ", nPerClimReg, ")"), 
          ClimaticRegion = as.factor(ClimaticRegion))  %>% 

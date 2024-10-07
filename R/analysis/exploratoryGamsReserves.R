@@ -135,7 +135,7 @@ vars <- c("s(ClimaticRegion, SlopeMeanTemp_scaled, bs = 're', k = 4)",
           "s(HerbivoreSpeciesRichness_scaled, k = 4)",
           "s(HerbivoreFunDiv_scaled, k = 4)",
           "s(HerbivoreBiomassKgKm2_scaled, k = 4)", 
-          "s(Longitude_scaled, Latitude_scaled)"
+          "s(LongitudeResid_scaled, LatitudeResid_scaled)"
           
 )
 
@@ -367,7 +367,10 @@ unique(guide$modelGroup)
 #saveRDS(guide, "builds/modelGuides/saReserveModelGuide.Rds")
 guide <- readRDS("builds/modelGuides/saReserveModelGuide.Rds")
 
-#guide <- guide %>% mutate_all(~ gsub("Biome", "ClimaticRegion", .))
+# guide <- guide %>%
+#  mutate_all(~ gsub("Longitude_scaled", "LongitudeResid_scaled", .)) %>% 
+#  mutate_all(~ gsub("Latitude_scaled", "LatitudeResid_scaled", .)) %>%
+#  mutate_all(~ gsub("Biome", "ClimaticRegion", .))
 
 res <- data.table()
 pred <- data.table()
