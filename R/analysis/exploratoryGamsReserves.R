@@ -97,10 +97,11 @@ dtCorr <- dtMod %>%
                 MeanBodyMassCwm, MaxBodyMass, HerbivoreSpeciesRichness, 
                 HerbivoreFunDiv, HerbivoreBiomassKgKm2) %>% filter(complete.cases(.))
 corr <- round(cor(dtCorr), 1)
-ggcorrplot::ggcorrplot(corr, hc.order = TRUE, type = "lower",
+pCorr <- ggcorrplot::ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE)
 
-
+pCorr
+ggsave(plot = pCorr, "builds/plots/supplement/varCorrReserves.png", dpi = 600)
 ##### Build model guide ######
 
 responses<- c("BurnedAreaTrend",
