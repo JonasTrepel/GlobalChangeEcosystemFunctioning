@@ -425,5 +425,3 @@ nrow(dt.final[STATUS_YR <= 2003])
 
 fwrite(x = dt.final, file = "data/processedData/cleanData/pasWithMegafauna.csv")
 
-pa.shapes <- pas.loop %>% dplyr::select(unique_id, WDPA_PID, NAME)
-st_write(pa.shapes, "data/spatialData/protectedAreas/paShapes.gpkg", append = FALSE)

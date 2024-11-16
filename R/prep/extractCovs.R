@@ -146,13 +146,13 @@ pasCovsDT <- pasRawCovs %>%
 
 #### EXTRACT CATEGORICAl COVS #### ----------------------------------
 
-## Biome
+## Biome ---------------
 
 wwfBiome <- read_sf("data/spatialData/otherCovariates/WWF_BIOMES.gpkg")
 
 biomeLeg <- wwfBiome %>% as.data.table() %>% mutate(geom = NULL) %>% unique()
 
-rastTmp <- terra::rast(res = 0.01) #roughly 5 km at equator 
+rastTmp <- terra::rast(res = 0.01) #roughly 1 km at equator 
 biomeR <- terra::rasterize(wwfBiome, rastTmp, field = "BIOME")
 plot(biomeR)
 
@@ -181,7 +181,45 @@ biomeExtrFin <- data.table(BIOME = biomeExtr) %>%
 table(biomeExtr)
 sum(is.na(biomeExtr))
 
-## Koppen Geiger Climatic Regions
+
+## Functional Biome ------------
+
+funBiome <- rast("data/spatialData/otherCovariates/higginsFunctionalBiomes.tif")
+plot(funBiome)
+funBiomeLeg <- data.table(
+  num = c(1:24), 
+  FunctionalBiome = c("SLC","SMC","SHC","TLC","TMC","THC",
+                      "SLD","SMD","SHD","TLD","TMD","THD",
+                      "SLB","SMB","SHB","TLB","TMB","THB","SLN","SMN","SHN",
+                      "TLN","TMN","THN")
+)
+
+
+worldGridFunBiome <- pas %>% st_as_sf() %>%
+  st_transform(crs(funBiome))
+
+funBiomeExtr <- exactextractr::exact_extract(funBiome,
+                                          worldGridFunBiome,
+                                          summarize_df = TRUE,
+                                          fun = function(df){
+                                            dat <- df[!is.na(df$value) & df$coverage_fraction > 0.00000001, ]
+                                            uniqueValues <- unique(dat$value)
+                                            mode <- uniqueValues[which.max(tabulate(match(dat$value, uniqueValues)))]
+                                            return(mode)
+                                          } #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
+)
+
+sum(is.na(funBiomeExtr))
+funBiomeExtrFin <- data.table(num = funBiomeExtr) %>% 
+  cbind(pas[, "unique_id"]) %>% 
+  mutate(geometry = NULL) %>% 
+  left_join(funBiomeLeg, by = "num") %>% 
+  dplyr::select(unique_id, FunctionalBiome) 
+
+table(biomeExtr)
+sum(is.na(biomeExtr))
+
+## Koppen Geiger Climatic Regions ------------------------------
 
 climaticRegionsR <- rast("data/spatialData/otherCovariates/KoppenGeigerClimaticRegions1km.tif")
 
@@ -276,6 +314,7 @@ lcExtrFin <- data.table(lcMode = lcExtr) %>%
   left_join(lcLeg, by = "lcNum") %>% 
   dplyr::select(unique_id, LandCover) 
 
+
 ### load more covariates 
 
 megafaunaCovs <- fread("data/processedData/cleanData/pasWithMegafauna.csv")
@@ -298,6 +337,7 @@ pasCovsDT <- pasRawCovs %>%
   left_join(lcExtrFin) %>% 
   left_join(megafaunaCovs) %>% 
   left_join(climRegExtrFin) %>% 
+  left_join(funBiomeExtrFin) %>% 
   left_join(dtCoords) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
