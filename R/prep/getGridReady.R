@@ -230,6 +230,9 @@ write_sf(worldGridRaw4, "data/spatialData/protectedAreas/paGrid.gpkg", append = 
 
 
 #### EXTRACT CONTINUOUS COVS #### ----------------------------------
+worldGridRaw4 <- read_sf("data/spatialData/protectedAreas/paGrid.gpkg")
+
+
 
 colNames <- c(
   #### Environmental ####
@@ -342,7 +345,7 @@ dtCovs <- foreach(i = 1:nrow(covs),
                     
                     covR <- rast(covs[i, ]$covPath)
                     
-                    worldGridTrans <- st_transform(gridCovsRaw, crs = st_crs(covR))
+                    worldGridTrans <- st_transform(worldGridRaw4, crs = st_crs(covR))
                     
                     extr <- exactextractr::exact_extract(covR, 
                                                          worldGridTrans, 
@@ -360,7 +363,7 @@ dtCovs <- foreach(i = 1:nrow(covs),
                     
                     #print(paste0(i, "/", nrow(covs)))
                     
-                  }
+  }
 
 
 
@@ -374,6 +377,14 @@ gridCovsDT <- gridCovsRaw %>%
 fwrite(gridCovsDT, "data/processedData/cleanData/gridWithCovs.csv")
 
 
+gridWithCovs <- worldGridRaw4 %>% 
+  left_join(dtCovs %>% unique())
+
+write_sf(gridWithCovs, "data/spatialData/protectedAreas/gridWithCovs.gpkg", append = FALSE)
+
+
+
+#stopCluster(clust)
 
 #############################################################################################
 #############################################################################################
