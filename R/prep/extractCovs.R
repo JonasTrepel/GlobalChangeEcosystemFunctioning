@@ -34,81 +34,73 @@ pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
 colNames <- c(
   #### Environmental ####
   "Elevation", ## Elevation
-  "MMP", ## MAP
+  "MAP", ## MAP
   "MAT", ## MAT
   "MaxTemp", ## MaxTemp
-  "MinTemp", ##MinTemp
   "BurnedAreaMean", ## Burned Area
-  "FireFrequencyMean", ## Fire Frequency
   "EVI", ## EVI
-  "NPP", ##
-  "EviSD", ##
-  
+
   #### Trends ####
   "EviTrend", ## EVI trend
-  "NppTrend", ## NPP Trend
-  "FireFreqTrend", ## Fire frequency trend
   "BurnedAreaTrend", ## Burned area trend
   "SOSTrend", ## SOS Trend 
-  "EviSDTrend", ##EVI SD Trend
-  
+  "EviTrendMasked", ## EVI trend masked
+  "BurnedAreaTrendMasked", ## Burned area trend masked
+  "SOSTrendMasked", ## SOS Trend masked
+
   #### Global Change ####
-  "AbsMeanTempDiff", ## Mean temp change 
-  "RelMeanTempDiff", ## Relative mean temp change
-  "AbsMaxTempDiff", ## Max temp change
-  "RelMaxTempDiff", ## Relative Max temp change
-  "AbsMinTempDiff", ## Min temp change
-  "RelMinTempDiff", ## Relative min temp change
-  "AbsPrecDiff", ## Prec change
-  "RelPrecDiff", ## Relative prec change
   "SlopeMeanTemp", ## Mean temp slope
   "SlopeMaxTemp", ## Max temp slope
-  "SlopeMinTemp", ## Min temp slope
   "SlopePrec", ## Prec slope
+  "SlopeMeanTempMasked", ## Mean temp slope masked
+  "SlopeMaxTempMasked", ## Max temp slope masked
+  "SlopePrecMasked", ## Prec slope masked
   "NitrogenDepo", ## Nitrogen depo
-  "HumanModification", #Human moddification index
-  "SpeciesLoss", ## Species loss
-  "BodyMassLoss" ## Body mass loss
+  "HumanModification", #Human modification index
+  
+  #### R-squared ####
+  "EviTrendR2", ## EVI trend R2
+  "BurnedAreaTrendR2", ## Burned Area trend R2
+  "SOSTrendR2", ## SOS trend R2 
+  "SlopeMeanTempR2", ## MAT trend R2
+  "SlopeMaxTempR2", ## MaxTemp trend R2
+  "SlopePrecR2" ## Prec trend R2
 )
 
 covPaths <- c(
   #### Environmental ####
   "data/spatialData/otherCovariates/Elevation_Global_930m.tif", ## Elevation
-  "data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif", ## MMP
+  "data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif", ## MAP
   "data/spatialData/climateData/currentMeanTemp20092019.tif", ##MAT
   "data/spatialData/climateData/currentMaxTemp20092019.tif", ##Max Temp
-  "data/spatialData/climateData/currentMinTemp20092019.tif", ## MinTemp
   "data/spatialData/otherCovariates/BurnedAreaMean20012023.tif", ## Burned Area
-  "data/spatialData/otherCovariates/FireMeanFreqTrend20012023.tif", ## Fire Frequency
   "data/spatialData/otherCovariates/EviMean20012023.tif", ## EVI
-  "data/spatialData/otherCovariates/NppMean20012023.tif", ##NPP
-  "data/spatialData/otherCovariates/EviSdMean20012023.tif", ## EVI Sd
   
   #### Trends ####
   "data/spatialData/trendData/EviTrend20012023.tif", ## EVI trend
-  "data/spatialData/trendData/NppTrend20012023.tif", ## NPP Trend
-  "data/spatialData/trendData/FireFreqTrend20012023.tif", ## Fire frequency trend
   "data/spatialData/trendData/BurnedAreaTrend20012023.tif", ## Burned area trend
   "data/spatialData/trendData/SosTrend20012023.tif", ## SOS Trend 
-  "data/spatialData/trendData/EviSdTrend20012023.tif", ##EVI SD Trend
-  
+  "data/spatialData/trendData/EviTrend20012023Masked.tif", ## EVI trend Masked
+  "data/spatialData/trendData/BurnedAreaTrend20012023Masked.tif", ## Burned area trend Masked
+  "data/spatialData/trendData/SosTrend20012023Masked.tif", ## SOS Trend Masked
+
   #### Global Change ####
-  "data/spatialData/climateData/absoluteChangeMeanTemp.tif", ## Mean temp change 
-  "data/spatialData/climateData/relativeChangeMeanTemp.tif", ## Relative mean temp change
-  "data/spatialData/climateData/absoluteChangeMaxTemp.tif", ## Max temp change
-  "data/spatialData/climateData/relativeChangeMaxTemp.tif", ## Relative Max temp change
-  "data/spatialData/climateData/absoluteChangeMinTemp.tif", ## Min temp change
-  "data/spatialData/climateData/relativeChangeMinTemp.tif", ## Relative min temp change
-  "data/spatialData/climateData/absoluteChangeMonthlyPrec.tif", ## Prec change
-  "data/spatialData/climateData/relativeChangeMonthlyPrec.tif", ## Relative prec change
-  "data/spatialData/climateData/slopeMeanTempChelsa20012019.tif", ## Mean temp slope
-  "data/spatialData/climateData/slopeMaxTempChelsa20012019.tif", ## Max temp slope
-  "data/spatialData/climateData/slopeMinTempChelsa20012019.tif", ## Min temp slope
-  "data/spatialData/climateData/slopePrecChelsa20012019.tif", ## Prec slope
+  "data/spatialData/trendData/MatTrend19502023.tif", ## Mean temp slope
+  "data/spatialData/trendData/MaxTempTrend19502023.tif", ## Max temp slope
+  "data/spatialData/trendData/MapTrend19502023.tif", ## Prec slope
+  "data/spatialData/trendData/MatTrend19502023Masked.tif", ## Mean temp slope masked
+  "data/spatialData/trendData/MaxTempTrend19502023Masked.tif", ## Max temp slope masked
+  "data/spatialData/trendData/MapTrend19502023Masked.tif", ## Prec slope masked
   "data/spatialData/otherCovariates/total_N_dep.tif",## Nitrogen depo
-  "data/spatialData/otherCovariates/lulc-human-modification-terrestrial-systems_geographic.tif", #Human moddification index
-  "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_MASS.tif", ## Species loss
-  "O:/Nat_Ecoinformatics/C_Write/_User/MatthewKerr_au738027/Novelty Exposure Mapping/Processed Data Layers/DEFAUNATION_RICHNESS.tif" ## Body mass loss
+  "data/spatialData/otherCovariates/lulc-human-modification-terrestrial-systems_geographic.tif", #Human modification index
+  
+  #### R-squared ####
+  "data/spatialData/trendData/EviTRsq20012023.tif", ## EVI trend R2
+  "data/spatialData/trendData/BurnedAreaTRsq20012023.tif", ## Burned Area trend R2
+  "data/spatialData/trendData/SosTRsq20012023.tif", ## SOS trend R2 
+  "data/spatialData/trendData/MatRsq19502023.tif", ## MAT trend R2
+  "data/spatialData/trendData/MaxTempRsq19502023.tif", ## MaxTemp trend R2
+  "data/spatialData/trendData/MapRsq19502023.tif" ## Prec trend R2
 )
 
 covs <- data.table(
@@ -119,7 +111,34 @@ covs <- data.table(
 
 pasRawCovs <- pas %>% as.data.table() %>% mutate(geom = NULL)
 
-for(i in 1:nrow(covs)){
+############### create cluster ####################
+library(doSNOW)
+library(foreach)
+library(tictoc)
+
+# Create and register a cluster
+clust <- makeCluster(30)
+registerDoSNOW(clust)
+
+## progress bar 
+iterations <- nrow(covs)
+pb <- txtProgressBar(max = iterations, style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+
+##############################################################################            
+################################## LOOOOOOOOOOOOP ############################            
+##############################################################################    
+#dt.tier <- dt.tier[3,]
+tic()
+
+dtCovs <- foreach(i = 1:nrow(covs),
+                           .packages = c('tidyverse', 'exactextractr', 'data.table', 'terra', 'sf'),
+                           .options.snow = opts,
+                           .inorder = FALSE,
+                           .combine = left_join) %dopar% {
+
+#for(i in 1:nrow(covs)){
   
   covR <- rast(covs[i, ]$covPath)
   
@@ -133,15 +152,24 @@ for(i in 1:nrow(covs)){
   )
   setnames(extrDT, "extrCol", covs[i, ]$colName)
   
-  pasRawCovs <- cbind(pasRawCovs, extrDT)
+  extraDTFin <- cbind(worldGridTrans[, "unique_id"], extrDT) %>%
+    as.data.table() %>%
+    mutate(geom = NULL) %>% 
+    unique()
+  return(extraDTFin)
   
-  print(paste0(i, "/", nrow(covs)))
+  #print(paste0(i, "/", nrow(covs)))
   
 }
 
+
+
+
 pasCovsDT <- pasRawCovs %>% 
+  left_join(dtCovs) %>% 
   as.data.table() %>% 
-  mutate(x = NULL)
+  mutate(x = NULL, 
+         geom = NULL)
 
 
 #### EXTRACT CATEGORICAl COVS #### ----------------------------------
@@ -317,7 +345,7 @@ lcExtrFin <- data.table(lcMode = lcExtr) %>%
 
 ### load more covariates 
 
-megafaunaCovs <- fread("data/processedData/cleanData/pasWithMegafauna.csv")
+#megafaunaCovs <- fread("data/processedData/cleanData/pasWithMegafauna.csv")
 
 ### get coordinates  
 sf_use_s2(FALSE)
@@ -332,25 +360,23 @@ dtCoords <- pas %>% as.data.table() %>%
 
 
 ######## Summarize and Write Out
-pasCovsDT <- pasRawCovs %>% 
-  left_join(biomeExtrFin) %>% 
-  left_join(lcExtrFin) %>% 
-  left_join(megafaunaCovs) %>% 
-  left_join(climRegExtrFin) %>% 
-  left_join(funBiomeExtrFin) %>% 
-  left_join(dtCoords) %>% 
+pasCovsDT <- pasCovsDT %>% 
+  left_join(biomeExtrFin %>% unique()) %>% 
+  left_join(lcExtrFin %>% unique()) %>% 
+ # left_join(megafaunaCovs) %>% 
+  left_join(climRegExtrFin %>% unique() ) %>% 
+  left_join(funBiomeExtrFin %>% unique()) %>% 
+  left_join(dtCoords %>% unique()) %>% 
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL, 
-         FireFreqTrend = ifelse(is.na(FireFreqTrend), 0 , FireFreqTrend),
          BurnedAreaMean = ifelse(is.na(BurnedAreaMean), 0 , BurnedAreaMean),
-         FireFrequencyMean = ifelse(is.na(FireFrequencyMean), 0 , FireFrequencyMean)
   ) %>% filter(GIS_AREA > 1)
 
 
 fwrite(pasCovsDT, "data/processedData/cleanData/pasWithCovs.csv")
 table(pasCovsDT$Biome)
-table(pasCovsDT$ClimaticRegion)
+table(pasCovsDT$FunctionalBiome)
 
 
 pa.shapes <- pasCovsDT %>% left_join(pas) %>% st_as_sf

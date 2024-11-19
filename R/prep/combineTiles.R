@@ -1,6 +1,65 @@
 library(terra)
 
 
+## Mask according to R2
+
+### Mean Annual Temperature 
+
+mat <- rast("data/spatialData/rawTiles/MatTrend19502023.tif")
+plot(mat)
+
+matR2 <-  rast("data/spatialData/rawTiles/MatRsq19502023.tif")
+plot(matR2)
+
+MatMask <- (matR2 > 0.2)*1
+plot(MatMask)
+
+MatMasked <- mask(mat, MatMask, maskvalues = 0, updatevalue = 0)
+
+plot(MatMasked)
+
+writeRaster(MatMasked,  "data/spatialData/trendData/MatTrend19502023Masked.tif", 
+            overwrite = TRUE)
+
+### Max Annual Temperature 
+
+MaxTemp <- rast("data/spatialData/rawTiles/MaxTempTrend19502023.tif")
+plot(MaxTemp)
+
+MaxTempR2 <-  rast("data/spatialData/rawTiles/MaxTempRsq19502023.tif")
+plot(MaxTempR2)
+
+MaxTempMask <- (MaxTempR2 > 0.2)*1
+plot(MaxTempMask)
+
+MaxTempMasked <- mask(MaxTemp, MaxTempMask, maskvalues = 0, updatevalue = 0)
+
+plot(MaxTempMasked)
+
+writeRaster(MaxTempMasked,  "data/spatialData/trendData/MaxTempTrend19502023Masked.tif", 
+            overwrite = TRUE)
+
+
+### Mean Annual Precipitation 
+
+
+Map <- rast("data/spatialData/rawTiles/MapTrend19502023.tif")
+plot(Map)
+
+MapR2 <-  rast("data/spatialData/rawTiles/MapRsq19502023.tif")
+plot(MapR2)
+
+MapMask <- (MapR2 > 0.2)*1
+plot(MapMask)
+
+MapMasked <- mask(Map, MapMask, maskvalues = 0, updatevalue = 0)
+
+plot(MapMasked)
+
+writeRaster(MapMasked,  "data/spatialData/trendData/MapTrend19502023Masked.tif", 
+            overwrite = TRUE)
+
+
 ### Combine the different tiles from the Google Earth Engine Output ###
 
 
@@ -19,18 +78,53 @@ eviR8 <- rast(eviFiles[8])
 
 
 globalEVI <- merge(eviR1, eviR2, eviR3, eviR4, eviR5, eviR6, eviR7, eviR8, 
-               # filename = "data/spatialData/trendData/eviTrend20032023.tif", 
+                filename = "data/spatialData/trendData/EviTrend20012023.tif", 
                 overwrite = TRUE)
 plot(globalEVI)
-globalEVI <- clamp(globalEVI,
-                       lower=-100,
-                       upper=100,
-                       values=FALSE)
 
-plot(globalEVI)
 
-writeRaster(globalEVI,  "data/spatialData/trendData/eviTrend20012023.tif", 
+# globalEVI <- clamp(globalEVI,
+#                        lower=-200,
+#                        upper=200,
+#                        values=FALSE)
+
+# plot(globalEVI)
+
+# writeRaster(globalEVI,  "data/spatialData/trendData/eviTrend20012023.tif", 
+#             overwrite = TRUE)
+
+#### EVI Trend R2
+eviTRsqFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "EviRsq", full.names = T)
+
+eviTRsqR1 <- rast(eviTRsqFiles[1])
+eviTRsqR2 <- rast(eviTRsqFiles[2])
+eviTRsqR3 <- rast(eviTRsqFiles[3])
+eviTRsqR4 <- rast(eviTRsqFiles[4])
+eviTRsqR5 <- rast(eviTRsqFiles[5])
+eviTRsqR6 <- rast(eviTRsqFiles[6])
+eviTRsqR7 <- rast(eviTRsqFiles[7])
+eviTRsqR8 <- rast(eviTRsqFiles[8])
+
+
+
+
+globalEviTRsq <- merge(eviTRsqR1, eviTRsqR2, eviTRsqR3, eviTRsqR4, eviTRsqR5, eviTRsqR6, eviTRsqR7, eviTRsqR8,
+                   filename = "data/spatialData/trendData/EviTRsq20012023.tif", 
+                   overwrite = TRUE)
+
+#globalEviTRsq[globalEviTRsq < 0] <- NA
+plot(globalEviTRsq)
+
+# Mask EVO Trend 
+EviMask <- (globalEviTRsq > 0.2)*1
+plot(EviMask)
+
+EviMasked <- mask(globalEVI, EviMask, maskvalues = 0, updatevalue = 0)
+
+plot(EviMasked)
+writeRaster(EviMasked,  "data/spatialData/trendData/EviTrend20012023Masked.tif", 
             overwrite = TRUE)
+
 
 
 #### EVI Mean ----------------------------------------
@@ -52,97 +146,6 @@ globaleviMean <- merge(eviMeanR1, eviMeanR2, eviMeanR3, eviMeanR4, eviMeanR5, ev
                    overwrite = TRUE)
 plot(globaleviMean)
 
-#### NPP Trend ----------------------------------------
-nppTrendFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "NppModisSimple", full.names = T)
-
-nppTrendR1 <- rast(nppTrendFiles[1])
-nppTrendR2 <- rast(nppTrendFiles[2])
-nppTrendR3 <- rast(nppTrendFiles[3])
-nppTrendR4 <- rast(nppTrendFiles[4])
-nppTrendR5 <- rast(nppTrendFiles[5])
-nppTrendR6 <- rast(nppTrendFiles[6])
-nppTrendR7 <- rast(nppTrendFiles[7])
-nppTrendR8 <- rast(nppTrendFiles[8])
-
-
-
-globalNppTrend <- merge(nppTrendR1, nppTrendR2, nppTrendR3, nppTrendR4, nppTrendR5, nppTrendR6, nppTrendR7, nppTrendR8, 
-                       filename = "data/spatialData/trendData/NppTrend20012023.tif", 
-                       overwrite = TRUE)
-plot(globalNppTrend)
-
-#### NPP Mean ----------------------------------------
-nppMeanFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "NppModisMean", full.names = T)
-
-nppMeanR1 <- rast(nppMeanFiles[1])
-nppMeanR2 <- rast(nppMeanFiles[2])
-nppMeanR3 <- rast(nppMeanFiles[3])
-nppMeanR4 <- rast(nppMeanFiles[4])
-nppMeanR5 <- rast(nppMeanFiles[5])
-nppMeanR6 <- rast(nppMeanFiles[6])
-nppMeanR7 <- rast(nppMeanFiles[7])
-nppMeanR8 <- rast(nppMeanFiles[8])
-
-
-
-globalNppMean <- merge(nppMeanR1, nppMeanR2, nppMeanR3, nppMeanR4, nppMeanR5, nppMeanR6, nppMeanR7, nppMeanR8, 
-                        filename = "data/spatialData/otherCovariates/NppMean20012023.tif", 
-                        overwrite = TRUE)
-plot(globalNppMean)
-
-#### Landcover ----------------------------------------
-lcFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "GlobalLand", full.names = T)
-
-lcR1 <- rast(lcFiles[1])
-lcR2 <- rast(lcFiles[2])
-
-
-globalLC <- merge(lcR1, lcR2, 
-                   filename = "data/spatialData/otherCovariates/GlobalLandCoverCopernicus2019.tif", 
-                   overwrite = TRUE)
-
-
-plot(globalLC)
-
-
-#### Fire Frequency TREND ----------------------------------------
-fireFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "FireFreqTrend", full.names = T)
-
-fireR1 <- rast(fireFiles[1])
-fireR2 <- rast(fireFiles[2])
-fireR3 <- rast(fireFiles[3])
-fireR4 <- rast(fireFiles[4])
-fireR5 <- rast(fireFiles[5])
-fireR6 <- rast(fireFiles[6])
-fireR7 <- rast(fireFiles[7])
-fireR8 <- rast(fireFiles[8])
-
-
-
-globalFireTrend <- merge(fireR1, fireR2, fireR3, fireR4, fireR5, fireR6, fireR7, fireR8, 
-                   filename = "data/spatialData/trendData/FireFreqTrend20012023.tif", 
-                   overwrite = TRUE)
-
-plot(globalFireTrend)
-
-#### Fire Frequency MEAN ----------------------------------------
-fireMeanFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "FireFreqMean", full.names = T)
-
-fireMeanR1 <- rast(fireMeanFiles[1])
-fireMeanR2 <- rast(fireMeanFiles[2])
-fireMeanR3 <- rast(fireMeanFiles[3])
-fireMeanR4 <- rast(fireMeanFiles[4])
-fireMeanR5 <- rast(fireMeanFiles[5])
-fireMeanR6 <- rast(fireMeanFiles[6])
-
-
-
-
-globalfireMeanTrend <- merge(fireMeanR1, fireMeanR2, fireMeanR3, fireMeanR4, fireMeanR5, fireMeanR6,  
-                         filename = "data/spatialData/otherCovariates/FireMeanFreqTrend20012023.tif", 
-                         overwrite = TRUE)
-
-plot(globalfireMeanTrend)
 
 #### Start of Season TREND ----------------------------------------
 sosFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SosTrend", full.names = T)
@@ -160,67 +163,138 @@ globalSosTrend <- merge(sosR1, sosR2, sosR3, sosR4, sosR5, sosR6, sosR7, sosR8,
                          filename = "data/spatialData/trendData/SosTrend20012023.tif", 
                          overwrite = TRUE)
 
-globalSosTrend <- clamp(globalSosTrend,
-                   lower=-50,
-                   upper=50,
-                   values=FALSE)
+#### Sos Trend R2
+SosTRsqFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SosRsq", full.names = T)
 
-plot(globalSosTrend)
+SosTRsqR1 <- rast(SosTRsqFiles[1])
+SosTRsqR2 <- rast(SosTRsqFiles[2])
+SosTRsqR3 <- rast(SosTRsqFiles[3])
+SosTRsqR4 <- rast(SosTRsqFiles[4])
+SosTRsqR5 <- rast(SosTRsqFiles[5])
+SosTRsqR6 <- rast(SosTRsqFiles[6])
+SosTRsqR7 <- rast(SosTRsqFiles[7])
+SosTRsqR8 <- rast(SosTRsqFiles[8])
 
 
-writeRaster(globalSosTrend,  "data/spatialData/trendData/SosTrend20012023.tif", 
+
+
+globalSosTRsq <- merge(SosTRsqR1, SosTRsqR2, SosTRsqR3, SosTRsqR4, SosTRsqR5, SosTRsqR6, SosTRsqR7, SosTRsqR8,
+                       filename = "data/spatialData/trendData/SosTRsq20012023.tif", 
+                       overwrite = TRUE)
+
+plot(globalSosTRsq)
+
+# Mask Sos Trend 
+SosMask <- (globalSosTRsq > 0.2)*1
+plot(SosMask)
+
+SosMasked <- mask(globalSosTrend, SosMask, maskvalues = 0, updatevalue = 0)
+
+plot(SosMasked)
+writeRaster(SosMasked,  "data/spatialData/trendData/SosTrend20012023Masked.tif", 
             overwrite = TRUE)
 
-#### SD (evi; 0.25 at 1km) TREND ----------------------------------------
-sdTrendFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SDTrend", full.names = T)
 
-sdTrendR1 <- rast(sdTrendFiles[1])
-sdTrendR2 <- rast(sdTrendFiles[2])
-sdTrendR3 <- rast(sdTrendFiles[3])
-sdTrendR4 <- rast(sdTrendFiles[4])
-sdTrendR5 <- rast(sdTrendFiles[5])
-sdTrendR6 <- rast(sdTrendFiles[6])
+#### Sos Mean ----------------------------------------
+SosMeanFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SosMean", full.names = T)
 
-
-
-
-globalsdTrendTrend <- merge(sdTrendR1, sdTrendR2, sdTrendR3, sdTrendR4, sdTrendR5, sdTrendR6,  
-                             filename = "data/spatialData/otherCovariates/sdTrendFreqTrend20012023.tif", 
-                             overwrite = TRUE)
-
-plot(globalsdTrendTrend)
-
-#### SD (evi; 0.25 at 1km) TREND ----------------------------------------
-sdTrendFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SDTrend", full.names = T)
-
-sdTrendR1 <- rast(sdTrendFiles[1])
-sdTrendR2 <- rast(sdTrendFiles[2])
-
-globalEviSdTrend <- merge(sdTrendR1, sdTrendR2, 
-                            filename = "data/spatialData/trendData/EviSdTrend20012023.tif", 
-                            overwrite = TRUE)
-
-plot(globalEviSdTrend)
-
-globalEviSdTrend <- clamp(globalEviSdTrend,
-                        lower=quantile(values(globalEviSdTrend), .01, na.rm = T),
-                        upper=quantile(values(globalEviSdTrend), .99, na.rm = T),
-                        values=FALSE)
-
-plot(globalEviSdTrend)
+SosMeanR1 <- rast(SosMeanFiles[1])
+SosMeanR2 <- rast(SosMeanFiles[2])
+SosMeanR3 <- rast(SosMeanFiles[3])
+SosMeanR4 <- rast(SosMeanFiles[4])
+SosMeanR5 <- rast(SosMeanFiles[5])
+SosMeanR6 <- rast(SosMeanFiles[6])
+SosMeanR7 <- rast(SosMeanFiles[7])
+SosMeanR8 <- rast(SosMeanFiles[8])
 
 
-writeRaster(globalEviSdTrend,  "data/spatialData/trendData/EviSdTrend20012023.tif", 
+
+globalSosMean <- merge(SosMeanR1, SosMeanR2, SosMeanR3, SosMeanR4, SosMeanR5, SosMeanR6, SosMeanR7, SosMeanR8, 
+                       filename = "data/spatialData/otherCovariates/SosMean20012023.tif", 
+                       overwrite = TRUE)
+plot(globalSosMean)
+
+
+
+#### Burned Area TREND ----------------------------------------
+BurnedAreaFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "BurnedAreaTrend", full.names = T)
+
+BurnedAreaR1 <- rast(BurnedAreaFiles[1])
+BurnedAreaR2 <- rast(BurnedAreaFiles[2])
+BurnedAreaR3 <- rast(BurnedAreaFiles[3])
+BurnedAreaR4 <- rast(BurnedAreaFiles[4])
+BurnedAreaR5 <- rast(BurnedAreaFiles[5])
+BurnedAreaR6 <- rast(BurnedAreaFiles[6])
+BurnedAreaR7 <- rast(BurnedAreaFiles[7])
+BurnedAreaR8 <- rast(BurnedAreaFiles[8])
+
+globalBurnedAreaTrend <- merge(BurnedAreaR1, BurnedAreaR2, BurnedAreaR3, BurnedAreaR4, BurnedAreaR5, BurnedAreaR6, BurnedAreaR7, BurnedAreaR8, 
+                        filename = "data/spatialData/trendData/BurnedAreaTrend20012023.tif", 
+                        overwrite = TRUE)
+
+#### BurnedArea Trend R2
+BurnedAreaTRsqFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "BurnedAreaRsq", full.names = T)
+
+BurnedAreaTRsqR1 <- rast(BurnedAreaTRsqFiles[1])
+BurnedAreaTRsqR2 <- rast(BurnedAreaTRsqFiles[2])
+BurnedAreaTRsqR3 <- rast(BurnedAreaTRsqFiles[3])
+BurnedAreaTRsqR4 <- rast(BurnedAreaTRsqFiles[4])
+BurnedAreaTRsqR5 <- rast(BurnedAreaTRsqFiles[5])
+BurnedAreaTRsqR6 <- rast(BurnedAreaTRsqFiles[6])
+BurnedAreaTRsqR7 <- rast(BurnedAreaTRsqFiles[7])
+BurnedAreaTRsqR8 <- rast(BurnedAreaTRsqFiles[8])
+
+
+
+
+globalBurnedAreaTRsq <- merge(BurnedAreaTRsqR1, BurnedAreaTRsqR2, BurnedAreaTRsqR3, BurnedAreaTRsqR4, BurnedAreaTRsqR5, BurnedAreaTRsqR6, BurnedAreaTRsqR7, BurnedAreaTRsqR8,
+                       filename = "data/spatialData/trendData/BurnedAreaTRsq20012023.tif", 
+                       overwrite = TRUE)
+
+plot(globalBurnedAreaTRsq)
+
+# Mask BurnedArea Trend 
+BurnedAreaMask <- (globalBurnedAreaTRsq > 0.2)*1
+plot(BurnedAreaMask)
+
+BurnedAreaMasked <- mask(globalBurnedAreaTrend, BurnedAreaMask, maskvalues = 0, updatevalue = 0)
+
+plot(BurnedAreaMasked)
+writeRaster(BurnedAreaMasked,  "data/spatialData/trendData/BurnedAreaTrend20012023Masked.tif", 
             overwrite = TRUE)
 
-#### SD (evi; 0.25 at 1km) MEAN ----------------------------------------
-sdMeanFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "SDMean", full.names = T)
 
-sdMeanR1 <- rast(sdMeanFiles[1])
-sdMeanR2 <- rast(sdMeanFiles[2])
+#### BurnedArea Mean ----------------------------------------
+BurnedAreaMeanFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "BurnedAreaMean", full.names = T)
 
-globalEviSdMean <- merge(sdMeanR1, sdMeanR2,   
-                            filename = "data/spatialData/otherCovariates/EviSdMean20012023.tif", 
-                            overwrite = TRUE)
+BurnedAreaMeanR1 <- rast(BurnedAreaMeanFiles[1])
+BurnedAreaMeanR2 <- rast(BurnedAreaMeanFiles[2])
+BurnedAreaMeanR3 <- rast(BurnedAreaMeanFiles[3])
+BurnedAreaMeanR4 <- rast(BurnedAreaMeanFiles[4])
+BurnedAreaMeanR5 <- rast(BurnedAreaMeanFiles[5])
+BurnedAreaMeanR6 <- rast(BurnedAreaMeanFiles[6])
+BurnedAreaMeanR7 <- rast(BurnedAreaMeanFiles[7])
+BurnedAreaMeanR8 <- rast(BurnedAreaMeanFiles[8])
 
-plot(globalEviSdMean)
+
+
+globalBurnedAreaMean <- merge(BurnedAreaMeanR1, BurnedAreaMeanR2, BurnedAreaMeanR3, BurnedAreaMeanR4, BurnedAreaMeanR5, BurnedAreaMeanR6, BurnedAreaMeanR7, BurnedAreaMeanR8, 
+                       filename = "data/spatialData/otherCovariates/BurnedAreaMean20012023.tif", 
+                       overwrite = TRUE)
+plot(globalBurnedAreaMean)
+
+
+
+#### Landcover ----------------------------------------
+lcFiles <- list.files(path = "data/spatialData/rawTiles/", pattern = "GlobalLand", full.names = T)
+
+lcR1 <- rast(lcFiles[1])
+lcR2 <- rast(lcFiles[2])
+
+
+globalLC <- merge(lcR1, lcR2, 
+                  filename = "data/spatialData/otherCovariates/GlobalLandCoverCopernicus2019.tif", 
+                  overwrite = TRUE)
+
+
+plot(globalLC)
