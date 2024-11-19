@@ -40,11 +40,30 @@ world <- rnaturalearth::ne_countries() %>% dplyr::select(continent, sovereignt, 
 
 sf_use_s2(FALSE)
 pas.cont <- st_join(pas, world)
+pas.cont$area_km2 <- st_area(pas.cont)/1000000
 
-## select largest X PA's for each country
 table(pas.cont$MARINE)
 pas.largest <- pas.cont %>% 
-  filter(MARINE == 0) 
+  mutate(iucnCatOrd = case_when(
+    IUCN_CAT == "Ia" ~  1,  
+    IUCN_CAT == "Ib" ~  2,  
+    IUCN_CAT == "II" ~  3,  
+    IUCN_CAT == "III" ~  4,  
+    IUCN_CAT == "IV" ~  5,  
+    IUCN_CAT == "V" ~  6,  
+    IUCN_CAT == "VI" ~  7,  
+    IUCN_CAT %in% c("Not Applicable", "Not Reported","Not Assigned") ~  8,  
+  ), 
+  unique_id = paste0(sovereignt, "_", WDPA_PID)) %>% 
+  filter(MARINE == 0) %>% 
+  group_by(WDPA_PID) %>%
+  slice_max(area_km2) %>% 
+  rename(Country = sovereignt, 
+         Continent = continent) %>% 
+  dplyr::select(WDPAID, WDPA_PID, NAME, unique_id, area_km2, STATUS_YR, iucnCatOrd, IUCN_CAT, DESIG_ENG, GIS_AREA, Continent, Country)
+  
 
-nrow(pas.largest[pas.largest$STATUS_YR <= 2013])
-nrow(pas.largest[pas.largest$STATUS_YR <= 2003])
+nrow(pas.largest[pas.largest$STATUS_YR <= 2013,])
+nrow(pas.largest[pas.largest$STATUS_YR <= 2003,])
+
+write_sf(pas.largest, "data/spatialData/protectedAreas/paShapes.gpkg", append = FALSE)
