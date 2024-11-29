@@ -3,7 +3,8 @@
 # install.packages(c("remotes", "googledrive"))
 # remotes::install_github("r-spatial/rgee")
 
-## may be we have to set the whole path to /opt/anaconda3/envs/rgee_env/bin?? 
+## macbook path /opt/anaconda3/envs/rgee_env/bin
+## GIS04 server: "C:\\Users\\au713983\\.conda\\envs\\rgee_env" 
 rgee_env_dir <- c("/opt/anaconda3/envs/rgee_env/bin")
 
 library(rgee)
@@ -19,7 +20,7 @@ Sys.setenv(RETICULATE_PYTHON = rgee_env_dir)
 Sys.setenv(EARTHENGINE_PYTHON = rgee_env_dir)
 
 
-
+ee_clean_user_credentials()
 ee$Authenticate(auth_mode='notebook')
 
 # Initialize - this will connect to a project. You should always call this
