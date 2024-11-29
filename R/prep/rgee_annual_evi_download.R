@@ -45,9 +45,28 @@ for(year in years){
                    folder = "rgee_backup",
                    description = "annual_evi",
                    scale = 500, 
-                   timePrefix = FALSE
+                   timePrefix = FALSE, 
+                   maxPixels = 1e13
                    )
  export_task$start()
+ 
+ #monitor task
+ 
+ # Monitor the task status
+ task_monitor <- function(task) {
+   while (task$status()$state %in% c("READY", "RUNNING")) {
+     cat("Task is still running...\n")
+     Sys.sleep(30)  # Wait 30 seconds before checking again
+   }
+   # Final status update
+   if (task$status()$state == "COMPLETED") {
+     cat("Task completed successfully!\n")
+   } else {
+     cat("Task failed or cancelled.\n")
+   }
+ }
+ 
+ task_monitor(export_task)
  
  drive_auth(email = "jonas.trepel@bio.au.dk")
  drive_files <- drive_ls(path = "rgee_backup") %>% dplyr::select(name)
@@ -55,7 +74,7 @@ for(year in years){
  
  for(filename in unique(drive_files$name)){
    
-   path_name = paste0("data/rawData/raw_time_series/raw_tiles/", filename)
+   path_name = paste0("data/rawData/raw_time_series/evi/evi_tmp_tiles/", filename)
    
    drive_download(file = filename, path = path_name, overwrite = TRUE)
    
@@ -65,7 +84,7 @@ for(year in years){
  googledrive::drive_empty_trash()
  
  
- files <- list.files("data/rawData/raw_time_series/raw_tiles/", full.names = T)
+ files <- list.files("data/rawData/raw_time_series/evi/evi_tmp_tiles/", full.names = T)
  
  r1 <- rast(files[1])
  r2 <- rast(files[2])
