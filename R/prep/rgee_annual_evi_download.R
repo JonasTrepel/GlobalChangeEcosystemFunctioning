@@ -53,23 +53,31 @@ for(year in years){
  #monitor task
  
  # Monitor the task status
+
  task_monitor <- function(task) {
-   while (task$status()$state %in% c("READY", "RUNNING")) {
+   status <- task$status()$state
+   print(paste("Initial status:", status))  # Debugging output
+   
+   while (status %in% c("READY", "RUNNING")) {
      cat("Task is still running...\n")
      Sys.sleep(30)  # Wait 30 seconds before checking again
+     status <- task$status()$state
+     print(paste("Updated status:", status))  # Debugging output
    }
+   
    # Final status update
-   if (task$status()$state == "COMPLETED") {
+   if (status == "COMPLETED") {
      cat("Task completed successfully!\n")
    } else {
      cat("Task failed or cancelled.\n")
    }
  }
  
- task_monitor(export_task)
  
+ task_monitor(export_task)
+
  drive_auth(email = "jonas.trepel@bio.au.dk")
- drive_files <- drive_ls(path = "rgee_backup") %>% dplyr::select(name)
+ drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>% dplyr::select(name)
  
  
  for(filename in unique(drive_files$name)){
