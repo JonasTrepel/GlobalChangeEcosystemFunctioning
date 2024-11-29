@@ -2,7 +2,7 @@
 library(rgee)
 library(data.table)
 library(tidyverse)
-ee_Initialize(user = "jonas.trepel@bio.au.dk", drive = TRUE)
+ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
 
 
 years <- c(1950:2023)

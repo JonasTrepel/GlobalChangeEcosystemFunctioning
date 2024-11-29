@@ -4,11 +4,11 @@
 # remotes::install_github("r-spatial/rgee")
 
 ## may be we have to set the whole path to /opt/anaconda3/envs/rgee_env/bin?? 
-rgee_env_dir <- c("/opt/anaconda3/envs/rgee_env")
+rgee_env_dir <- c("/opt/anaconda3/envs/rgee_env/bin")
 
 library(rgee)
 
-reticulate::use_python(paste0(rgee_env_dir, "/bin"), required=T)
+reticulate::use_python(rgee_env_dir, required=T)
 rgee::ee_install_set_pyenv(
   py_path = rgee_env_dir,
   py_env = 'rgee_env'
