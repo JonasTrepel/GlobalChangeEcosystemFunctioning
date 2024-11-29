@@ -20,7 +20,7 @@ for(year in years){
     ImageCollection('MODIS/061/MOD13A1')$
     select('EVI')$
     filterDate(start, end)$
-    median()$subtract(273.15)
+    median()
   
   
   world_ext <- ee$Geometry$Rectangle(
