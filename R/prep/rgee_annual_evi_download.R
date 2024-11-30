@@ -11,8 +11,6 @@ drive_auth(email = "jonas.trepel@bio.au.dk")
 
 years <- c(2001:2023)
 
-annual_temps <- data.table()
-
 for(year in years){
   
   print(paste0("Starting with: ", year))
@@ -89,7 +87,7 @@ for(year in years){
  }
 
  googledrive::drive_rm(unique(drive_files$name))
- googledrive::drive_empty_trash()
+ #googledrive::drive_empty_trash()
  
  
  files <- list.files("data/rawData/raw_time_series/evi/evi_tmp_tiles/", full.names = T)
