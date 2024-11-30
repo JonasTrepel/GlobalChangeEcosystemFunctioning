@@ -9,7 +9,7 @@ ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
 drive_auth(email = "jonas.trepel@bio.au.dk")
 
 
-years <- c(2001:2023)
+years <- c(2012:2023)
 
 for(year in years){
   
@@ -27,7 +27,9 @@ for(year in years){
     filterDate(start_date, end_date)$
     median()
   
-  Map$addLayer(annual_img, vis_params)
+  Map$addLayer(annual_img)
+  
+ # ee_print(annual_img)
   
   world_ext <- ee$Geometry$Rectangle(
     coords = c(-179.99999, -89.9999, 179.99999, 89.9999),
@@ -52,30 +54,30 @@ for(year in years){
  
  # Monitor the task status
 
- task_monitor <- function(task) {
-   status <- task$status()$state
-   print(paste("Initial status:", status))  # Debugging output
+ drive_auth(email = "jonas.trepel@bio.au.dk")
+ 
+ for (i in 1:1000) {
+
+     drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>% 
+     dplyr::select(name)
    
-   while (status %in% c("READY", "RUNNING")) {
-     cat("Task is still running...\n")
-     Sys.sleep(30)  # Wait 30 seconds before checking again
-     status <- task$status()$state
-     print(paste("Updated status:", status))  # Debugging output
-   }
-   
-   # Final status update
-   if (status == "COMPLETED") {
-     cat("Task completed successfully!\n")
+   # Check if the folder is empty
+   if (n_distinct(drive_files) == 0) {
+     Sys.sleep(30)  
+     print(paste0("Attempt ", i, ": Drive still empty"))
    } else {
-     cat("Task failed or cancelled.\n")
+     print("Files found:")
+     print(drive_files)
+     Sys.sleep(30) #to make sure all tiles are there
+     print(drive_files)
+     
+     break  #
    }
  }
  
- 
- task_monitor(export_task)
-
- drive_auth(email = "jonas.trepel@bio.au.dk")
- drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>% dplyr::select(name)
+ drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>%
+   dplyr::select(name) %>% 
+   unique()
  
  
  for(filename in unique(drive_files$name)){
@@ -92,23 +94,17 @@ for(year in years){
  
  files <- list.files("data/rawData/raw_time_series/evi/evi_tmp_tiles/", full.names = T)
  
- r1 <- rast(files[1])
- r2 <- rast(files[2])
- r3 <- rast(files[3])
- r4 <- rast(files[4])
- r5 <- rast(files[5])
- r6 <- rast(files[6])
- r7 <- rast(files[7])
- r8 <- rast(files[8])
+ raster_list <- lapply(files, rast)
  
  file_name_merge <- paste0("data/rawData/raw_time_series/evi/evi_modis_median_500m_", year, ".tif")
  
- global_evi <- merge(r1, r2, r3, r4, r5, r6, r7, r8,
-                        filename = file_name_merge, 
-                        overwrite = TRUE)
- 
+ global_evi <- do.call(merge, c(raster_list, list(filename = file_name_merge, overwrite = TRUE)))
  plot(global_evi)
+ 
+ file.remove(files)
  
  print(paste0(year, " EVI done"))
  
 }
+
+
