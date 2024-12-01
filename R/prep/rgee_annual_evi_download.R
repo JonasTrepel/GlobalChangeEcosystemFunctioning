@@ -9,7 +9,7 @@ ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
 drive_auth(email = "jonas.trepel@bio.au.dk")
 
 
-years <- c(2012:2023)
+years <- c(2001:2023)
 
 for(year in years){
   
@@ -38,7 +38,7 @@ for(year in years){
     geodesic = FALSE
   )
   
- Map$addLayer(world_ext)
+ #Map$addLayer(world_ext)
   
  export_task <- ee_image_to_drive(image = annual_img,
                    region = world_ext,
@@ -68,7 +68,17 @@ for(year in years){
    } else {
      print("Files found:")
      print(drive_files)
-     Sys.sleep(30) #to make sure all tiles are there
+     
+     if(n_distinct(drive_files) < 8){
+       Sys.sleep(150) #to make sure all tiles are there
+       drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>% 
+         dplyr::select(name)
+     }
+     #check again
+     if(n_distinct(drive_files) < 8){
+       Sys.sleep(150) #to make sure all tiles are there
+     }
+     drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_evi") %>%  dplyr::select(name)
      print(drive_files)
      
      break  #
@@ -99,7 +109,8 @@ for(year in years){
  file_name_merge <- paste0("data/rawData/raw_time_series/evi/evi_modis_median_500m_", year, ".tif")
  
  global_evi <- do.call(merge, c(raster_list, list(filename = file_name_merge, overwrite = TRUE)))
- plot(global_evi)
+ 
+ plot(global_evi, main = paste0(year))
  
  file.remove(files)
  
