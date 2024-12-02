@@ -61,7 +61,7 @@ yearly_fires <- function(year) {
     
     qa_sub <-  QA$filter(ee$Filter$calendarRange(year, year, 'year'))$max();
     
-    mask <- bitwiseExtract(qa_sub, 0, 0)$eq(1)
+    mask <- bitwise_extract(qa_sub, 0, 0)$eq(1)
     
     fire_sub2 <- fire_sub$
       unmask(0)$
@@ -190,13 +190,26 @@ yearly_fires <- function(year) {
                       full.names = T, 
                       pattern = "annual_burned_area")
   
-  raster_list <- lapply(files, rast)
-  
+
   file_name_merge <- paste0("data/rawData/raw_time_series/fire/burned_area/burned_area_modis_5000m_", year, ".tif")
   
-  global_doy <- do.call(merge, c(raster_list, list(filename = file_name_merge, overwrite = TRUE)))
+  if(n_distinct(files) > 1){
   
-  plot(global_doy, main = paste0(year))
+  raster_list <- lapply(files, rast)
+    
+  global_ba <- do.call(merge, c(raster_list, list(filename = file_name_merge, overwrite = TRUE)))
+  
+  }else{
+  global_ba <- rast(files)
+  
+  writeRaster(global_ba, filename = file_name_merge, overwrite = TRUE )
+
+  }
+  
+  
+  
+  
+  plot(global_ba, main = paste0(year))
   
   file.remove(files)
   
