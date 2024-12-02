@@ -1,9 +1,10 @@
-##### Load all rasters 😵‍💫 ##### 
+##### Load all rasters ##### 
 
 library(rgee)
 library(data.table)
 library(tidyverse)
 library(googledrive)
+library(terra)
 
 ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
 drive_auth(email = "jonas.trepel@bio.au.dk")
@@ -21,11 +22,9 @@ for(year in years){
   
   annual_img <- ee$
     ImageCollection('ECMWF/ERA5_LAND/MONTHLY_AGGR')$
-    select('temperature_2m')$
+    select('temperature_2m_max')$
     filterDate(start_date, end_date)$
-    mean()$subtract(273.15)
-  
-  Map$addLayer(annual_img, vis_params)
+    max()$subtract(273.15)
   
   world_ext <- ee$Geometry$Rectangle(
     coords = c(-179.99999, -89.9999, 179.99999, 89.9999),
@@ -39,7 +38,7 @@ for(year in years){
   export_task <- ee_image_to_drive(image = annual_img,
                                    region = world_ext,
                                    folder = "rgee_backup",
-                                   description = "annual_temp",
+                                   description = "annual_max_temp",
                                    scale = 11132, 
                                    timePrefix = FALSE, 
                                    maxPixels = 1e13
@@ -71,22 +70,22 @@ for(year in years){
   task_monitor(export_task)
   
   drive_auth(email = "jonas.trepel@bio.au.dk")
-  drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_temp") %>% dplyr::select(name)
+  drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_max_temp") %>% dplyr::select(name)
   
   
   for(filename in unique(drive_files$name)){
     
-    path_name = paste0("data/rawData/raw_time_series/era5/era5_mat/mat_tmp_images/", filename)
+    path_name = paste0("data/rawData/raw_time_series/era5/era5_max_temp/max_temp_tmp_images/", filename)
     
     drive_download(file = filename, path = path_name, overwrite = TRUE)
     
   }
   
   googledrive::drive_rm(unique(drive_files$name))
-  googledrive::drive_empty_trash()
+  #googledrive::drive_empty_trash()
   
   
-  files <- list.files("data/rawData/raw_time_series/era5/era5_mat/mat_tmp_images/", full.names = T)
+  files <- list.files("data/rawData/raw_time_series/era5/era5_max_temp/max_temp_tmp_images/", full.names = T)
   
   r1 <- rast(files[1])
   # r2 <- rast(files[2])
@@ -97,14 +96,15 @@ for(year in years){
   # r7 <- rast(files[7])
   # r8 <- rast(files[8])
   
-  file_name_merge <- paste0("data/rawData/raw_time_series/era5/era_5_mat/era_5_mat_", year, ".tif")
+  file_name_merge <- paste0("data/rawData/raw_time_series/era5/era5_max_temp/era_5_max_temp_", year, ".tif")
   
   writeRaster(r1, # r2, r3, r4, r5, r6, r7, r8,
-                      filename = file_name_merge, 
-                      overwrite = TRUE)
+              filename = file_name_merge, 
+              overwrite = TRUE)
   
-  plot(r1)
+  plot(r1, main = paste0(year))
   
-  print(paste0(year, " EVI done"))
+  print(paste0(year, " done"))
   
 }
+
