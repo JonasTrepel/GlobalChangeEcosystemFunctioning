@@ -97,7 +97,7 @@ for(year in years){
   # r7 <- rast(files[7])
   # r8 <- rast(files[8])
   
-  file_name_merge <- paste0("data/rawData/raw_time_series/era5/era5_map/era_5_mat_", year, ".tif")
+  file_name_merge <- paste0("data/rawData/raw_time_series/era5/era5_map/era_5_map_", year, ".tif")
   
   writeRaster(r1, # r2, r3, r4, r5, r6, r7, r8,
               filename = file_name_merge, 

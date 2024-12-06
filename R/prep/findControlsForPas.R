@@ -15,20 +15,22 @@ library(mapview)
 source("R/functions/movePolygon.R")
 
 pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>% 
-  rename(PaAreaKm2 = GIS_AREA, 
-         PaYear = STATUS_YR) %>% 
-  mutate(PaYear = ifelse(PaYear == 0, NA, PaYear), 
-         PaAge = 2023-PaYear) %>% 
-  filter(!LandCover == "Water")
+  mutate(STATUS_YR = ifelse(STATUS_YR == 0, NA, STATUS_YR), 
+         PaAge = 2023-STATUS_YR) %>% 
+  filter(!LandCover %in% c("Water", "Ocean", "Urban", "Cultivated"))
 
 
 paShapes <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>% 
   filter(unique_id %in% unique(pasCovsDTRaw$unique_id)) %>%
   left_join(pasCovsDTRaw)
 
-file.exists("data/spatialData/gridWithCovs.gpkg")
-gridNotProt <- read_sf("data/spatialData/gridWithCovs.gpkg") %>% 
-  filter(iucnCat == "Not Protected")
+file.exists("data/spatialData/protectedAreas/gridWithCovs.gpkg")
+
+gridNotProt_raw <- read_sf("data/spatialData/protectedAreas/gridWithCovs.gpkg") 
+
+gridNotProt <- gridNotProt_raw %>% 
+  mutate(iucnCat = ifelse(is.na(iucnCat), "NotProtected", iucnCat)) %>% 
+  filter(iucnCat == "NotProtected")
 
 #paShapes <- paShapes %>% sample_n(25)
 
@@ -41,8 +43,6 @@ nCores <- parallel::detectCores()/2
 # Create and register a cluster
 clust <- makeCluster(nCores)
 registerDoSNOW(clust)
-
-paControls <- NULL
 
 ## progress bar 
 iterations <- nrow(paShapes)
@@ -63,18 +63,18 @@ paControls <- foreach(i = 1:nrow(paShapes),
   pa <- paShapes[i,]
   
   mat <- pa$MAT
-  mmp <- pa$MMP
-  biome <- pa$Biome
-  cont <- pa$continent 
+  map <- pa$MAP
+  biome <- pa$FunctionalBiome
+  cont <- pa$Continent 
   
   
   potentialSpace <- gridNotProt %>% 
-    filter(!MAT > (mat+2) & !MAT < (mat-2)) %>% 
-    filter(!MMP > (mmp+50) & !MMP < (mmp-50)) %>% 
-    filter(Biome == biome & continent == cont) %>% 
+   # filter(!MAT > (mat+2) & !MAT < (mat-2)) %>% 
+   # filter(!MAP > (map+250) & !MAP < (map-250)) %>% 
+    filter(FunctionalBiomeShort == biome & continent == cont) %>% 
     summarize()
   
-  ## skip if there is equivalent at all
+  ## skip if there is no equivalent at all
   bBox <- st_bbox(potentialSpace)
   if(is.na(bBox$xmin)){return(NULL)}
  
@@ -83,14 +83,14 @@ paControls <- foreach(i = 1:nrow(paShapes),
   newPoly <- movePolygon(ogPoly = pa, potSpace = potentialSpace, maxAttempts = 1000)
   sf_use_s2(TRUE)
   
-  # mapview(potentialSpace) + mapview(newPoly, col.regions = "red")
+  # mapview(potentialSpace) + mapview(newPoly, col.regions = "red") + mapview(pa, col.regions = "green")
   
   if(!is.null(newPoly)){
    
      newPoly <- newPoly %>% 
        mutate(controlFor = paShapes[i,]$unique_id, 
-              continent = cont, 
-              Biome = biome)
+              Continent = cont, 
+              FunctionalBiome = biome)
   }
   
   return(newPoly)
