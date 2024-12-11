@@ -31,16 +31,21 @@ process_trend <- function(cols_pattern, trend_name, dt) {
   dt_subset[[paste0(trend_name, "_coef")]] <- coefficients(ar_results)[, "t"] 
   dt_subset[[paste0(trend_name, "_p_value")]] <- ar_results$pvals[, 2]
   
+
   dt_subset <- dt_subset %>% 
-    dplyr::select(paste0(trend_name, "_coef"), paste0(trend_name, "_p_value"), unique_id)
+    dplyr::select(paste0(trend_name, "_coef"),
+                  paste0(trend_name, "_p_value"),
+                  unique_id)
   
   return(dt_subset)
 }
 
 # List of trends
 trend_configs <- data.frame(
-  pattern = c("mat_", "max_temp_", "map_", "evi_", "burned_area_", "doy_greenup_1_"),
-  name = c("mat", "max_temp", "map", "evi", "burned_area", "doy_greenup_1"),
+  pattern = c("mat_", "max_temp_", "map_"#, "evi_", "burned_area_", "doy_greenup_1_"
+              ),
+  name = c("mat", "max_temp", "map"#, "evi", "burned_area", "doy_greenup_1"
+           ),
   stringsAsFactors = FALSE
 )
 
@@ -70,11 +75,12 @@ dt_res <- dt %>%
   left_join(dt_trend) %>%
   dplyr::select(-all_of(grep("mat_", names(dt), value = T)),
                 -all_of(grep("max_temp_", names(dt), value = T)),
-                -all_of(grep("map_", names(dt), value = T)),
-                -all_of(grep("evi_", names(dt), value = T)),
-                -all_of(grep("burned_area_", names(dt), value = T)),
-                -all_of(grep("doy_greenup_1_", names(dt), value = T))) 
+        #       -all_of(grep("evi_", names(dt), value = T)),
+        #       -all_of(grep("burned_area_", names(dt), value = T)),
+        #       -all_of(grep("doy_greenup_1_", names(dt), value = T)),
+                -all_of(grep("map_", names(dt), value = T))
+) 
 
-#fwrite(dt_res, "data/processedData/cleanData/grid_sample_with_trends_loop.csv")
-fwrite(dt_res, "data/processedData/cleanData/pas_and_controls_with_trends.csv")
+#fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
+fwrite(dt_res, "data/processedData/dataFragments/pas_and_controls_with_climate_trends.csv")
 
