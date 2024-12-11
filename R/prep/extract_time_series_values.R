@@ -1,4 +1,4 @@
-## extract time series for grids 
+## extract time series for vects 
 
 library(sf)
 library(terra)
@@ -8,7 +8,14 @@ library(tidyverse)
 
 #read vectors 
 
-grid <- st_read("data/spatialData/grid_sample.gpkg")
+grid <- st_read("data/spatialData/grid_sample.gpkg") %>% 
+  rename(unique_id = gridID)
+
+pas <- st_read("data/spatialData/pas_and_controls.gpkg")
+
+#vect <- pas
+vect <- grid
+
 
 ## get file paths sorted 
 
@@ -101,17 +108,17 @@ tic()
 dt_covs <- foreach(i = 1:nrow(covs),
                   .packages = c('tidyverse', 'exactextractr', 'data.table', 'terra', 'sf'),
                   .options.snow = opts,
-                  .inorder = FALSE,
+                  .inorder = TRUE,
                   .combine = left_join) %dopar% {
                     
                     #for(i in 1:nrow(covs)){
                     
                     cov_r <- rast(covs[i, ]$filepath)
                     
-                    grid_trans <- st_transform(grid, crs = st_crs(cov_r))
+                    vect_trans <- st_transform(vect, crs = st_crs(cov_r))
                     
                     extr <- exactextractr::exact_extract(cov_r, 
-                                                         grid_trans, 
+                                                         vect_trans, 
                                                          fun = "mean")
                     dt_extr <- data.table(
                       extr_col = extr
@@ -119,12 +126,12 @@ dt_covs <- foreach(i = 1:nrow(covs),
                    
                     setnames(dt_extr, "extr_col", covs[i, ]$colname)
                     
-                    dt_extr2 <- cbind(grid[, "gridID"], dt_extr) %>%
+                    dt_extr2 <- cbind(vect[, "unique_id"], dt_extr) %>%
                       as.data.table() %>%
                       mutate(geom = NULL) %>% 
                       unique()
                     
-                    dt_extr_fin <- grid[, "gridID"] %>% 
+                    dt_extr_fin <- vect[, "unique_id"] %>% 
                       left_join(dt_extr2) %>% 
                       as.data.table() %>%
                       mutate(geom = NULL) %>% 
@@ -138,7 +145,7 @@ toc()
 
 
 #combine
-grid_covs <- grid %>% 
+vect_covs <- vect %>% 
   as.data.table() %>% 
   mutate(x = NULL, geom = NULL, geometry = NULL) %>% 
   left_join(dt_covs) %>% 
@@ -147,17 +154,10 @@ grid_covs <- grid %>%
          geom = NULL,
          geometry = NULL)
 
-fwrite(grid_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries")
+if(nrow(pas) == nrow(vect)){
+  fwrite(vect_covs, "data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv")
+}
 
-# Identify duplicated gridIDs
-duplicated_ids <- grid %>%
-  filter(gridID %in% grid$gridID[duplicated(grid$gridID)])
-
-# Display rows with duplicated gridIDs
-print(duplicated_ids)
-
-# Optional: Count how many times each gridID is duplicated
-duplicates_summary <- duplicated_ids %>%
-  count(gridID, sort = TRUE)
-
-print(duplicates_summary)
+if(nrow(grid) == nrow(vect)){
+  fwrite(vect_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv")
+}
