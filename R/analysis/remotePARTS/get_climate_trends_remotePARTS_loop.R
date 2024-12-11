@@ -5,13 +5,12 @@ library(data.table)
 
 # Read the data
 dt <- fread("data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv") %>% 
-  as.data.frame() %>% 
-  rename(unique_id = gridID)
+  as.data.frame() 
 
-dt <- fread("data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv") %>% 
-  as.data.frame() %>% 
-  rename(X = Longitude, 
-         Y = Latitude)
+# dt <- fread("data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv") %>% 
+#  as.data.frame() %>% 
+#  rename(X = Longitude, 
+#         Y = Latitude)
 
 #dt <- dt %>% sample_n(1000)
 
@@ -81,6 +80,6 @@ dt_res <- dt %>%
                 -all_of(grep("map_", names(dt), value = T))
 ) 
 
-#fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
-fwrite(dt_res, "data/processedData/dataFragments/pas_and_controls_with_climate_trends.csv")
+fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
+#fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
 
