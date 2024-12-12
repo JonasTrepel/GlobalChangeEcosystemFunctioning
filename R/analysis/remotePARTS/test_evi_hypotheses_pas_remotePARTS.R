@@ -64,8 +64,7 @@ dt_evi$abs_evi_coef <- abs(ar_evi$coefficients[, "t"])
 dt_evi$evi_p_value <- ar_evi$pvals[, 2]
 
 fwrite(dt_evi %>% dplyr::select(
-  unique_id, X, Y, og_layer, evi_coef, abs_evi_coef, evi_p_value
-), "data/processedData/dataFragments/pa_evi_trends.csv")
+  unique_id, X, Y, og_layer, evi_coef, abs_evi_coef, evi_p_value), "data/processedData/dataFragments/pa_evi_trends.csv")
 
 # get distance matrix 
 d_evi <- distm_scaled(coords_evi)
