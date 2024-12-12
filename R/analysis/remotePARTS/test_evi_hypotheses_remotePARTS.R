@@ -149,7 +149,7 @@ p_h2 <- dt_est_h2 %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                                         alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H2: evi change ~\nglobal change", y = NULL, x = NULL) +
+  labs(title = "H2: evi change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h2
@@ -177,7 +177,7 @@ p_h3 <- dt_est_h3 %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H3: evi change ~\nfunctional biome", y = NULL, x = NULL) +
+  labs(title = "H3: evi change ~\nfunctional biome", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h3
@@ -206,7 +206,7 @@ p_h4 <- dt_est_h4 %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H4: abs evi change ~\nprotection", y = NULL, x = NULL) +
+  labs(title = "H4: evi change ~\nprotection", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h4
@@ -255,7 +255,7 @@ v_opt_pa <- covar_exp(d_pa, range_opt_pa)
 pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 800, npart = NA)
 dim(pm_pa)
 
-gls_h5 <- fitGLS_partition(abs_evi_coef ~ 0 +
+gls_h5 <- fitGLS_partition(evi_coef ~ 0 +
                    area_km2_scaled + 
                    pa_age_scaled,
                    partmat = pm_pa,
@@ -278,7 +278,7 @@ p_h5 <- dt_est_h5 %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H5: abs evi change ~\npa age & size", y = NULL, x = NULL) +
+  labs(title = "H5: evi change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h5
