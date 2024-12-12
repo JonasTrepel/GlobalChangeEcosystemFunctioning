@@ -52,7 +52,7 @@ p_evi_points <- ggplot() +
               filter(!is.na(evi_coef)) %>% 
               mutate(evi_coef = ifelse(evi_coef > 39.1, 39.1, evi_coef),
                      evi_coef = ifelse(evi_coef < -22.5, -22.5, evi_coef)),
-          aes(x = X, y = Y, color = evi_coef, fill = evi_coef, size = area_km2), alpha = 0.9) +
+          aes(x = X, y = Y, color = evi_coef, fill = evi_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   theme_minimal() +
@@ -85,7 +85,7 @@ p_burned_area_points <- ggplot() +
                filter(!is.na(burned_area_coef)) %>% 
                mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
                       burned_area_coef = ifelse(burned_area_coef < -0.00257, -0.00257, burned_area_coef)),
-             aes(x = X, y = Y, color = burned_area_coef, fill = burned_area_coef, size = area_km2), alpha = 0.9) +
+             aes(x = X, y = Y, color = burned_area_coef, fill = burned_area_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
   theme_minimal() +
@@ -118,7 +118,7 @@ p_greenup_points <- ggplot() +
                filter(!is.na(greenup_coef) & !grepl("N", FunctionalBiome)) %>% 
                mutate(greenup_coef = ifelse(greenup_coef > 1.42, 1.42, greenup_coef),
                       greenup_coef = ifelse(greenup_coef < -1.88, -1.88, greenup_coef)),
-             aes(x = X, y = Y, color = greenup_coef, fill = greenup_coef, size = area_km2), alpha = 0.9) +
+             aes(x = X, y = Y, color = greenup_coef, fill = greenup_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
   theme_minimal() +
