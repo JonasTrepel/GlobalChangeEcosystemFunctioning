@@ -152,7 +152,7 @@ corr <- round(cor(dt_corr), 1)
 p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE)
 p_corr
-ggsave(plot = p_corr, "builds/plots/variable_correlations.png", dpi = 600, height = 10, width = 10)
+ggsave(plot = p_corr, "builds/plots/variable_correlations.png", dpi = 600, height = 8, width = 8)
 
 
 #### trends in different biomes and protected vs unprotected 
