@@ -128,6 +128,13 @@ p_greenup_points
 ggsave(plot = p_greenup_points, "builds/plots/greenup_pa_points_map.png", dpi = 600)
 
 
+p_all_trends_map_points <- gridExtra::grid.arrange(p_evi_points, p_burned_area_points, p_greenup_points, ncol = 1)
+ggsave(plot = p_all_trends_map_points, "builds/plots/all_trends_map_points.png", dpi = 600, height = 10, width = 8)
+
+p_all_trends_map_shapes <- gridExtra::grid.arrange(p_evi, p_burned_area, p_greenup, ncol = 1)
+ggsave(plot = p_all_trends_map_shapes, "builds/plots/all_trends_map_shapes.png", dpi = 600, height = 10, width = 8)
+
+
 ##### correlations ####
 
 climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
