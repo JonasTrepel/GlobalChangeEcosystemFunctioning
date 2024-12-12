@@ -1,4 +1,4 @@
-#### test burned_area hypothesis ####
+#### test greenup hypothesis ####
 
 source("R/functions/extract_gls_estimates.R")
 
@@ -21,7 +21,7 @@ dt_raw <- fread("data/processedData/data_with_response_timeseries/pas_and_contro
     human_modification = scale(HumanModification), 
     area_km2_scaled = scale(log(area_km2)),
     pa_age_scaled = scale(log(PaAge))) %>% 
-  rename(functional_biome = FunctionalBiome) #%>% filter(BurnedAreaMean > 0) 
+  rename(functional_biome = FunctionalBiome) %>% filter(!grepl("N", functional_biome)) 
 
 dt <- dt_raw
 
@@ -39,55 +39,59 @@ dt <- dt_raw
 # dt <- rbind(dt_sub_pa, dt_sub_cont) # %>% filter(complete.cases(.))
 #######################################
 
-####### calculate burned_area trend #######
+####### calculate greenup trend #######
 
-burned_area_cols <- grep("burned_area_", names(dt), value = T)
+greenup_cols <- grep("greenup_", names(dt), value = T)
 
 #subset to complete cases
-dt_burned_area <- dt %>%
-  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y,
+dt_greenup <- dt %>%
+  dplyr::select(all_of(greenup_cols), functional_biome, X, Y, unique_id,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 og_layer) %>% 
   filter(complete.cases(.))
 
 #get y matrix
-y_burned_area <- as.matrix(dt_burned_area[, burned_area_cols])
+y_greenup <- as.matrix(dt_greenup[, greenup_cols])
 
 #get coordinate matrix 
-coords_burned_area <- as.matrix(dt_burned_area[, c("X", "Y")])
+coords_greenup <- as.matrix(dt_greenup[, c("X", "Y")])
 
 #fit autoregression, accounting for temporal autocorrelation 
-ar_burned_area <- fitAR_map(Y = y_burned_area, coords = coords_burned_area)
+ar_greenup <- fitAR_map(Y = y_greenup, coords = coords_greenup)
 
 #extract coefficients and p values 
-dt_burned_area$burned_area_coef <- ar_burned_area$coefficients[, "t"]
-dt_burned_area$abs_burned_area_coef <- abs(ar_burned_area$coefficients[, "t"])
-dt_burned_area$burned_area_p_value <- ar_burned_area$pvals[, 2]
+dt_greenup$greenup_coef <- ar_greenup$coefficients[, "t"]
+dt_greenup$abs_greenup_coef <- abs(ar_greenup$coefficients[, "t"])
+dt_greenup$greenup_p_value <- ar_greenup$pvals[, 2]
+
+fwrite(dt_greenup %>% dplyr::select(
+  unique_id, X, Y, og_layer, greenup_coef, abs_greenup_coef, greenup_p_value),
+  "data/processedData/dataFragments/pa_greenup_trends.csv")
 
 # get distance matrix 
-d_burned_area <- distm_scaled(coords_burned_area)
+d_greenup <- distm_scaled(coords_greenup)
 
 ### estimate optimal r parameter (range of spatial autocorrelation)
-corfit <- fitCor(resids = residuals(ar_burned_area), coords = coords_burned_area, covar_FUN = "covar_exp", 
-                 start = list(range = 0.1), fit.n = nrow(dt_burned_area))
-(range_opt_burned_area = corfit$spcor)
+corfit <- fitCor(resids = residuals(ar_greenup), coords = coords_greenup, covar_FUN = "covar_exp", 
+                 start = list(range = 0.1), fit.n = nrow(dt_greenup))
+(range_opt_greenup = corfit$spcor)
 
 #use r to calculate optimal v parameter 
-v_opt_burned_area <- covar_exp(d_burned_area, range_opt_burned_area)
+v_opt_greenup <- covar_exp(d_greenup, range_opt_greenup)
 
 ############ test hypotheses ############ 
 
 #partition the data 
 
-pm <- sample_partitions(npix = nrow(dt_burned_area), partsize = 1000, npart = NA)
+pm <- sample_partitions(npix = nrow(dt_greenup), partsize = 1000, npart = NA)
 dim(pm)
 
-## Hypothesis 1: Ecosystem functioning is overall changing 
-gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
+## Hypothesis 1: Ecosystem functioning is overall changing  ----------------------------
+gls_h1 <- fitGLS_partition(greenup_coef ~ 1,
                            partmat = pm,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_burned_area),
-                           data = dt_burned_area,
+                           covar.pars = list(range = range_opt_greenup),
+                           data = dt_greenup,
                            nugget = NA,
                            ncores = 4,
                            progressbar = TRUE, 
@@ -95,10 +99,11 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            coord.names = c("X", "Y")
 )
 gls_h1 # yes. 
-## Hypothesis 2: Change depends on climate change, N deposition, human modification, 
+
+## Hypothesis 2: Change depends on climate change, N deposition, human modification  ----------------------------
 
 set.seed(161)
-gls_h2 <- fitGLS_partition(burned_area_coef ~ 1 +
+gls_h2 <- fitGLS_partition(greenup_coef ~ 1 +
                              nitrogen_depo +
                              mat_coef + 
                              max_temp_coef + 
@@ -106,8 +111,8 @@ gls_h2 <- fitGLS_partition(burned_area_coef ~ 1 +
                              human_modification,
                            partmat = pm,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_burned_area),
-                           data = dt_burned_area,
+                           covar.pars = list(range = range_opt_greenup),
+                           data = dt_greenup,
                            nugget = NA,
                            ncores = 4,
                            progressbar = TRUE, 
@@ -121,20 +126,20 @@ p_h2 <- dt_est_h2 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
-  labs(title = "H2: burned_area change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
+  labs(title = "H2: greenup change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h2
 
-## Hypothesis 3 - different trends in different biomes
+## Hypothesis 3 - different trends in different biomes  ----------------------------
 set.seed(161)
-gls_h3 <- fitGLS_partition(burned_area_coef ~ 0 +
+gls_h3 <- fitGLS_partition(greenup_coef ~ 0 +
                              functional_biome,
                            partmat = pm,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_burned_area),
-                           data = dt_burned_area,
+                           covar.pars = list(range = range_opt_greenup),
+                           data = dt_greenup,
                            nugget = NA,
                            ncores = 4,
                            progressbar = TRUE, 
@@ -149,21 +154,21 @@ p_h3 <- dt_est_h3 %>%
   # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
-  labs(title = "H3: burned_area change ~\nfunctional biome", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
+  labs(title = "H3: greenup change ~\nfunctional biome", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h3
 
 
-## Hypothesis 4 - different absolute trend in and outside of PAs
+## Hypothesis 4 - different absolute trend in and outside of PAs ----------------------------
 set.seed(161)
-gls_h4 <- fitGLS_partition(burned_area_coef ~ 0 +
+gls_h4 <- fitGLS_partition(greenup_coef ~ 0 +
                              og_layer,
                            partmat = pm,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_burned_area),
-                           data = dt_burned_area,
+                           covar.pars = list(range = range_opt_greenup),
+                           data = dt_greenup,
                            nugget = NA,
                            ncores = 4,
                            progressbar = TRUE, 
@@ -178,8 +183,8 @@ p_h4 <- dt_est_h4 %>%
   # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
-  labs(title = "H4: burned_area change ~\nprotection", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
+  labs(title = "H4: greenup change ~\nprotection", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h4
@@ -189,17 +194,17 @@ p_h4
 ## Hypothesis 5 - PA size and age ----------------------------
 
 # recalculate trends only on PAs 
-burned_area_cols <- grep("burned_area_", names(dt), value = T)
+greenup_cols <- grep("greenup_", names(dt), value = T)
 
 #subset to complete cases
 dt_pa <- dt %>% filter(og_layer == "protected_areas") %>%
-  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y,
+  dplyr::select(all_of(greenup_cols), functional_biome, X, Y,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 og_layer, area_km2_scaled, pa_age_scaled) %>% 
   filter(complete.cases(.))
 
 #get y matrix
-y_pa <- as.matrix(dt_pa[, burned_area_cols])
+y_pa <- as.matrix(dt_pa[, greenup_cols])
 
 #get coordinate matrix 
 coords_pa <- as.matrix(dt_pa[, c("X", "Y")])
@@ -208,9 +213,9 @@ coords_pa <- as.matrix(dt_pa[, c("X", "Y")])
 ar_pa <- fitAR_map(Y = y_pa, coords = coords_pa)
 
 #extract coefficients and p values 
-dt_pa$burned_area_coef <- ar_pa$coefficients[, "t"]
-dt_pa$abs_burned_area_coef <- abs(ar_pa$coefficients[, "t"])
-dt_pa$burned_area_p_value <- ar_pa$pvals[, 2]
+dt_pa$greenup_coef <- ar_pa$coefficients[, "t"]
+dt_pa$abs_greenup_coef <- abs(ar_pa$coefficients[, "t"])
+dt_pa$greenup_p_value <- ar_pa$pvals[, 2]
 
 # get distance matrix 
 d_pa <- distm_scaled(coords_pa)
@@ -228,16 +233,16 @@ v_opt_pa <- covar_exp(d_pa, range_opt_pa)
 pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 800, npart = NA)
 dim(pm_pa)
 
-gls_h5 <- fitGLS_partition(burned_area_coef ~ 0 +
+gls_h5 <- fitGLS_partition(greenup_coef ~ 0 +
                              area_km2_scaled + 
                              pa_age_scaled,
                            partmat = pm_pa,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_burned_area),
+                           covar.pars = list(range = range_opt_greenup),
                            data = dt_pa,
                            nugget = NA,
                            ncores = 4,
-                           ncross = 8,
+                           ncross = 6,
                            progressbar = TRUE, 
                            parallel = TRUE, 
                            coord.names = c("X", "Y"))
@@ -250,8 +255,8 @@ p_h5 <- dt_est_h5 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
-  labs(title = "H5: burned_area change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
+  labs(title = "H5: greenup change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_h5
@@ -259,8 +264,8 @@ p_h5
 
 library(gridExtra)
 
-p_burned_area_a <- grid.arrange(p_h2, p_h3, p_h4, p_h5, ncol = 4)
-ggsave(plot = p_burned_area_a, "builds/plots/burned_area_remotePARTS.png", dpi = 600, height = 3, width = 13)
+p_greenup_a <- grid.arrange(p_h2, p_h3, p_h4, p_h5, ncol = 4)
+ggsave(plot = p_greenup_a, "builds/plots/greenup_remotePARTS.png", dpi = 600, height = 3, width = 13)
 
 
 # Biomes separately -------------------
@@ -272,16 +277,16 @@ ggsave(plot = p_burned_area_a, "builds/plots/burned_area_remotePARTS.png", dpi =
 
 biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_size = NA){
   
-  burned_area_cols <- grep(col_pattern, names(dt), value = T)
+  greenup_cols <- grep(col_pattern, names(dt), value = T)
   
   #subset to complete cases
   dt_biome <- dat %>% filter(functional_biome == funbi) %>%
-    dplyr::select(all_of(burned_area_cols), functional_biome, X, Y,
+    dplyr::select(all_of(greenup_cols), functional_biome, X, Y,
                   nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification) %>% 
     filter(complete.cases(.))
   
   #get y matrix
-  y_biome <- as.matrix(dt_biome[, burned_area_cols])
+  y_biome <- as.matrix(dt_biome[, greenup_cols])
   
   #get coordinate matrix 
   coords_biome <- as.matrix(dt_biome[, c("X", "Y")])
@@ -290,8 +295,8 @@ biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_si
   ar_biome <- fitAR_map(Y = y_biome, coords = coords_biome)
   
   #extract coefficients and p values 
-  dt_biome$burned_area_coef <- ar_biome$coefficients[, "t"]
-  dt_biome$burned_area_p_value <- ar_biome$pvals[, 2]
+  dt_biome$greenup_coef <- ar_biome$coefficients[, "t"]
+  dt_biome$greenup_p_value <- ar_biome$pvals[, 2]
   
   # get distance matrix 
   d_biome <- distm_scaled(coords_biome)
@@ -310,7 +315,7 @@ biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_si
   cor.test(dt_biome$human_modification, dt_biome$nitrogen_depo)
   
   set.seed(161)
-  gls_biome <- fitGLS(burned_area_coef ~ 1 +
+  gls_biome <- fitGLS(greenup_coef ~ 1 +
                         nitrogen_depo +
                         mat_coef +
                         max_temp_coef +
@@ -330,7 +335,7 @@ biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_si
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                     alpha = 0.9, linewidth = 1.2) +
-    scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+    scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
     labs(title = paste0(funbi), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
     theme_classic() +
     theme(legend.position = "none")
@@ -342,25 +347,25 @@ biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_si
 
 
 
-p_smd <- biome_gls(funbi = "SMD", col_pattern = "burned_area_", dat = dt)
+p_smd <- biome_gls(funbi = "SMD", col_pattern = "greenup_", dat = dt)
 p_smd
 
-p_tmn <- biome_gls(funbi = "TMN", col_pattern = "burned_area_", dat = dt)
-p_tmn
+# p_tmn <- biome_gls(funbi = "TMN", col_pattern = "greenup_", dat = dt)
+# p_tmn
+# 
+# p_thn <- biome_gls(funbi = "THN", col_pattern = "greenup_", dat = dt)
+# p_thn
 
-p_thn <- biome_gls(funbi = "THN", col_pattern = "burned_area_", dat = dt)
-p_thn
-
-p_tmb <- biome_gls(funbi = "TMB", col_pattern = "burned_area_", dat = dt)
+p_tmb <- biome_gls(funbi = "TMB", col_pattern = "greenup_", dat = dt)
 p_tmb
 
-p_tmc <- biome_gls(funbi = "TMC", col_pattern = "burned_area_", dat = dt)
+p_tmc <- biome_gls(funbi = "TMC", col_pattern = "greenup_", dat = dt)
 p_tmc
 
-p_burned_area_biome <- grid.arrange(p_smd, p_tmn, 
-                            p_thn, 
-                            p_tmb, p_tmc, ncol = 5)
-ggsave(plot = p_burned_area_biome, "builds/plots/burned_area_remotePARTS_biome.png", dpi = 600, height = 3, width = 14)
+p_greenup_biome <- grid.arrange(p_smd, 
+                                    p_tmb, p_tmc,
+                                    ncol = 5)
+ggsave(plot = p_greenup_biome, "builds/plots/greenup_remotePARTS_biome.png", dpi = 600, height = 3, width = 14)
 
-p_burned_area <- grid.arrange(p_burned_area_a, p_burned_area_biome, ncol = 1)
-ggsave(plot = p_burned_area, "builds/plots/burned_area_remotePARTS_full.png", dpi = 600, height = 6, width = 14)
+p_greenup <- grid.arrange(p_greenup_a, p_greenup_biome, ncol = 1)
+ggsave(plot = p_greenup, "builds/plots/greenup_remotePARTS_full.png", dpi = 600, height = 6, width = 14)

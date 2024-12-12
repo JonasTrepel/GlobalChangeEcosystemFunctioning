@@ -44,7 +44,7 @@ evi_cols <- grep("evi_", names(dt), value = T)
 
 #subset to complete cases
 dt_evi <- dt %>%
-  dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+  dplyr::select(all_of(evi_cols), functional_biome, X, Y, unique_id,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 og_layer) %>% 
   filter(complete.cases(.))
@@ -62,6 +62,10 @@ ar_evi <- fitAR_map(Y = y_evi, coords = coords_evi)
 dt_evi$evi_coef <- ar_evi$coefficients[, "t"]
 dt_evi$abs_evi_coef <- abs(ar_evi$coefficients[, "t"])
 dt_evi$evi_p_value <- ar_evi$pvals[, 2]
+
+fwrite(dt_evi %>% dplyr::select(
+  unique_id, X, Y, og_layer, evi_coef, abs_evi_coef, evi_p_value
+), "data/processedData/dataFragments/pa_evi_trends.csv")
 
 # get distance matrix 
 d_evi <- distm_scaled(coords_evi)
@@ -81,7 +85,7 @@ v_opt_evi <- covar_exp(d_evi, range_opt_evi)
 pm <- sample_partitions(npix = nrow(dt_evi), partsize = 1500, npart = NA)
 dim(pm)
 
-## Hypothesis 1: Ecosystem functioning is overall changing 
+## Hypothesis 1: Ecosystem functioning is overall changing --------------------
 gls_h1 <- fitGLS_partition(evi_coef ~ 1,
                partmat = pm,
                covar_FUN = "covar_exp",
@@ -95,7 +99,7 @@ gls_h1 <- fitGLS_partition(evi_coef ~ 1,
                )
 gls_h1 # yes. 
 
-## Hypothesis 2: Change depends on climate change, N deposition, human modification, 
+## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
 set.seed(161)
 gls_h2 <- fitGLS_partition(evi_coef ~ 1 +
@@ -127,7 +131,7 @@ p_h2 <- dt_est_h2 %>%
   theme(legend.position = "none")
 p_h2
   
-## Hypothesis 3 - different trends in different biomes
+## Hypothesis 3 - different trends in different biomes ----------------------
 set.seed(161)
 gls_h3 <- fitGLS_partition(evi_coef ~ 0 +
                    functional_biome,
@@ -156,7 +160,7 @@ p_h3 <- dt_est_h3 %>%
 p_h3
 
 
-## Hypothesis 4 - different absolute trend in and outside of PAs
+## Hypothesis 4 - different absolute trend in and outside of PAs ------------------
 set.seed(161)
 gls_h4 <- fitGLS_partition(evi_coef ~ 0 +
                  og_layer,
@@ -237,7 +241,6 @@ gls_h5 <- fitGLS_partition(evi_coef ~ 0 +
                    data = dt_pa,
                    nugget = NA,
                    ncores = 4,
-                   ncross = 8,
                    progressbar = TRUE, 
                    parallel = TRUE, 
                    coord.names = c("X", "Y"))
@@ -268,13 +271,6 @@ ggsave(plot = p_evi_a, "builds/plots/evi_remotePARTS.png", dpi = 600, height = 3
 
 # functional biomes 
 ## TMN, TMC, TMB, THN, SMD
-
-col_pattern <- "evi_"
-dat <- dt
-part <- TRUE 
-part_size <- 500
-funbi <- "THN"
-
 
 biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_size = NA){
 
