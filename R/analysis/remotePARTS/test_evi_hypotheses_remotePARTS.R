@@ -39,9 +39,17 @@ dt_raw <- fread("data/processedData/data_with_response_timeseries/pas_and_contro
   mutate(n_per_functional_biome = n()) %>% 
   ungroup() %>% 
   as.data.frame() %>% 
-  filter(n_per_functional_biome > 1000)
-
-table(dt_raw$FunctionalBiome)
+  filter(n_per_functional_biome > 1000) %>% 
+  mutate(
+    nitrogen_depo = scale(NitrogenDepo),
+    mat_coef = scale(mat_coef),
+    max_temp_coef = scale(max_temp_coef),
+    map_coef = scale(map_coef),
+    human_modification = scale(HumanModification), 
+    area_km2_scaled = scale(log(area_km2)),
+    pa_age_scaled = scale(log(PaAge))) %>% 
+  rename(functional_biome = FunctionalBiome)
+dt <- dt_raw
 
 ##### Subset for testing only #######
 
@@ -55,7 +63,6 @@ dt_sub_cont <- dt_raw %>%
 
 #dt <- dt_raw
 dt <- rbind(dt_sub_pa, dt_sub_cont) # %>% filter(complete.cases(.))
-dt <- dt_raw
 #######################################
 
 ####### calculate EVI trend #######
@@ -63,7 +70,11 @@ dt <- dt_raw
 evi_cols <- grep("evi_", names(dt), value = T)
 
 #subset to complete cases
-dt_evi <- dt %>% filter(complete.cases(dt[, evi_cols]))
+dt_evi <- dt %>%
+  dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+                nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
+                og_layer) %>% 
+  filter(complete.cases(.))
 
 #get y matrix
 y_evi <- as.matrix(dt_evi[, evi_cols])
@@ -76,6 +87,7 @@ ar_evi <- fitAR_map(Y = y_evi, coords = coords_evi)
 
 #extract coefficients and p values 
 dt_evi$evi_coef <- ar_evi$coefficients[, "t"]
+dt_evi$abs_evi_coef <- abs(ar_evi$coefficients[, "t"])
 dt_evi$evi_p_value <- ar_evi$pvals[, 2]
 
 # get distance matrix 
@@ -112,16 +124,6 @@ gls_h1 # yes.
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification, 
 
-dt_evi_scaled <- dt_evi %>% mutate(
-  nitrogen_depo = scale(NitrogenDepo),
-  mat_coef = scale(mat_coef),
-  max_temp_coef = scale(max_temp_coef),
-  map_coef = scale(map_coef),
-  human_modification = scale(HumanModification),
-  abs_evi_coef = abs(evi_coef),
-  evi_coef_scaled = scale(evi_coef)
-) %>% rename(functional_biome = FunctionalBiome)
-
 set.seed(161)
 gls_h2 <- fitGLS_partition(evi_coef ~ 1 +
                    nitrogen_depo +
@@ -132,7 +134,7 @@ gls_h2 <- fitGLS_partition(evi_coef ~ 1 +
                    partmat = pm,
                    covar_FUN = "covar_exp",
                    covar.pars = list(range = range_opt_evi),
-                   data = dt_evi_scaled,
+                   data = dt_evi,
                    nugget = NA,
                    ncores = 4,
                    progressbar = TRUE, 
@@ -153,12 +155,13 @@ p_h2 <- dt_est_h2 %>%
 p_h2
   
 ## Hypothesis 3 - different trends in different biomes
-gls_h3 <- fitGLS_partition(abs_evi_coef ~ 0 +
+set.seed(161)
+gls_h3 <- fitGLS_partition(evi_coef ~ 0 +
                    functional_biome,
                    partmat = pm,
                    covar_FUN = "covar_exp",
                    covar.pars = list(range = range_opt_evi),
-                   data = dt_evi_scaled,
+                   data = dt_evi,
                    nugget = NA,
                    ncores = 4,
                    progressbar = TRUE, 
@@ -181,16 +184,17 @@ p_h3
 
 
 ## Hypothesis 4 - different absolute trend in and outside of PAs
-gls_h4 <- fitGLS_partition(abs_evi_coef ~ 0 +
+set.seed(161)
+gls_h4 <- fitGLS_partition(evi_coef ~ 0 +
                  og_layer,
                  partmat = pm,
                  covar_FUN = "covar_exp",
                  covar.pars = list(range = range_opt_evi),
-                 data = dt_evi_scaled,
+                 data = dt_evi,
                  nugget = NA,
                  ncores = 4,
                  progressbar = TRUE, 
-                 parallel = T, 
+                 parallel = F, 
                  coord.names = c("X", "Y"))
 gls_h4 # 
 
@@ -209,13 +213,17 @@ p_h4
 
 ## get estimates
 
-## Hypothesis 5 - PA size and age 
+## Hypothesis 5 - PA size and age ----------------------------
 
 # recalculate trends only on PAs 
 evi_cols <- grep("evi_", names(dt), value = T)
 
 #subset to complete cases
-dt_pa <- dt %>% filter(og_layer == "protected_areas" & complete.cases(dt[, evi_cols]))
+dt_pa <- dt %>% filter(og_layer == "protected_areas") %>%
+  dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+                nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
+                og_layer, area_km2_scaled, pa_age_scaled) %>% 
+  filter(complete.cases(.))
 
 #get y matrix
 y_pa <- as.matrix(dt_pa[, evi_cols])
@@ -228,6 +236,7 @@ ar_pa <- fitAR_map(Y = y_pa, coords = coords_pa)
 
 #extract coefficients and p values 
 dt_pa$evi_coef <- ar_pa$coefficients[, "t"]
+dt_pa$abs_evi_coef <- abs(ar_pa$coefficients[, "t"])
 dt_pa$evi_p_value <- ar_pa$pvals[, 2]
 
 # get distance matrix 
@@ -241,19 +250,9 @@ corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "
 #use r to calculate optimal v parameter 
 v_opt_pa <- covar_exp(d_pa, range_opt_pa)
 
-hist(log(dt$PaAge))
-dt_pa_scaled <- dt_pa %>% 
-  mutate(abs_evi_coef = abs(evi_coef), 
-         evi_coef_scaled = scale(evi_coef),
-         area_km2_scaled = scale(log(area_km2)),
-         pa_age_scaled = scale(log(PaAge))
-         
-         )
-
-
 #partition the data 
 
-pm_pa <- sample_partitions(npix = nrow(dt_pa_scaled), partsize = 700, npart = NA)
+pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 800, npart = NA)
 dim(pm_pa)
 
 gls_h5 <- fitGLS_partition(abs_evi_coef ~ 0 +
@@ -262,14 +261,14 @@ gls_h5 <- fitGLS_partition(abs_evi_coef ~ 0 +
                    partmat = pm_pa,
                    covar_FUN = "covar_exp",
                    covar.pars = list(range = range_opt_evi),
-                   data = dt_pa_scaled,
+                   data = dt_pa,
                    nugget = NA,
                    ncores = 4,
                    ncross = 8,
                    progressbar = TRUE, 
-                   parallel = T, 
+                   parallel = TRUE, 
                    coord.names = c("X", "Y"))
-gls_h5 # N depo to rule them all - also, apparently some differences between biomes 
+gls_h5 
 
 dt_est_h5 <- extract_gls_estimates(gls_h5, part = TRUE)
 
@@ -301,12 +300,18 @@ col_pattern <- "evi_"
 dat <- dt
 part <- TRUE 
 part_size <- 500
-fb <- "SMD"
+funbi <- "THN"
+
+
+biome_gls <- function(funbi = NA, col_pattern = NA, dat = NA, part = NA, part_size = NA){
 
 evi_cols <- grep(col_pattern, names(dt), value = T)
 
 #subset to complete cases
-dt_biome <- dat %>% filter(FunctionalBiome == fb & complete.cases(dat[, evi_cols]))
+dt_biome <- dat %>% filter(functional_biome == funbi) %>%
+  dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+                nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification) %>% 
+  filter(complete.cases(.))
 
 #get y matrix
 y_biome <- as.matrix(dt_biome[, evi_cols])
@@ -335,25 +340,16 @@ print("estimated optimal range")
 #use r to calculate optimal v parameter 
 v_opt_biome <- covar_exp(d_biome, range_opt_biome)
 
-dt_biome_scaled <- dt_biome %>% 
-  mutate(abs_evi_coef = abs(evi_coef), 
-         evi_coef_scaled = scale(evi_coef),
-         area_km2_scaled = scale(log(area_km2)),
-         pa_age_scaled = scale(log(PaAge)),
-         nitrogen_depo = scale(NitrogenDepo),
-         mat_coef = scale(mat_coef),
-         max_temp_coef = scale(max_temp_coef),
-         map_coef = scale(map_coef),
-         human_modification = scale(HumanModification)
-  )
+cor.test(dt_biome$human_modification, dt_biome$nitrogen_depo)
 
-cor.test(dt_biome_scaled$human_modification, dt_biome_scaled$nitrogen_depo)
 set.seed(161)
 gls_biome <- fitGLS(evi_coef ~ 1 +
                       nitrogen_depo +
                       mat_coef +
-                      max_temp_coef,
-                    data = dt_biome_scaled,
+                      max_temp_coef +
+                      map_coef +
+                      human_modification,
+                    data = dt_biome,
                     V = v_opt_biome, 
                     nugget = NA, 
                     no.F = TRUE
@@ -368,8 +364,34 @@ p_biome <- dt_est_biome %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = paste0(fb), y = NULL, x = NULL) +
+  labs(title = paste0(funbi), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none")
 p_biome
+
+return(p_biome)
+
+}
+
+
+
+p_smd <- biome_gls(funbi = "SMD", col_pattern = "evi_", dat = dt)
+p_smd
+
+p_tmn <- biome_gls(funbi = "TMN", col_pattern = "evi_", dat = dt)
+p_tmn
+
+p_thn <- biome_gls(funbi = "THN", col_pattern = "evi_", dat = dt)
+p_thn
+
+p_tmb <- biome_gls(funbi = "TMB", col_pattern = "evi_", dat = dt)
+p_tmb
+
+p_tmc <- biome_gls(funbi = "TMC", col_pattern = "evi_", dat = dt)
+p_tmc
+
+p_evi <- grid.arrange(p_smd, p_tmn, 
+                      p_thn, 
+                      p_tmb, p_tmc, ncol = 5)
+ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_biome.png", dpi = 600, height = 3, width = 14)
 
