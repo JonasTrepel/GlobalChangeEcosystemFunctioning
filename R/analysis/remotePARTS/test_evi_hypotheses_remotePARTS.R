@@ -286,8 +286,8 @@ p_h5
 
 library(gridExtra)
 
-p_evi <- grid.arrange(p_h2, p_h3, p_h4, p_h5, ncol = 4)
-ggsave(plot = p_evi, "builds/plots/evi_remotePARTS.png", dpi = 600, height = 3, width = 13)
+p_evi_a <- grid.arrange(p_h2, p_h3, p_h4, p_h5, ncol = 4)
+ggsave(plot = p_evi_a, "builds/plots/evi_remotePARTS.png", dpi = 600, height = 3, width = 13)
 
 
 # Biomes separately -------------------
@@ -390,8 +390,10 @@ p_tmb
 p_tmc <- biome_gls(funbi = "TMC", col_pattern = "evi_", dat = dt)
 p_tmc
 
-p_evi <- grid.arrange(p_smd, p_tmn, 
+p_evi_biome <- grid.arrange(p_smd, p_tmn, 
                       p_thn, 
                       p_tmb, p_tmc, ncol = 5)
-ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_biome.png", dpi = 600, height = 3, width = 14)
+ggsave(plot = p_evi_biome, "builds/plots/evi_remotePARTS_biome.png", dpi = 600, height = 3, width = 14)
 
+p_evi <- grid.arrange(p_evi_a, p_evi_biome, ncol = 1)
+ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_full.png", dpi = 600, height = 6, width = 14)
