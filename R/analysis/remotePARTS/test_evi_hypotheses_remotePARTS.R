@@ -53,16 +53,16 @@ dt <- dt_raw
 
 ##### Subset for testing only #######
 
-dt_sub_pa <- dt_raw %>%
-  filter(og_layer == "protected_areas") %>%
-  filter(complete.cases(.)) %>%
-  sample_n(5000)
-
-dt_sub_cont <- dt_raw %>%
-  filter(control_for %in% unique(dt_sub_pa$unique_id))
-
-#dt <- dt_raw
-dt <- rbind(dt_sub_pa, dt_sub_cont) # %>% filter(complete.cases(.))
+# dt_sub_pa <- dt_raw %>%
+#   filter(og_layer == "protected_areas") %>%
+#   filter(complete.cases(.)) %>%
+#   sample_n(5000)
+# 
+# dt_sub_cont <- dt_raw %>%
+#   filter(control_for %in% unique(dt_sub_pa$unique_id))
+# 
+# #dt <- dt_raw
+# dt <- rbind(dt_sub_pa, dt_sub_cont) # %>% filter(complete.cases(.))
 #######################################
 
 ####### calculate EVI trend #######
@@ -138,7 +138,7 @@ gls_h2 <- fitGLS_partition(evi_coef ~ 1 +
                    nugget = NA,
                    ncores = 4,
                    progressbar = TRUE, 
-                   parallel = FALSE, 
+                   parallel = TRUE, 
                    coord.names = c("X", "Y"))
 gls_h2 #
 
@@ -165,7 +165,7 @@ gls_h3 <- fitGLS_partition(evi_coef ~ 0 +
                    nugget = NA,
                    ncores = 4,
                    progressbar = TRUE, 
-                   parallel = T, 
+                   parallel = TRUE, 
                    coord.names = c("X", "Y"))
 gls_h3 # 
 
@@ -194,7 +194,7 @@ gls_h4 <- fitGLS_partition(evi_coef ~ 0 +
                  nugget = NA,
                  ncores = 4,
                  progressbar = TRUE, 
-                 parallel = F, 
+                 parallel = TRUE, 
                  coord.names = c("X", "Y"))
 gls_h4 # 
 
