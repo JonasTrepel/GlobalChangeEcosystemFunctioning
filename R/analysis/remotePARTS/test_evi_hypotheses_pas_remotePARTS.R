@@ -109,7 +109,7 @@ gls_h1 <- fitGLS_partition(evi_coef ~ 1,
                parallel = T, 
                coord.names = c("X", "Y")
                )
-gls_h1 # yes. Est: 6.47873; SE: 0.6552403; pval.t: 5.54166e-23
+gls_h1 # yes. Est: 6.489292; SE: 0.665201; pval.t: 2.039496e-22
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
@@ -370,8 +370,8 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     fit_n <- nrow(dt_biome)
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
-    corfit_biome <- fitCor_own(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                               start = start, fit.n = fit_n, na.rm = TRUE)
+    corfit_biome <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
+                               start = start, fit.n = fit_n)
     
     (range_opt_biome = corfit_biome$spcor)
     
@@ -483,7 +483,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
 
 ## NDVI min 
 nrow(dt[dt$ndvi_min == "cold",])
-p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "evi_", dat = dt, part = TRUE)
+p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 p_cold
 
 nrow(dt[dt$ndvi_min == "dry",])
@@ -508,7 +508,7 @@ p_medium <- biome_gls(prod = "medium", col_pattern = "evi_", dat = dt, part = TR
 p_medium
 
 nrow(dt[dt$productivity == "high",])
-p_high <- biome_gls(prod = "high", col_pattern = "evi_", dat = dt, part = TRUE)
+p_high <- biome_gls(prod = "high", col_pattern = "evi_", dat = dt, part = FALSE)
 p_high
 
 
@@ -520,4 +520,4 @@ p_evi_prod <- gridExtra::grid.arrange(p_low, p_medium, p_high, ncol = 5)
 ggsave(plot = p_evi_prod, "builds/plots/evi_remotePARTS_prod.png", dpi = 600, height = 3, width = 14)
 
 p_evi <- gridExtra::grid.arrange(p_evi_a, p_evi_ndvi, p_evi_prod, ncol = 1)
-ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_full.png", dpi = 600, height = 9, width = 14)
+ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_full.png", dpi = 600, height = 8, width = 14)

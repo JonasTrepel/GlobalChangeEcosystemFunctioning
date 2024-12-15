@@ -109,7 +109,7 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: -1.423428e-05; SE: 2.925797e-05; pval.t: 0.6266131
+gls_h1 # no. Est: -1.815493e-05; SE: 3.214655e-05; pval.t: 0.5722486
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
@@ -370,8 +370,8 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     fit_n <- nrow(dt_biome)
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
-    corfit_biome <- fitCor_own(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                           start = start, fit.n = fit_n, na.rm = TRUE)
+    corfit_biome <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
+                           start = start, fit.n = fit_n)
     
     (range_opt_biome = corfit_biome$spcor)
     

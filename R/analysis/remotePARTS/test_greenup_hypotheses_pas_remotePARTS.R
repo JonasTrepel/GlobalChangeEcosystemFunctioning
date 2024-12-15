@@ -110,7 +110,7 @@ gls_h1 <- fitGLS_partition(greenup_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: -1.423428e-05; SE: 2.925797e-05; pval.t: 0.6266131
+gls_h1 # yes. Est: -0.06711707; SE: 0.1045439; pval.t: 0.520888
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
@@ -371,8 +371,8 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     fit_n <- nrow(dt_biome)
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
-    corfit_biome <- fitCor_own(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                               start = start, fit.n = fit_n, na.rm = TRUE)
+    corfit_biome <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
+                               start = start, fit.n = fit_n)
     
     (range_opt_biome = corfit_biome$spcor)
     
@@ -485,7 +485,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
 ## NDVI min 
 nrow(dt[dt$ndvi_min == "cold",])
 #may have to run it a couple of times using different starting values, but should work eventually 
-p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "greenup_", start = list(r = 0.5),
+p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "greenup_", start = list(r = 0.1),
                     dat = dt, part = TRUE, fit_n = "row_n")
 p_cold
 
@@ -497,10 +497,10 @@ nrow(dt[dt$ndvi_min == "cold_and_dry",])
 p_cold_and_dry <- biome_gls(ndvi_m = "cold_and_dry", col_pattern = "greenup_", dat = dt, part = FALSE)
 p_cold_and_dry
 
-nrow(dt[dt$ndvi_min == "non_seasonal",])
-p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", col_pattern = "greenup_", dat = dt, part = TRUE,
-                            start = list(r = 1))
-p_non_seasonal
+# nrow(dt[dt$ndvi_min == "non_seasonal",])
+# p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", col_pattern = "greenup_", dat = dt, part = TRUE,
+#                             start = list(r = 0.1))
+#p_non_seasonal
 
 ## 
 nrow(dt[dt$productivity == "low",])
@@ -517,7 +517,7 @@ p_high
 
 
 p_greenup_ndvi <- gridExtra::grid.arrange(p_cold, p_dry, 
-                                          p_cold_and_dry, p_non_seasonal, ncol = 5)
+                                          p_cold_and_dry, ncol = 5)
 ggsave(plot = p_greenup_ndvi, "builds/plots/greenup_remotePARTS_ndvi.png", dpi = 600, height = 3, width = 14)
 
 p_greenup_prod <- gridExtra::grid.arrange(p_low, p_medium, p_high, ncol = 5)
