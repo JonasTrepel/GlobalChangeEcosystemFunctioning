@@ -1,4 +1,4 @@
-#### test EVI hypothesis ####
+#### test burned_area hypothesis ####
 source("R/functions/extract_gls_estimates.R")
 
 
@@ -12,7 +12,7 @@ dt_raw <- fread("data/processedData/data_with_response_timeseries/pas_and_contro
   mutate(n_per_functional_biome = n()) %>% 
   ungroup() %>% 
   as.data.frame() %>% 
- # filter(n_per_functional_biome > 1000) %>% 
+  # filter(n_per_functional_biome > 1000) %>% 
   rename(functional_biome = FunctionalBiome) %>% 
   mutate(
     productivity = case_when(
@@ -50,85 +50,85 @@ dt <- dt_raw
 # dt <- rbind(dt_sub_pa, dt_sub_cont) # %>% filter(complete.cases(.))
 #######################################
 
-####### calculate EVI trend #######
+####### calculate burned_area trend #######
 
-evi_cols <- grep("evi_", names(dt), value = T)
+burned_area_cols <- grep("burned_area_", names(dt), value = T)
 
 #subset to complete cases
-dt_evi <- dt %>%
-  dplyr::select(all_of(evi_cols), functional_biome, X, Y, unique_id, productivity, ndvi_min,
+dt_burned_area <- dt %>%
+  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y, unique_id, productivity, ndvi_min,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 og_layer) %>% 
   filter(complete.cases(.))
 
 #get y matrix
-y_evi <- as.matrix(dt_evi[, evi_cols])
+y_burned_area <- as.matrix(dt_burned_area[, burned_area_cols])
 
 #get coordinate matrix 
-coords_evi <- as.matrix(dt_evi[, c("X", "Y")])
+coords_burned_area <- as.matrix(dt_burned_area[, c("X", "Y")])
 
 #fit autoregression, accounting for temporal autocorrelation 
-ar_evi <- fitAR_map(Y = y_evi, coords = coords_evi)
+ar_burned_area <- fitAR_map(Y = y_burned_area, coords = coords_burned_area)
 
 #extract coefficients and p values 
-dt_evi$evi_coef <- ar_evi$coefficients[, "t"]
-dt_evi$abs_evi_coef <- abs(ar_evi$coefficients[, "t"])
-dt_evi$evi_p_value <- ar_evi$pvals[, 2]
+dt_burned_area$burned_area_coef <- ar_burned_area$coefficients[, "t"]
+dt_burned_area$abs_burned_area_coef <- abs(ar_burned_area$coefficients[, "t"])
+dt_burned_area$burned_area_p_value <- ar_burned_area$pvals[, 2]
 
-fwrite(dt_evi %>% dplyr::select(
-  unique_id, X, Y, og_layer, evi_coef, abs_evi_coef, evi_p_value), "data/processedData/dataFragments/pa_evi_trends.csv")
+fwrite(dt_burned_area %>% dplyr::select(
+  unique_id, X, Y, og_layer, burned_area_coef, abs_burned_area_coef, burned_area_p_value), "data/processedData/dataFragments/pa_burned_area_trends.csv")
 
 # get distance matrix 
-#d_evi <- distm_scaled(coords_evi)
+#d_burned_area <- distm_scaled(coords_burned_area)
 
 ### estimate optimal r parameter (range of spatial autocorrelation)
-corfit <- fitCor(resids = residuals(ar_evi), coords = coords_evi, covar_FUN = "covar_exp", 
-                 start = list(range = 0.1), fit.n = nrow(dt_evi))
-(range_opt_evi = corfit$spcor)
+corfit <- fitCor(resids = residuals(ar_burned_area), coords = coords_burned_area, covar_FUN = "covar_exp", 
+                 start = list(range = 0.1), fit.n = nrow(dt_burned_area))
+(range_opt_burned_area = corfit$spcor)
 
 #use r to calculate optimal v parameter 
-#v_opt_evi <- covar_exp(d_evi, range_opt_evi)
+#v_opt_burned_area <- covar_exp(d_burned_area, range_opt_burned_area)
 
 ############ test hypotheses ############ 
 
 #partition the data 
 
-pm <- sample_partitions(npix = nrow(dt_evi), partsize = 1500, npart = NA)
+pm <- sample_partitions(npix = nrow(dt_burned_area), partsize = 1500, npart = NA)
 dim(pm)
 
 ## Hypothesis 1: Ecosystem functioning is overall changing --------------------
 set.seed(161)
-gls_h1 <- fitGLS_partition(evi_coef ~ 1,
-               partmat = pm,
-               covar_FUN = "covar_exp",
-               covar.pars = list(range = range_opt_evi),
-               data = dt_evi,
-               nugget = NA,
-               ncores = 4,
-               progressbar = TRUE, 
-               parallel = T, 
-               coord.names = c("X", "Y")
-               )
-gls_h1 # yes. Est: 6.47873; SE: 0.6552403; pval.t: 5.54166e-23
+gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
+                           partmat = pm,
+                           covar_FUN = "covar_exp",
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_burned_area,
+                           nugget = NA,
+                           ncores = 4,
+                           progressbar = TRUE, 
+                           parallel = T, 
+                           coord.names = c("X", "Y")
+)
+gls_h1 # yes. Est: -1.423428e-05; SE: 2.925797e-05; pval.t: 0.6266131
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
 set.seed(161)
-gls_h2 <- fitGLS_partition(evi_coef ~ 1 +
-                   nitrogen_depo +
-                   mat_coef + 
-                   max_temp_coef + 
-                   map_coef + 
-                   human_modification,
-                   partmat = pm,
-                   covar_FUN = "covar_exp",
-                   covar.pars = list(range = range_opt_evi),
-                   data = dt_evi,
-                   nugget = NA,
-                   ncores = 4,
-                   progressbar = TRUE, 
-                   parallel = TRUE, 
-                   coord.names = c("X", "Y"))
+gls_h2 <- fitGLS_partition(burned_area_coef ~ 1 +
+                             nitrogen_depo +
+                             mat_coef + 
+                             max_temp_coef + 
+                             map_coef + 
+                             human_modification,
+                           partmat = pm,
+                           covar_FUN = "covar_exp",
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_burned_area,
+                           nugget = NA,
+                           ncores = 4,
+                           progressbar = TRUE, 
+                           parallel = TRUE, 
+                           coord.names = c("X", "Y"))
 gls_h2 
 
 dt_est_h2 <- extract_gls_estimates(gls_h2, part = TRUE)
@@ -137,38 +137,38 @@ p_h2 <- dt_est_h2 %>%
   ggplot() + 
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
-                                        alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H2: evi change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
+                  alpha = 0.9, linewidth = 1.2) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+  labs(title = "H2: burned_area change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
 p_h2
-  
+
 ## Hypothesis 3 - different trends at different productivity  ----------------------
 set.seed(161)
-gls_h3 <- fitGLS_partition(evi_coef ~ 0 +
-                   productivity,
-                   partmat = pm,
-                   covar_FUN = "covar_exp",
-                   covar.pars = list(range = range_opt_evi),
-                   data = dt_evi,
-                   nugget = NA,
-                   ncores = 4,
-                   progressbar = TRUE, 
-                   parallel = TRUE, 
-                   coord.names = c("X", "Y"))
+gls_h3 <- fitGLS_partition(burned_area_coef ~ 0 +
+                             productivity,
+                           partmat = pm,
+                           covar_FUN = "covar_exp",
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_burned_area,
+                           nugget = NA,
+                           ncores = 4,
+                           progressbar = TRUE, 
+                           parallel = TRUE, 
+                           coord.names = c("X", "Y"))
 gls_h3 # 
 
 
 dt_est_h3 <- extract_gls_estimates(gls_h3, part = TRUE)
 p_h3 <- dt_est_h3 %>% 
   ggplot() + 
- # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H3: evi change ~\nproductivity", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+  labs(title = "H3: burned_area change ~\nproductivity", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
@@ -176,12 +176,12 @@ p_h3
 
 ## Hypothesis 4 - different trends in different seasonality ----------------------
 set.seed(161)
-gls_h4 <- fitGLS_partition(evi_coef ~ 0 +
-                           ndvi_min,
+gls_h4 <- fitGLS_partition(burned_area_coef ~ 0 +
+                             ndvi_min,
                            partmat = pm,
                            covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_evi),
-                           data = dt_evi,
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_burned_area,
                            nugget = NA,
                            ncores = 4,
                            progressbar = TRUE, 
@@ -193,11 +193,11 @@ gls_h4 #
 dt_est_h4 <- extract_gls_estimates(gls_h4, part = TRUE)
 p_h4 <- dt_est_h4 %>% 
   ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H4: evi change ~\ngrowth lim.", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+  labs(title = "H4: burned_area change ~\ngrowth lim.", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
@@ -206,17 +206,17 @@ p_h4
 
 ## Hypothesis 5 - different absolute trend in and outside of PAs ------------------
 set.seed(161)
-gls_h5 <- fitGLS_partition(evi_coef ~ 0 +
-                 og_layer,
-                 partmat = pm,
-                 covar_FUN = "covar_exp",
-                 covar.pars = list(range = range_opt_evi),
-                 data = dt_evi,
-                 nugget = NA,
-                 ncores = 4,
-                 progressbar = TRUE, 
-                 parallel = TRUE, 
-                 coord.names = c("X", "Y"))
+gls_h5 <- fitGLS_partition(burned_area_coef ~ 0 +
+                             og_layer,
+                           partmat = pm,
+                           covar_FUN = "covar_exp",
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_burned_area,
+                           nugget = NA,
+                           ncores = 4,
+                           progressbar = TRUE, 
+                           parallel = TRUE, 
+                           coord.names = c("X", "Y"))
 gls_h5 # 
 
 
@@ -224,11 +224,11 @@ dt_est_h5 <- extract_gls_estimates(gls_h5, part = TRUE)
 
 p_h5 <- dt_est_h5 %>% 
   ggplot() + 
- # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H4: evi change ~\nprotection", subtitle = paste0("n = ", nrow(dt_evi)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+  labs(title = "H4: burned_area change ~\nprotection", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
@@ -239,17 +239,17 @@ p_h5
 ## Hypothesis 6 - PA size and age ----------------------------
 
 # recalculate trends only on PAs 
-evi_cols <- grep("evi_", names(dt), value = T)
+burned_area_cols <- grep("burned_area_", names(dt), value = T)
 
 #subset to complete cases
 dt_pa <- dt %>% filter(og_layer == "protected_areas") %>%
-  dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 og_layer, area_km2_log, pa_age_log) %>% 
   filter(complete.cases(.))
 
 #get y matrix
-y_pa <- as.matrix(dt_pa[, evi_cols])
+y_pa <- as.matrix(dt_pa[, burned_area_cols])
 
 #get coordinate matrix 
 coords_pa <- as.matrix(dt_pa[, c("X", "Y")])
@@ -258,16 +258,16 @@ coords_pa <- as.matrix(dt_pa[, c("X", "Y")])
 ar_pa <- fitAR_map(Y = y_pa, coords = coords_pa)
 
 #extract coefficients and p values 
-dt_pa$evi_coef <- ar_pa$coefficients[, "t"]
-dt_pa$abs_evi_coef <- abs(ar_pa$coefficients[, "t"])
-dt_pa$evi_p_value <- ar_pa$pvals[, 2]
+dt_pa$burned_area_coef <- ar_pa$coefficients[, "t"]
+dt_pa$abs_burned_area_coef <- abs(ar_pa$coefficients[, "t"])
+dt_pa$burned_area_p_value <- ar_pa$pvals[, 2]
 
 # get distance matrix 
 #d_pa <- distm_scaled(coords_pa)
 
 ### estimate optimal r parameter (range of spatial autocorrelation)
 corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "covar_exp", 
-                 start = list(range = 0.1), fit.n = nrow(dt_pa))
+                    start = list(range = 0.1), fit.n = nrow(dt_pa))
 (range_opt_pa = corfit_pa$spcor)
 
 #use r to calculate optimal v parameter 
@@ -278,18 +278,18 @@ corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "
 pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1000, npart = NA)
 dim(pm_pa)
 
-gls_h6 <- fitGLS_partition(evi_coef ~ 1 +
-                   area_km2_log + 
-                   pa_age_log,
-                   partmat = pm_pa,
-                   covar_FUN = "covar_exp",
-                   covar.pars = list(range = range_opt_evi),
-                   data = dt_pa,
-                   nugget = NA,
-                   ncores = 4,
-                   progressbar = TRUE, 
-                   parallel = TRUE, 
-                   coord.names = c("X", "Y"))
+gls_h6 <- fitGLS_partition(burned_area_coef ~ 1 +
+                             area_km2_log + 
+                             pa_age_log,
+                           partmat = pm_pa,
+                           covar_FUN = "covar_exp",
+                           covar.pars = list(range = range_opt_burned_area),
+                           data = dt_pa,
+                           nugget = NA,
+                           ncores = 4,
+                           progressbar = TRUE, 
+                           parallel = TRUE, 
+                           coord.names = c("X", "Y"))
 gls_h6 
 
 dt_est_h6 <- extract_gls_estimates(gls_h6, part = TRUE)
@@ -299,8 +299,8 @@ p_h6 <- dt_est_h6 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
-  labs(title = "H6: evi change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
+  labs(title = "H6: burned_area change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12)) 
@@ -309,8 +309,8 @@ p_h6
 
 library(gridExtra)
 
-p_evi_a <- grid.arrange(p_h2, p_h3, p_h4, p_h5, p_h6, ncol = 5)
-ggsave(plot = p_evi_a, "builds/plots/evi_remotePARTS.png", dpi = 600, height = 3, width = 13)
+p_burned_area_a <- grid.arrange(p_h2, p_h3, p_h4, p_h5, p_h6, ncol = 5)
+ggsave(plot = p_burned_area_a, "builds/plots/burned_area_remotePARTS.png", dpi = 600, height = 3, width = 13)
 
 
 # Biomes separately -------------------
@@ -321,21 +321,21 @@ unique(dt$productivity)
 # unctional biomes 
 ## TMN, TMC, TMB, THN, SMD
 
-prod <- "medium"
-ndvi_m <- NA
-col_pattern <- "evi_"
+prod <- NA
+ndvi_m <- "cold"
+col_pattern <- "burned_area_"
 dat = dt
 
 biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(range = 0.1),
                       dat = NA, part = TRUE, part_size = NA, fit_n = "row_n"){
   
-  evi_cols <- grep(col_pattern, names(dt), value = T)
+  burned_area_cols <- grep(col_pattern, names(dt), value = T)
   
   
   if(!is.na(prod)){
     dat <- dat %>% filter(productivity %in% prod) %>%
       #filter(BurnedAreaMean > 0) %>% 
-      dplyr::select(all_of(evi_cols), functional_biome, X, Y, ndvi_min,
+      dplyr::select(all_of(burned_area_cols), functional_biome, X, Y, ndvi_min,
                     nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification) %>% 
       filter(complete.cases(.))
   }
@@ -343,14 +343,14 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
   if(!is.na(ndvi_m)){
     dat <- dat %>% filter(ndvi_min %in% ndvi_m) %>%
       #filter(BurnedAreaMean > 0) %>% 
-      dplyr::select(all_of(evi_cols), functional_biome, X, Y,
+      dplyr::select(all_of(burned_area_cols), functional_biome, X, Y,
                     nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification) %>% 
       filter(complete.cases(.))
   }
   
   dt_biome <- dat 
   #get y matrix
-  y_biome <- as.matrix(dt_biome[, evi_cols])
+  y_biome <- as.matrix(dt_biome[, burned_area_cols])
   
   #get coordinate matrix 
   coords_biome <- as.matrix(dt_biome[, c("X", "Y")])
@@ -359,9 +359,9 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
   ar_biome <- fitAR_map(Y = y_biome, coords = coords_biome)
   
   #extract coefficients and p values 
-  dt_biome$evi_coef <- ar_biome$coefficients[, "t"]
-  dt_biome$evi_p_value <- ar_biome$pvals[, 2]
-  dt_biome$abs_evi_coef <- abs(ar_biome$coefficients[, "t"])
+  dt_biome$burned_area_coef <- ar_biome$coefficients[, "t"]
+  dt_biome$burned_area_p_value <- ar_biome$pvals[, 2]
+  dt_biome$abs_burned_area_coef <- abs(ar_biome$coefficients[, "t"])
   
   if(fit_n == "row_n"){
     
@@ -371,7 +371,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
     corfit_biome <- fitCor_own(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                               start = start, fit.n = fit_n, na.rm = TRUE)
+                           start = start, fit.n = fit_n, na.rm = TRUE)
     
     (range_opt_biome = corfit_biome$spcor)
     
@@ -382,24 +382,24 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
     corfit_biome1 <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                            start = start, fit.n = fit_n)
+                           start = start, fit.n = fit_n)
     
     r1 <-  corfit_biome1$spcor
     
     corfit_biome2 <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                            start = start, fit.n = fit_n)
+                           start = start, fit.n = fit_n)
     
     r2 <-  corfit_biome2$spcor
     
     corfit_biome3 <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
-                            start = start, fit.n = fit_n)
+                           start = start, fit.n = fit_n)
     
     r3 <-  corfit_biome3$spcor
     
     (range_opt_biome <- mean(c(r1, r2, r3)))
-    
+
   }
-  
+
   
   print(paste0("estimated optimal range (", round(range_opt_biome, 4),"), start fitting GLS"))
   
@@ -413,7 +413,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     
     
     set.seed(161)
-    gls_biome <- fitGLS(evi_coef ~ 1 +
+    gls_biome <- fitGLS(burned_area_coef ~ 1 +
                           nitrogen_depo +
                           mat_coef +
                           max_temp_coef +
@@ -437,7 +437,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     
     
     set.seed(161)
-    gls_biome <- fitGLS_partition(evi_coef ~ 1 +
+    gls_biome <- fitGLS_partition(burned_area_coef ~ 1 +
                                     nitrogen_depo +
                                     mat_coef + 
                                     max_temp_coef + 
@@ -470,7 +470,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                     alpha = 0.9, linewidth = 1.2) +
-    scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+    scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
     labs(title = paste0(label), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
     theme_classic() +
     theme(legend.position = "none", 
@@ -483,41 +483,44 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
 
 ## NDVI min 
 nrow(dt[dt$ndvi_min == "cold",])
-p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "evi_", dat = dt, part = TRUE)
+#may have to run it a couple of times using different starting values, but should work eventually 
+p_cold <- biome_gls(ndvi_m = "cold", col_pattern = "burned_area_", start = list(r = 0.5),
+                    dat = dt, part = TRUE, fit_n = "row_n")
 p_cold
 
 nrow(dt[dt$ndvi_min == "dry",])
-p_dry <- biome_gls(ndvi_m = "dry", col_pattern = "evi_", dat = dt, part = FALSE)
+p_dry <- biome_gls(ndvi_m = "dry", col_pattern = "burned_area_", dat = dt, part = FALSE, fit_n = "row_n")
 p_dry
 
 nrow(dt[dt$ndvi_min == "cold_and_dry",])
-p_cold_and_dry <- biome_gls(ndvi_m = "cold_and_dry", col_pattern = "evi_", dat = dt, part = FALSE)
+p_cold_and_dry <- biome_gls(ndvi_m = "cold_and_dry", col_pattern = "burned_area_", dat = dt, part = FALSE)
 p_cold_and_dry
 
 nrow(dt[dt$ndvi_min == "non_seasonal",])
-p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", col_pattern = "evi_", dat = dt, part = TRUE)
+p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", col_pattern = "burned_area_", dat = dt, part = TRUE,
+                            start = list(r = 1))
 p_non_seasonal
 
 ## 
 nrow(dt[dt$productivity == "low",])
-p_low <- biome_gls(prod = "low", col_pattern = "evi_", dat = dt, part = FALSE)
+p_low <- biome_gls(prod = "low", col_pattern = "burned_area_", dat = dt, part = FALSE, fit_n = "row_n")
 p_low
 
 nrow(dt[dt$productivity == "medium",])
-p_medium <- biome_gls(prod = "medium", col_pattern = "evi_", dat = dt, part = TRUE)
+p_medium <- biome_gls(prod = "medium", col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = "row_n")
 p_medium
 
 nrow(dt[dt$productivity == "high",])
-p_high <- biome_gls(prod = "high", col_pattern = "evi_", dat = dt, part = TRUE)
+p_high <- biome_gls(prod = "high", col_pattern = "burned_area_", dat = dt, part = FALSE, fit_n = "row_n")
 p_high
 
 
-p_evi_ndvi <- gridExtra::grid.arrange(p_cold, p_dry, 
-                      p_cold_and_dry, p_non_seasonal, ncol = 5)
-ggsave(plot = p_evi_ndvi, "builds/plots/evi_remotePARTS_ndvi.png", dpi = 600, height = 3, width = 14)
+p_burned_area_ndvi <- gridExtra::grid.arrange(p_cold, p_dry, 
+                                      p_cold_and_dry, p_non_seasonal, ncol = 5)
+ggsave(plot = p_burned_area_ndvi, "builds/plots/burned_area_remotePARTS_ndvi.png", dpi = 600, height = 3, width = 14)
 
-p_evi_prod <- gridExtra::grid.arrange(p_low, p_medium, p_high, ncol = 5)
-ggsave(plot = p_evi_prod, "builds/plots/evi_remotePARTS_prod.png", dpi = 600, height = 3, width = 14)
+p_burned_area_prod <- gridExtra::grid.arrange(p_low, p_medium, p_high, ncol = 5)
+ggsave(plot = p_burned_area_prod, "builds/plots/burned_area_remotePARTS_prod.png", dpi = 600, height = 3, width = 14)
 
-p_evi <- gridExtra::grid.arrange(p_evi_a, p_evi_ndvi, p_evi_prod, ncol = 1)
-ggsave(plot = p_evi, "builds/plots/evi_remotePARTS_full.png", dpi = 600, height = 9, width = 14)
+p_burned_area <- gridExtra::grid.arrange(p_burned_area_a, p_burned_area_ndvi, p_burned_area_prod, ncol = 1)
+ggsave(plot = p_burned_area, "builds/plots/burned_area_remotePARTS_full.png", dpi = 600, height = 8, width = 14)
