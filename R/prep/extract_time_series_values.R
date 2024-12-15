@@ -8,8 +8,7 @@ library(tidyverse)
 
 #read vectors 
 
-grid <- st_read("data/spatialData/grid_sample.gpkg") %>% 
-  rename(unique_id = gridID)
+grid <- st_read("data/spatialData/grid_sample.gpkg") 
 
 pas <- st_read("data/spatialData/pas_and_controls.gpkg")
 
@@ -90,7 +89,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(50)
+clust <- makeCluster(25)
 registerDoSNOW(clust)
 
 ## progress bar 

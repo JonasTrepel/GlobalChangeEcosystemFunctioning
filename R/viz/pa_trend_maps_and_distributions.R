@@ -19,13 +19,26 @@ shapes <- st_read("data/spatialData/pas_and_controls.gpkg") %>%
   st_transform(crs = 'ESRI:54030') %>% 
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
-  left_join(greenup_trend)
+  left_join(greenup_trend) %>% 
+  rename(functional_biome = FunctionalBiome) %>% 
+  mutate(
+    productivity = case_when(
+      grepl("L", functional_biome) ~ "low", 
+      grepl("M", functional_biome) ~ "medium", 
+      grepl("H", functional_biome) ~ "high"
+    ), 
+    ndvi_min = case_when(
+      grepl("C", functional_biome) ~ "cold", 
+      grepl("D", functional_biome) ~ "dry", 
+      grepl("B", functional_biome) ~ "cold_and_dry", 
+      grepl("N", functional_biome) ~ "non_seasonal"
+    ))
 
 coords <- st_coordinates(st_centroid(shapes))
 shapes$X <- coords[,1]
 shapes$Y <- coords[,2]
 
-
+sum(is.na(shapes$evi_coef))
 
 ### evi maps -------------
 quantile(shapes$evi_coef, c(.025, .975), na.rm = T)
@@ -35,8 +48,8 @@ p_evi <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey95") +
   geom_sf(data = shapes %>%
             filter(!is.na(evi_coef)) %>% 
-            mutate(evi_coef = ifelse(evi_coef > 39.1, 39.1, evi_coef),
-                   evi_coef = ifelse(evi_coef < -22.5, -22.5, evi_coef)),
+            mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
+                   evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
           aes(color = evi_coef, fill = evi_coef)) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -49,9 +62,8 @@ p_evi_points <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey95") +
   geom_point(data = shapes %>%
             filter(!is.na(evi_coef)) %>% 
-              filter(!is.na(evi_coef)) %>% 
-              mutate(evi_coef = ifelse(evi_coef > 39.1, 39.1, evi_coef),
-                     evi_coef = ifelse(evi_coef < -22.5, -22.5, evi_coef)),
+              mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
+                     evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
           aes(x = X, y = Y, color = evi_coef, fill = evi_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -70,7 +82,7 @@ p_burned_area <- ggplot() +
   geom_sf(data = shapes %>%
             filter(!is.na(burned_area_coef)) %>% 
             mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                   burned_area_coef = ifelse(burned_area_coef < -0.00257, -0.00257, burned_area_coef)),
+                   burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
           aes(color = burned_area_coef, fill = burned_area_coef)) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -84,7 +96,7 @@ p_burned_area_points <- ggplot() +
   geom_point(data = shapes %>%
                filter(!is.na(burned_area_coef)) %>% 
                mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                      burned_area_coef = ifelse(burned_area_coef < -0.00257, -0.00257, burned_area_coef)),
+                      burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
              aes(x = X, y = Y, color = burned_area_coef, fill = burned_area_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -101,9 +113,9 @@ quantile(shapes$greenup_coef, c(.025, .975), na.rm = T)
 p_greenup <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey95") +
   geom_sf(data = shapes %>%
-            filter(!is.na(greenup_coef) & !grepl("N", FunctionalBiome)) %>% 
-            mutate(greenup_coef = ifelse(greenup_coef > 1.42, 1.42, greenup_coef),
-                   greenup_coef = ifelse(greenup_coef < -1.88, -1.88, greenup_coef)),
+            filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
+            mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
+                   greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
           aes(color = greenup_coef, fill = greenup_coef)) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
@@ -115,9 +127,9 @@ ggsave(plot = p_greenup, "builds/plots/greenup_pa_shapes_map.png", dpi = 600)
 p_greenup_points <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey95") +
   geom_point(data = shapes %>%
-               filter(!is.na(greenup_coef) & !grepl("N", FunctionalBiome)) %>% 
-               mutate(greenup_coef = ifelse(greenup_coef > 1.42, 1.42, greenup_coef),
-                      greenup_coef = ifelse(greenup_coef < -1.88, -1.88, greenup_coef)),
+               filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
+               mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
+                      greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
              aes(x = X, y = Y, color = greenup_coef, fill = greenup_coef, size = area_km2), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
@@ -169,8 +181,8 @@ library(ggridges)
 p_evi_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(evi_coef)) %>% 
-                                 mutate(evi_coef = ifelse(evi_coef > 39.1, 39.1, evi_coef),
-                                        evi_coef = ifelse(evi_coef < -22.5, -22.5, evi_coef)),
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
                                aes(x = evi_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -180,21 +192,35 @@ p_evi_prot <- ggplot() +
 
 p_evi_prot
 
-p_evi_funbi <- ggplot() +
+p_evi_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(evi_coef)) %>% 
-                                 mutate(evi_coef = ifelse(evi_coef > 39.1, 39.1, evi_coef),
-                                        evi_coef = ifelse(evi_coef < -22.5, -22.5, evi_coef)),
-                               aes(x = evi_coef, y = FunctionalBiome, fill = ..x..), alpha = 0.7) +
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
+                               aes(x = evi_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   theme_bw() +
   labs(y = "") + 
   theme(legend.position = "none")
 
-p_evi_funbi
+p_evi_prod
 
-p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_funbi, ncol = 1)
+p_evi_ndvi <- ggplot() +
+  geom_density_ridges_gradient(data = shapes %>%
+                                 filter(!is.na(evi_coef)) %>% 
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
+                               aes(x = evi_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "bam", midpoint = 0) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  theme_bw() +
+  labs(y = "") + 
+  theme(legend.position = "none")
+
+p_evi_ndvi
+
+p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_ndvi, p_evi_prod, ncol = 1)
 
 
 # burned area ridges
@@ -202,7 +228,7 @@ p_burned_area_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(burned_area_coef)) %>% 
                                  mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                                        burned_area_coef = ifelse(burned_area_coef < -0.00257, -0.00257, burned_area_coef)),
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
                                aes(x = burned_area_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -212,28 +238,42 @@ p_burned_area_prot <- ggplot() +
 
 p_burned_area_prot
 
-p_burned_area_funbi <- ggplot() +
+p_burned_area_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(burned_area_coef)) %>% 
                                  mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                                        burned_area_coef = ifelse(burned_area_coef < -0.00257, -0.00257, burned_area_coef)),
-                               aes(x = burned_area_coef, y = FunctionalBiome, fill = ..x..), alpha = 0.7) +
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
+                               aes(x = burned_area_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
   theme_bw() +
   labs(y = "") + 
   theme(legend.position = "none")
 
-p_burned_area_funbi
+p_burned_area_prod
 
-p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_funbi, ncol = 1)
+p_burned_area_ndvi <- ggplot() +
+  geom_density_ridges_gradient(data = shapes %>%
+                                 filter(!is.na(burned_area_coef)) %>% 
+                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
+                               aes(x = burned_area_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "vik", midpoint = 0) +
+  scale_fill_scico(palette = "vik", midpoint = 0) +
+  theme_bw() +
+  labs(y = "") + 
+  theme(legend.position = "none")
+
+p_burned_area_ndvi
+
+p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_ndvi, p_burned_area_prod, ncol = 1)
 
 ## greenup ridges 
 p_greenup_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
-               filter(!is.na(greenup_coef) & !grepl("N", FunctionalBiome)) %>% 
-               mutate(greenup_coef = ifelse(greenup_coef > 1.42, 1.42, greenup_coef),
-                      greenup_coef = ifelse(greenup_coef < -1.88, -1.88, greenup_coef)),
+                                 filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
              aes(x = greenup_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
@@ -243,21 +283,63 @@ p_greenup_prot <- ggplot() +
   
 p_greenup_prot
 
-p_greenup_funbi <- ggplot() +
+p_greenup_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
-                                 filter(!is.na(greenup_coef) & !grepl("N", FunctionalBiome)) %>% 
-                                 mutate(greenup_coef = ifelse(greenup_coef > 1.42, 1.42, greenup_coef),
-                                        greenup_coef = ifelse(greenup_coef < -1.88, -1.88, greenup_coef)),
-                               aes(x = greenup_coef, y = FunctionalBiome, fill = ..x..), alpha = 0.7) +
+                                 filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
+                               aes(x = greenup_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
   theme_bw() +
   labs(y = "") + 
   theme(legend.position = "none")
 
-p_greenup_funbi
+p_greenup_prod
 
-p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_funbi, ncol = 1)
+p_greenup_ndvi <- ggplot() +
+  geom_density_ridges_gradient(data = shapes %>%
+                                 filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
+                               aes(x = greenup_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "cork", midpoint = 0) +
+  scale_fill_scico(palette = "cork", midpoint = 0) +
+  theme_bw() +
+  labs(y = "") + 
+  theme(legend.position = "none")
+
+p_greenup_ndvi
+
+p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_ndvi, p_greenup_prod,  ncol = 1)
 
 p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
-ggsave(plot = p_ridges, "builds/plots/pa_ridges.png", dpi = 600, height = 6, width = 12)
+ggsave(plot = p_ridges, "builds/plots/pa_ridges.png", dpi = 600, height = 8, width = 12)
+
+
+### biome maps -------
+
+p_ndvi_points <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey95") +
+  geom_point(data = shapes,
+             aes(x = X, y = Y, color = ndvi_min, fill = ndvi_min, size = area_km2), alpha = 0.7) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+p_ndvi_points
+
+p_prod_points <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey95") +
+  geom_point(data = shapes,
+             aes(x = X, y = Y, color = productivity, fill = productivity, size = area_km2), alpha = 0.7) +
+  scale_color_scico_d(palette = "batlowK") +
+  scale_fill_scico_d(palette = "batlowK") +
+  theme_minimal() +
+  theme(axis.title = element_blank())
+p_prod_points
+
+p_biome <- gridExtra::grid.arrange(p_ndvi_points, p_prod_points, ncol = 1)
+
+ggsave(plot = p_biome, "builds/plots/fbiome_maps.png", height = 9, width = 10, dpi = 600)
+
