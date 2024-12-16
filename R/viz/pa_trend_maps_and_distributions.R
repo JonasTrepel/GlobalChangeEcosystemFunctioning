@@ -181,8 +181,8 @@ library(ggridges)
 p_evi_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(evi_coef)) %>% 
-                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
-                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, NA, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, NA, evi_coef)),
                                aes(x = evi_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -195,8 +195,8 @@ p_evi_prot
 p_evi_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(evi_coef)) %>% 
-                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
-                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, NA, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, NA, evi_coef)),
                                aes(x = evi_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -209,8 +209,8 @@ p_evi_prod
 p_evi_ndvi <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(evi_coef)) %>% 
-                                 mutate(evi_coef = ifelse(evi_coef > 37.5, 37.5, evi_coef),
-                                        evi_coef = ifelse(evi_coef < -20.9, -20.9, evi_coef)),
+                                 mutate(evi_coef = ifelse(evi_coef > 37.5, NA, evi_coef),
+                                        evi_coef = ifelse(evi_coef < -20.9, NA, evi_coef)),
                                aes(x = evi_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
@@ -227,8 +227,8 @@ p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_ndvi, p_evi_prod, ncol =
 p_burned_area_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(burned_area_coef)) %>% 
-                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
+                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, NA, burned_area_coef),
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, NA, burned_area_coef)),
                                aes(x = burned_area_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -241,8 +241,8 @@ p_burned_area_prot
 p_burned_area_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(burned_area_coef)) %>% 
-                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
+                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, NA, burned_area_coef),
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, NA, burned_area_coef)),
                                aes(x = burned_area_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -255,8 +255,8 @@ p_burned_area_prod
 p_burned_area_ndvi <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(burned_area_coef)) %>% 
-                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, 0.003, burned_area_coef),
-                                        burned_area_coef = ifelse(burned_area_coef < -0.003, -0.003, burned_area_coef)),
+                                 mutate(burned_area_coef = ifelse(burned_area_coef > 0.003, NA, burned_area_coef),
+                                        burned_area_coef = ifelse(burned_area_coef < -0.003, NA, burned_area_coef)),
                                aes(x = burned_area_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
@@ -272,8 +272,8 @@ p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_
 p_greenup_prot <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
-                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
-                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, NA, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, NA, greenup_coef)),
              aes(x = greenup_coef, y = og_layer, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
@@ -286,8 +286,8 @@ p_greenup_prot
 p_greenup_prod <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
-                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
-                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, NA, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, NA, greenup_coef)),
                                aes(x = greenup_coef, y = productivity, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
@@ -300,8 +300,8 @@ p_greenup_prod
 p_greenup_ndvi <- ggplot() +
   geom_density_ridges_gradient(data = shapes %>%
                                  filter(!is.na(greenup_coef) & !ndvi_min == "non_seasonal") %>% 
-                                 mutate(greenup_coef = ifelse(greenup_coef > 2, 2, greenup_coef),
-                                        greenup_coef = ifelse(greenup_coef < -2, -2, greenup_coef)),
+                                 mutate(greenup_coef = ifelse(greenup_coef > 2, NA, greenup_coef),
+                                        greenup_coef = ifelse(greenup_coef < -2, NA, greenup_coef)),
                                aes(x = greenup_coef, y = ndvi_min, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "cork", midpoint = 0) +
   scale_fill_scico(palette = "cork", midpoint = 0) +
