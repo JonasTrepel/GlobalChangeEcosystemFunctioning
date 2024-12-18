@@ -110,7 +110,7 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: 5.774992 ; SE: 0.5172815 ; pval.t: 6.278953e-29
+gls_h1 # yes. Est:  -0.0003618223 ; SE: 3.514317e-05 ; pval.t: 7.520345e-25
 
 ## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
 
@@ -139,7 +139,7 @@ p_h2 <- dt_est_h2 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
   labs(title = "H2: burned_area change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -168,7 +168,7 @@ p_h3 <- dt_est_h3 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
   labs(title = "H3: burned_area change ~\nproductivity", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -197,7 +197,7 @@ p_h4 <- dt_est_h4 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
   labs(title = "H4: burned_area change ~\ngrowth lim.", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -228,7 +228,7 @@ p_h5 <- dt_est_h5 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
   labs(title = "H5: burned_area change ~\nprotection", subtitle = paste0("n = ", nrow(dt_burned_area)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -300,7 +300,7 @@ p_h6 <- dt_est_h6 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
   labs(title = "H6: burned_area change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -471,7 +471,7 @@ biome_gls <- function(ndvi_m = NA, prod = NA, col_pattern = NA, start = list(ran
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                     alpha = 0.9, linewidth = 1.2) +
-    scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+    scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
     labs(title = paste0(label), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
     theme_classic() +
     theme(legend.position = "none", 
