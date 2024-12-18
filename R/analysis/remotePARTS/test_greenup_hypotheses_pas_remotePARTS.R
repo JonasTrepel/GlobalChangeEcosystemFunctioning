@@ -229,7 +229,7 @@ p_h5 <- dt_est_h5 %>%
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
-  labs(title = "H4: greenup change ~\nprotection", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
+  labs(title = "H5: greenup change ~\nprotection", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
