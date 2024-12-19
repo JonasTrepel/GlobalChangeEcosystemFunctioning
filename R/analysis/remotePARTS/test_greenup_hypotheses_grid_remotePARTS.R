@@ -510,7 +510,7 @@ p_medium <- biome_gls(prod = "medium", col_pattern = "greenup_", dat = dt, part 
 p_medium
 
 nrow(dt[dt$productivity == "high",])
-p_high <- biome_gls(prod = "high", col_pattern = "greenup_", dat = dt, part = FALSE, fit_n = 15000)
+p_high <- biome_gls(prod = "high", col_pattern = "greenup_", dat = dt, part = TRUE, fit_n = 15000)
 p_high
 
 

@@ -496,12 +496,14 @@ p_cold_and_dry <- biome_gls(ndvi_m = "cold_and_dry", col_pattern = "burned_area_
 p_cold_and_dry
 
 nrow(dt[dt$ndvi_min == "non_seasonal",])
-p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = 15000)
+p_non_seasonal <- biome_gls(ndvi_m = "non_seasonal", start = list(range = 0.5),
+                            col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = 15000)
 p_non_seasonal
 
 ## 
 nrow(dt[dt$productivity == "low",])
-p_low <- biome_gls(prod = "low", col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = 15000)
+p_low <- biome_gls(prod = "low",  start = list(range = 0.5),
+                   col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = 15000)
 p_low
 
 nrow(dt[dt$productivity == "medium",])
@@ -509,7 +511,7 @@ p_medium <- biome_gls(prod = "medium", col_pattern = "burned_area_", dat = dt, p
 p_medium
 
 nrow(dt[dt$productivity == "high",])
-p_high <- biome_gls(prod = "high", col_pattern = "burned_area_", dat = dt, part = FALSE, fit_n = 15000)
+p_high <- biome_gls(prod = "high", col_pattern = "burned_area_", dat = dt, part = TRUE, fit_n = 15000)
 p_high
 
 
