@@ -79,32 +79,31 @@ grid_int <- grid_raw %>%
            iucn_cat %in% c("III", "IV", "V", "VI", "UnknownOrNA") ~ "Mixed",
            iucn_cat == "NotProtected" ~ "Unprotected"
     ), 
-    prot_cat_biome = paste0(protection_cat_broad, "_", FunctionalBiomeShort), 
-    prot_cat_ndvi_min = paste0(protection_cat_broad, "_", ndvi_min), 
-    prot_cat_prod = paste0(protection_cat_broad, "_", productivity), 
+    super_biome = case_when(
+      grepl("C", FunctionalBiomeShort) & grepl("T", FunctionalBiomeShort) ~ "cold_tall", 
+      grepl("C", FunctionalBiomeShort) & grepl("S", FunctionalBiomeShort) ~ "cold_short", 
+      !grepl("C", FunctionalBiomeShort) & grepl("T", FunctionalBiomeShort) ~ "not_cold_tall", 
+      !grepl("C", FunctionalBiomeShort) & grepl("S", FunctionalBiomeShort) ~ "not_cold_short"
+    )
     ) %>% 
   dplyr::select(-unique_id) %>%
   rename(unique_id = gridID)
 
 grid_sub_1 <- grid_int %>% 
   group_by(protection_cat_broad) %>% 
-  filter(n() > 15000) %>% 
-  sample_n(15000) %>% 
+  filter(n() > 25000) %>% 
+  sample_n(25000) %>% 
   ungroup()
 
 grid_sub_2 <- grid_int %>% 
-  group_by(ndvi_min) %>% 
-  filter(n() > 15000) %>% 
-  sample_n(15000) %>% 
+  group_by(super_biome) %>% 
+  filter(n() > 25000) %>% 
+  sample_n(25000) %>% 
   ungroup()
 
-grid_sub_3 <- grid_int %>% 
-  group_by(productivity) %>% 
-  filter(n() > 15000) %>% 
-  sample_n(15000) %>% 
-  ungroup()
 
-grid_sub <- rbind(grid_sub_1, grid_sub_2, grid_sub_3) %>%
+
+grid_sub <- rbind(grid_sub_1, grid_sub_2) %>%
   unique() %>% 
   distinct(X, Y, .keep_all = TRUE)
 
