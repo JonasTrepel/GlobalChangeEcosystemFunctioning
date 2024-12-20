@@ -21,7 +21,7 @@ extract_gls_estimates <- function(mod, part = TRUE, resp = NA){
              p_value = pval.t) %>% mutate(ci_lb = estimate - 1.96*std_error,
                                           ci_ub = estimate + 1.96*std_error, 
                                           sig = ifelse(p_value < 0.05, "significant", "non-significant"), 
-                                          response = resp)
+                                          response = {{resp}}) %>% dplyr::select(-t.stat)
     
   }
   
