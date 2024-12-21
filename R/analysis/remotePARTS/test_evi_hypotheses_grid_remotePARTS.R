@@ -109,7 +109,7 @@ gls_h1 <- fitGLS_partition(evi_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: 6.596736; SE: 0.6716234; pval.t: 1.059091e-22
+gls_h1 # yes. Est: 5.563445 ; SE: 0.4952674 ; pval.t: 2.871102e-29
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 
@@ -244,7 +244,7 @@ p_h4.1
 evi_cols <- grep("evi_", names(dt), value = T)
 
 #subset to complete cases
-dt_pa <- dt %>% filter(protection_cat_broad == "protected_areas") %>%
+dt_pa <- dt %>% filter(protection_cat_broad == "Strict") %>%
   dplyr::select(all_of(evi_cols), functional_biome, X, Y, super_biome,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 protection_cat_broad, area_km2_log, pa_age_log) %>% 
@@ -277,7 +277,7 @@ corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "
 
 #partition the data 
 
-pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1000, npart = NA)
+pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1500, npart = NA)
 dim(pm_pa)
 
 # change --- 
@@ -448,7 +448,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
   if(part == TRUE){
     
-    if(is.na(part_size)){partsize <- 1000}
+    if(is.na(part_size)){part_size <- 1000}
     
     pm_biome <- sample_partitions(npix = nrow(dt_biome), partsize = part_size, npart = NA)
     dim(pm_biome)
@@ -502,25 +502,25 @@ table(dt_raw[dt_raw$super_biome == "not_cold_short", ]$functional_biome)
 
 
 nrow(dt[dt$super_biome == "cold_tall",])
-p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000,
+p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000, part_size = 1500,
                          col_pattern = "evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_tall <- p_cold_tall$data
 p_cold_tall
 
 nrow(dt[dt$super_biome == "cold_short",])
-p_cold_short <- biome_gls(super_b = "cold_short", fit_n = 15000,
+p_cold_short <- biome_gls(super_b = "cold_short", fit_n = 15000, part_size = 1500,
                           col_pattern = "evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_short <- p_cold_short$data
 p_cold_short
 
 nrow(dt[dt$super_biome == "not_cold_tall",])
-p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = 15000,
+p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = 15000, part_size = 1500,
                              col_pattern = "evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_not_cold_tall <- p_not_cold_tall$data
 p_not_cold_tall
 
 nrow(dt[dt$super_biome == "not_cold_short",])
-p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = 15000,
+p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = 15000, part_size = 1500,
                               col_pattern = "evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_not_cold_short <- p_not_cold_short$data
 p_not_cold_short

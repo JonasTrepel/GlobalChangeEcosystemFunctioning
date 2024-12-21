@@ -197,7 +197,7 @@ gls_h4 #
 dt_est_h4 <- extract_gls_estimates(gls_h4, part = TRUE)
 p_h4 <- dt_est_h4 %>% 
   ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
@@ -245,7 +245,7 @@ p_h4.1
 greenup_cols <- grep("greenup_", names(dt), value = T)
 
 #subset to complete cases
-dt_pa <- dt %>% filter(protection_cat_broad == "protected_areas") %>%
+dt_pa <- dt %>% filter(protection_cat_broad == "Strict") %>%
   dplyr::select(all_of(greenup_cols), functional_biome, X, Y, super_biome,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
                 protection_cat_broad, area_km2_log, pa_age_log) %>% 
@@ -449,7 +449,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
   if(part == TRUE){
     
-    if(is.na(part_size)){partsize <- 1000}
+    if(is.na(part_size)){part_size <- 1000}
     
     pm_biome <- sample_partitions(npix = nrow(dt_biome), partsize = part_size, npart = NA)
     dim(pm_biome)
@@ -503,25 +503,25 @@ table(dt_raw[dt_raw$super_biome == "not_cold_short", ]$functional_biome)
 
 
 nrow(dt[dt$super_biome == "cold_tall",])
-p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000,
+p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000, part_size = 1500,
                          col_pattern = "greenup_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_tall <- p_cold_tall$data
 p_cold_tall
 
 nrow(dt[dt$super_biome == "cold_short",])
-p_cold_short <- biome_gls(super_b = "cold_short", fit_n = 15000,
+p_cold_short <- biome_gls(super_b = "cold_short", fit_n = 15000, part_size = 1500,
                           col_pattern = "greenup_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_short <- p_cold_short$data
 p_cold_short
 
 nrow(dt[dt$super_biome == "not_cold_tall",])
-p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = 15000,
+p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = 15000, part_size = 1500,
                              col_pattern = "greenup_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_not_cold_tall <- p_not_cold_tall$data
 p_not_cold_tall
 
 nrow(dt[dt$super_biome == "not_cold_short",])
-p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = 15000,
+p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = 15000, part_size = 1500,
                               col_pattern = "greenup_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_not_cold_short <- p_not_cold_short$data
 p_not_cold_short
