@@ -80,7 +80,7 @@ p_evi_shapes <- ggplot() +
           aes(color = evi_coef, fill = evi_coef)) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
-  labs(color = "EVI\nTrend", fill = "EVI\nTrend\n") +
+  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
        # legend.key.width = unit(1, "cm"),
@@ -99,7 +99,7 @@ p_evi_points <- ggplot() +
           aes(x = X, y = Y, color = evi_coef, fill = evi_coef)) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
-  labs(color = "EVI\nTrend", fill = "EVI\nTrend\n") +
+  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
@@ -124,7 +124,7 @@ p_burned_area_shapes <- ggplot() +
           aes(color = burned_area_coef, fill = burned_area_coef)) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
-  labs(color = "Burned\nArea\nTrend", fill = "Burned Area\nTrend\n") +
+  labs(color = "Burned\nArea\nTrend", fill = "Burned\nArea\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
@@ -143,7 +143,7 @@ p_burned_area_points <- ggplot() +
              aes(x = X, y = Y, color = burned_area_coef, fill = burned_area_coef)) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
-  labs(color = "Burned\nArea\nTrend", fill = "Burned Area\nTrend\n") +
+  labs(color = "Burned\nArea\nTrend", fill = "Burned Area\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
@@ -187,7 +187,7 @@ p_greenup_points <- ggplot() +
              aes(x = X, y = Y, color = greenup_coef, fill = greenup_coef)) +
   scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  labs(color = "Greenup\nTrend", fill = "Greenup\nTrend\n") +
+  labs(color = "Greenup\nTrend", fill = "Greenup\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
@@ -359,9 +359,9 @@ p_est_greenup_b <- dt_est %>%
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#386695",
+  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey", 
-                                "Sig. Positive" = "#3D7D3C"
+                                "Sig. Positive" = "#386695"
   )) +
   labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_bw() +
@@ -379,9 +379,9 @@ p_est_greenup_c <- dt_est %>%
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#386695",
+  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey", 
-                                "Sig. Positive" = "#3D7D3C"
+                                "Sig. Positive" = "#386695"
   )) +
   labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_bw() +
@@ -521,8 +521,8 @@ p_greenup_prot <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
                                  filter(!is.na(greenup_coef)),
                                aes(x = greenup_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw() +
   labs(y = "", x = "Greenup Trend") + 
@@ -535,8 +535,8 @@ p_greenup_biome <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
                                  filter(!is.na(greenup_coef)),
                                aes(x = greenup_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw() +
   labs(y = "", x = "Greenup Trend") + 
@@ -556,14 +556,15 @@ ggsave(plot = p_ridges, "builds/plots/pa_ridges.png", dpi = 600, height = 6, wid
 p_biome_shapes <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey75") +
   geom_sf(data = shapes %>% 
+            filter(!is.na(evi_coef)) %>%
                mutate(biome_clean = case_when(
                  super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
                  super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
                  super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
                  super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation")),
              aes(color = biome_clean, fill = biome_clean), alpha = 1) +
-  scale_color_scico_d(palette = "bamako") +
-  scale_fill_scico_d(palette = "bamako") +
+  scale_color_scico_d(palette = "batlowK") +
+  scale_fill_scico_d(palette = "batlowK") +
   theme_void() +
   labs(color = "Biome", fill = "Biome") +
   theme(axis.title = element_blank())
@@ -575,6 +576,7 @@ ggsave(plot = p_biome_shapes, "builds/plots/pa_biome_maps_shapes.png", dpi = 600
 p_biome_points <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey75") +
   geom_point(data = shapes %>% 
+               filter(!is.na(evi_coef)) %>%
                mutate(biome_clean = case_when(
                  super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
                  super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
