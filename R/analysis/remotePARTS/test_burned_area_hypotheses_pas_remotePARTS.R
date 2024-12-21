@@ -108,7 +108,7 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: 6.596736; SE: 0.6716234; pval.t: 1.059091e-22
+gls_h1 # yes. Est: -1.606564e-05; SE: 3.276259e-05; pval.t: 0.6238825
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 
@@ -166,7 +166,7 @@ dt_est_h3 <- extract_gls_estimates(gls_h3, part = TRUE)
 
 p_h3 <- dt_est_h3 %>% 
   ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
+   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
@@ -195,7 +195,7 @@ gls_h4 #
 dt_est_h4 <- extract_gls_estimates(gls_h4, part = TRUE)
 p_h4 <- dt_est_h4 %>% 
   ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
@@ -226,7 +226,7 @@ dt_est_h4.1 <- extract_gls_estimates(gls_h4.1, part = TRUE)
 
 p_h4.1 <- dt_est_h4.1 %>% 
   ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
@@ -446,7 +446,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
   if(part == TRUE){
     
-    if(is.na(part_size)){partsize <- 1000}
+    if(is.na(part_size)){part_size <- 1000}
     
     pm_biome <- sample_partitions(npix = nrow(dt_biome), partsize = part_size, npart = NA)
     dim(pm_biome)

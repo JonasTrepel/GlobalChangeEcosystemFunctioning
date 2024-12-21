@@ -446,7 +446,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
   if(part == TRUE){
     
-    if(is.na(part_size)){partsize <- 1000}
+    if(is.na(part_size)){part_size <- 1000}
     
     pm_biome <- sample_partitions(npix = nrow(dt_biome), partsize = part_size, npart = NA)
     dim(pm_biome)

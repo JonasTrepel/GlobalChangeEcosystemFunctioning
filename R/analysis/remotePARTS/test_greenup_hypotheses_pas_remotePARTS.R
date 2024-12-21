@@ -109,7 +109,7 @@ gls_h1 <- fitGLS_partition(greenup_coef ~ 1,
                            parallel = T, 
                            coord.names = c("X", "Y")
 )
-gls_h1 # yes. Est: 6.596736; SE: 0.6716234; pval.t: 1.059091e-22
+gls_h1 # yes. Est: -0.05098253; SE: 0.1024441; pval.t: 0.6187328
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 
@@ -447,7 +447,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
   if(part == TRUE){
     
-    if(is.na(part_size)){partsize <- 1000}
+    if(is.na(part_size)){part_size <- 1000}
     
     pm_biome <- sample_partitions(npix = nrow(dt_biome), partsize = part_size, npart = NA)
     dim(pm_biome)
@@ -520,7 +520,7 @@ p_not_cold_tall
 
 nrow(dt[dt$super_biome == "not_cold_short",])
 p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = "row_n",
-                              col_pattern = "greenup_", dat = dt, part = FALSE, start = list(range = 0.1))
+                              col_pattern = "greenup_", dat = dt, part = FALSE, start = list(range = 0.5))
 dt_est_not_cold_short <- p_not_cold_short$data
 p_not_cold_short
 
