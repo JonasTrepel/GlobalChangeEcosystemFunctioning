@@ -8,6 +8,8 @@ library(rnaturalearth)
 library(sf)
 library(gridExtra)
 library(tidylog)
+library(RColorBrewer)
+
 
 evi_trend <- fread("data/processedData/dataFragments/grid_evi_trends.csv") %>%
   dplyr::select(-c("X", "Y", "protection_cat_broad"))
@@ -17,7 +19,7 @@ greenup_trend <- fread("data/processedData/dataFragments/grid_greenup_trends.csv
   dplyr::select(-c("X", "Y", "protection_cat_broad"))
 
 climate_trends <- fread("data/processedData/dataFragments/grid_sample_with_climate_trends.csv") %>% 
-  dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef)
+  dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef, mat_p_value, map_p_value, max_temp_p_value)
 
 sf_use_s2(FALSE)
 world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
@@ -659,9 +661,9 @@ p_mat_shapes <- ggplot() +
   theme_void() +
   labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_mat_shapes
 
 ggsave(plot = p_mat_shapes, "builds/plots/grid_mat_map_shapes.png", dpi = 600)
@@ -671,14 +673,14 @@ p_map_shapes <- ggplot() +
   geom_sf(data = dt_env %>% 
             filter(!is.na(evi_coef)),
           aes(color = map_coef, fill = map_coef), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+  scale_color_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  scale_fill_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
   theme_void() +
   labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_map_shapes
 
 ggsave(plot = p_map_shapes, "builds/plots/grid_map_map_shapes.png", dpi = 600)
@@ -694,9 +696,9 @@ p_max_temp_shapes <- ggplot() +
   theme_void() +
   labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_max_temp_shapes
 
 ggsave(plot = p_max_temp_shapes, "builds/plots/grid_max_temp_map_shapes.png", dpi = 600)
@@ -707,14 +709,14 @@ p_n_depo_shapes <- ggplot() +
   geom_sf(data = dt_env %>% 
             filter(!is.na(evi_coef)),
           aes(color = nitrogen_deposition, fill = nitrogen_deposition), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+  scale_color_scico(palette = "batlow") +
+  scale_fill_scico(palette = "batlow") +
   theme_void() +
   labs(color = "Nitrogen\nDeposition", fill = "Nitrogen\nDeposition") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_n_depo_shapes
 
 ggsave(plot = p_n_depo_shapes, "builds/plots/grid_n_depo_map_shapes.png", dpi = 600)
@@ -724,18 +726,23 @@ p_human_modification_shapes <- ggplot() +
   geom_sf(data = dt_env %>% 
             filter(!is.na(evi_coef)),
           aes(color = human_modification, fill = human_modification), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+  scale_color_scico(palette = "bamako") +
+  scale_fill_scico(palette = "bamako") +
   theme_void() +
   labs(color = "Human\nModification", fill = "Human\nModification") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_human_modification_shapes
 
 ggsave(plot = p_human_modification_shapes, "builds/plots/grid_human_modification_map_shapes.png", dpi = 600)
 
+gc_maps <- grid.arrange(p_n_depo_shapes, p_human_modification_shapes, 
+                         p_mat_shapes, p_max_temp_shapes, 
+                         p_map_shapes, ncol = 2)
+
+ggsave(plot = gc_maps, "builds/plots/grid_global_change_map_shapes.png", dpi = 600)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #################################     QUANTILES     ##################################
@@ -772,3 +779,175 @@ quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$burned_area_coef, c(0, 0.05, 0
 quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
 #           0%            5%           25%           50%           75%           95%          100%
 #-11.590909090  -0.922264706  -0.246465032  -0.009843419   0.238165137   1.726039631  11.247583560 
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#########################     SIG. GLOBAL CHANGE MAPS     ############################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+dt_env_raw <- shapes %>% 
+  left_join(climate_trends)  %>% 
+  rename(nitrogen_deposition = NitrogenDepo, 
+         human_modification = HumanModification)
+
+q_025_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.025), na.rm = T))
+q_975_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.975), na.rm = T))
+q_025_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.025), na.rm = T))
+q_975_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.975), na.rm = T))
+q_025_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.025), na.rm = T))
+q_975_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.975), na.rm = T))
+q_025_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition, c(.025), na.rm = T))
+q_975_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition, c(.975), na.rm = T))
+q_025_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.025), na.rm = T))
+q_975_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.975), na.rm = T))
+
+dt_env <-  dt_env_raw %>%
+  mutate(mat_coef = ifelse(mat_coef > q_975_mat, q_975_mat, mat_coef),
+         mat_coef = ifelse(mat_coef < q_025_mat, q_025_mat, mat_coef),
+         map_coef = ifelse(map_coef > q_975_map, q_975_map, map_coef),
+         map_coef = ifelse(map_coef < q_025_map, q_025_map, map_coef),
+         max_temp_coef = ifelse(max_temp_coef > q_975_max_temp, q_975_max_temp, max_temp_coef),
+         max_temp_coef = ifelse(max_temp_coef < q_025_max_temp, q_025_max_temp, max_temp_coef),
+         nitrogen_deposition = ifelse(nitrogen_deposition > q_975_nitrogen_deposition, q_975_nitrogen_deposition, nitrogen_deposition),
+         nitrogen_deposition = ifelse(nitrogen_deposition < q_025_nitrogen_deposition, q_025_nitrogen_deposition, nitrogen_deposition),
+         human_modification = ifelse(human_modification > q_975_human_modification, q_975_human_modification, human_modification),
+         human_modification = ifelse(human_modification < q_025_human_modification, q_025_human_modification, human_modification)
+  )
+
+p_mat_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(mat_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(mat_p_value < 0.05),
+          aes(color = mat_coef, fill = mat_coef), alpha = 1) +
+  scale_color_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A") +
+  theme_void() +
+  labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_mat_shapes_sig
+
+ggsave(plot = p_mat_shapes_sig, "builds/plots/grid_mat_map_shapes_sig.png", dpi = 600)
+
+p_map_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(map_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(map_p_value < 0.05),
+          aes(color = map_coef, fill = map_coef), alpha = 1) +
+  scale_color_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  scale_fill_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  theme_void() +
+  labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_map_shapes_sig
+
+ggsave(plot = p_map_shapes_sig, "builds/plots/grid_map_map_shapes_sig.png", dpi = 600)
+
+
+p_max_temp_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(max_temp_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(max_temp_p_value < 0.05),
+          aes(color = max_temp_coef, fill = max_temp_coef), alpha = 1) +
+  scale_color_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A") +
+  theme_void() +
+  labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_max_temp_shapes_sig
+
+ggsave(plot = p_max_temp_shapes_sig, "builds/plots/grid_max_temp_map_shapes_sig.png", dpi = 600)
+
+p_evi_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(evi_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(evi_coef)) %>% 
+            filter(evi_p_value < 0.05),
+          aes(color = evi_coef, fill = evi_coef), alpha = 1) +
+  scale_color_scico(palette = "bam", midpoint = 0) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  theme_void() +
+  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_evi_shapes_sig
+
+ggsave(plot = p_evi_shapes_sig, "builds/plots/grid_evi_map_shapes_sig.png", dpi = 600)
+
+p_burned_area_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(burned_area_coef)) %>% 
+            filter(burned_area_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(burned_area_coef)) %>% 
+            filter(burned_area_p_value < 0.05),
+          aes(color = burned_area_coef, fill = burned_area_coef), alpha = 1) +
+  scale_color_scico(palette = "vik", midpoint = 0) +
+  scale_fill_scico(palette = "vik", midpoint = 0) +
+  theme_void() +
+  labs(color = "Burned\nArea\nTrend", fill = "Burned\nArea\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_burned_area_shapes_sig
+
+ggsave(plot = p_burned_area_shapes_sig, "builds/plots/grid_burned_area_map_shapes_sig.png", dpi = 600)
+
+p_greenup_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "grey99", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(greenup_coef)) %>% 
+            filter(greenup_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(greenup_coef)) %>% 
+            filter(greenup_p_value < 0.05),
+          aes(color = greenup_coef, fill = greenup_coef), alpha = 1) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  theme_void() +
+  labs(color = "Greenup\nTrend", fill = "Greenup\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_greenup_shapes_sig
+
+ggsave(plot = p_greenup_shapes_sig, "builds/plots/grid_greenup_map_shapes_sig.png", dpi = 600)
+
+sig_maps <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig, 
+                         p_map_shapes_sig, p_evi_shapes_sig, 
+                         p_burned_area_shapes_sig, p_greenup_shapes_sig, ncol = 2)
+
+ggsave(plot = sig_maps, "builds/plots/grid_sig_map_shapes.png", dpi = 600)
+
+sig_maps_climate <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig, 
+                         p_map_shapes_sig, ncol = 2)
+
+ggsave(plot = sig_maps_climate, "builds/plots/grid_sig_climate_map_shapes.png", dpi = 600, width = 10, height = 4.5) 
+
