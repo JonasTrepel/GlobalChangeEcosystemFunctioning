@@ -620,36 +620,10 @@ ggsave(plot = p_pa_shapes, "builds/plots/grid_protection_map_shapes.png", dpi = 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     GLOBAL CHANGE MAPS     ##############################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
 dt_env_raw <- shapes %>% 
   left_join(climate_trends)  %>% 
   rename(nitrogen_deposition = NitrogenDepo, 
          human_modification = HumanModification)
-
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$mat_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.045576069  0.004695984  0.012743080  0.022046219  0.029451839  0.040541147  0.079413342
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$max_temp_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.081249289 -0.004047223  0.008281520  0.017152691  0.025692758  0.041528039  0.219463404 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$map_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-50.77784118  -4.59155461  -0.07938528   0.47506487   1.21686432   4.28346692  43.26811849 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$nitrogen_deposition, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#        0%         5%        25%        50%        75%        95%       100% 
-#   8.93624   38.26200  108.45508  215.97137  446.29657 1136.52124 6848.16553 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$human_modification, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#0.000000e+00 1.911390e-06 5.226702e-03 5.079506e-02 1.635810e-01 4.231209e-01 9.732789e-01 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$evi_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-163.8214168  -14.7408541   -0.7717181    4.5138879   13.1196674   29.2534735  180.7633833 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$burned_area_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.049467534 -0.004512144  0.000000000  0.000000000  0.000000000  0.002043215  0.048151842 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#           0%            5%           25%           50%           75%           95%          100%
-#-11.590909090  -0.922264706  -0.246465032  -0.009843419   0.238165137   1.726039631  11.247583560 
 
 q_025_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.025), na.rm = T))
 q_975_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.975), na.rm = T))
@@ -684,7 +658,10 @@ p_mat_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_mat_shapes
 
 ggsave(plot = p_mat_shapes, "builds/plots/grid_mat_map_shapes.png", dpi = 600)
@@ -698,7 +675,10 @@ p_map_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_map_shapes
 
 ggsave(plot = p_map_shapes, "builds/plots/grid_map_map_shapes.png", dpi = 600)
@@ -713,10 +693,14 @@ p_max_temp_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_max_temp_shapes
 
 ggsave(plot = p_max_temp_shapes, "builds/plots/grid_max_temp_map_shapes.png", dpi = 600)
+
 
 p_n_depo_shapes <- ggplot() +
   geom_sf(data = world, fill = "grey99", color = "grey75") +
@@ -727,7 +711,10 @@ p_n_depo_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Nitrogen\nDeposition", fill = "Nitrogen\nDeposition") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_n_depo_shapes
 
 ggsave(plot = p_n_depo_shapes, "builds/plots/grid_n_depo_map_shapes.png", dpi = 600)
@@ -741,8 +728,47 @@ p_human_modification_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Human\nModification", fill = "Human\nModification") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_human_modification_shapes
 
 ggsave(plot = p_human_modification_shapes, "builds/plots/grid_human_modification_map_shapes.png", dpi = 600)
 
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#################################     QUANTILES     ##################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+dt_env_raw <- shapes %>% 
+  left_join(climate_trends)  %>% 
+  rename(nitrogen_deposition = NitrogenDepo, 
+         human_modification = HumanModification)
+
+
+
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$mat_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-0.045576069  0.004695984  0.012743080  0.022046219  0.029451839  0.040541147  0.079413342
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$max_temp_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-0.081249289 -0.004047223  0.008281520  0.017152691  0.025692758  0.041528039  0.219463404 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$map_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-50.77784118  -4.59155461  -0.07938528   0.47506487   1.21686432   4.28346692  43.26811849 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$nitrogen_deposition, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#        0%         5%        25%        50%        75%        95%       100% 
+#   8.93624   38.26200  108.45508  215.97137  446.29657 1136.52124 6848.16553 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$human_modification, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#0.000000e+00 1.911390e-06 5.226702e-03 5.079506e-02 1.635810e-01 4.231209e-01 9.732789e-01 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$evi_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-163.8214168  -14.7408541   -0.7717181    4.5138879   13.1196674   29.2534735  180.7633833 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$burned_area_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-0.049467534 -0.004512144  0.000000000  0.000000000  0.000000000  0.002043215  0.048151842 
+quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#           0%            5%           25%           50%           75%           95%          100%
+#-11.590909090  -0.922264706  -0.246465032  -0.009843419   0.238165137   1.726039631  11.247583560 

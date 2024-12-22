@@ -633,7 +633,10 @@ p_mat_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_mat_shapes
 
 ggsave(plot = p_mat_shapes, "builds/plots/pa_mat_map_shapes.png", dpi = 600)
@@ -647,7 +650,10 @@ p_map_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_map_shapes
 
 ggsave(plot = p_map_shapes, "builds/plots/pa_map_map_shapes.png", dpi = 600)
@@ -662,7 +668,10 @@ p_max_temp_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_max_temp_shapes
 
 ggsave(plot = p_max_temp_shapes, "builds/plots/pa_max_temp_map_shapes.png", dpi = 600)
@@ -676,7 +685,10 @@ p_n_depo_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Nitrogen\nDeposition", fill = "Nitrogen\nDeposition") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_n_depo_shapes
 
 ggsave(plot = p_n_depo_shapes, "builds/plots/pa_n_depo_map_shapes.png", dpi = 600)
@@ -690,7 +702,10 @@ p_human_modification_shapes <- ggplot() +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Human\nModification", fill = "Human\nModification") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(1.5, "lines"))
 p_human_modification_shapes
 
 ggsave(plot = p_human_modification_shapes, "builds/plots/pa_human_modification_map_shapes.png", dpi = 600)
