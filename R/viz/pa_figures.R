@@ -580,7 +580,7 @@ p_prot_shapes <- ggplot() +
                filter(!is.na(evi_coef)) %>%
                mutate(prot_clean = case_when(
                  og_layer == "protected_areas" ~ "Protected",
-                 og_layer == "cold_tall" ~ "Control")),
+                 og_layer == "controls" ~ "Control")),
              aes(color = prot_clean, fill = prot_clean), alpha = 1) +
   scale_color_scico_d(palette = "batlow") +
   scale_fill_scico_d(palette = "batlow") +
