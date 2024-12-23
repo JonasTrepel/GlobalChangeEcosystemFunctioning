@@ -12,7 +12,7 @@ library(gridExtra)
 library(sf)
 library(mapview)
 
-source("R/functions/movePolygon.R")
+source("R/functions/move_polygon.R")
 source("R/functions/resolve_overlaps.R")
 
 pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>% 
@@ -93,7 +93,7 @@ pa_controls_raw <- foreach(i = 1:nrow(paShapes),
  
   # mapview(potentialSpace) + mapview(pa, col.regions = "red")
   sf_use_s2(FALSE)
-  newPoly <- movePolygon(ogPoly = pa,
+  newPoly <- move_polygon(ogPoly = pa,
                          potSpace = potentialSpace,
                          maxAttempts = 1000, 
                          seed = Seed)
