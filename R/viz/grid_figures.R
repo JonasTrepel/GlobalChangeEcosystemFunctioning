@@ -613,7 +613,7 @@ p_pa_shapes <- ggplot() +
   scale_color_scico_d(palette = "bamako") +
   scale_fill_scico_d(palette = "bamako") +
   theme_void() +
-  labs(color = "Biome", fill = "Biome") +
+  labs(color = "Protection\nStatus", fill = "Protection\nStatus") +
   theme(axis.title = element_blank())
 p_pa_shapes
 
