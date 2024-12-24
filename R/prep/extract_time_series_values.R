@@ -76,12 +76,23 @@ sos_files <- data.table(filepath = list.files("data/rawData/raw_time_series/phen
          colname =  gsub("_modis_500m", "", filename))
 
 
+mean_evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series/mean_evi/",
+                                              pattern = "envi_", 
+                                              full.names = TRUE), 
+                        filename = list.files("data/rawData/raw_time_series/mean_evi/",
+                                              pattern = "envi_", 
+                                              full.names = FALSE)) %>% 
+  mutate(filename = gsub(".tif", "", filename),
+         colname =  gsub("envi_mean_500m", "envi", filename))
+
+
 covs <- rbind(mat_files, 
               max_temp_files, 
               map_files,
               evi_files,
               burned_area_files,
-              sos_files)
+              sos_files, 
+              mean_evi_files)
 
 ############### create cluster ####################
 library(doSNOW)

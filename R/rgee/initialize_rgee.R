@@ -5,7 +5,7 @@
 
 ## macbook path /opt/anaconda3/envs/rgee_env/bin
 ## GIS04 server: "C:\\Users\\au713983\\.conda\\envs\\rgee_env" 
-rgee_env_dir <- c("/opt/anaconda3/envs/rgee_env/bin")
+rgee_env_dir <- c("C:\\Users\\au713983\\.conda\\envs\\rgee_env")
 
 library(rgee)
 
@@ -19,7 +19,7 @@ rgee::ee_install_set_pyenv(
 Sys.setenv(RETICULATE_PYTHON = rgee_env_dir)
 Sys.setenv(EARTHENGINE_PYTHON = rgee_env_dir)
 
-
+#### AUTHENTICATE AGAIN#####
 ee_clean_user_credentials()
 ee$Authenticate(auth_mode='notebook')
 
