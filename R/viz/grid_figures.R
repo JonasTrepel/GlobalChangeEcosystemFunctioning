@@ -799,6 +799,12 @@ q_025_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition,
 q_975_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition, c(.975), na.rm = T))
 q_025_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.025), na.rm = T))
 q_975_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.975), na.rm = T))
+q_025_evi <- as.numeric(quantile(dt_env_raw$evi_coef, c(.025), na.rm = T))
+q_975_evi <- as.numeric(quantile(dt_env_raw$evi_coef, c(.975), na.rm = T))
+q_025_burned_area <- as.numeric(quantile(dt_env_raw$burned_area_coef, c(.025), na.rm = T))
+q_975_burned_area <- as.numeric(quantile(dt_env_raw$burned_area_coef, c(.975), na.rm = T))
+q_025_greenup <- as.numeric(quantile(dt_env_raw$greenup_coef, c(.025), na.rm = T))
+q_975_greenup <- as.numeric(quantile(dt_env_raw$greenup_coef, c(.975), na.rm = T))
 
 dt_env <-  dt_env_raw %>%
   mutate(mat_coef = ifelse(mat_coef > q_975_mat, q_975_mat, mat_coef),
@@ -810,7 +816,13 @@ dt_env <-  dt_env_raw %>%
          nitrogen_deposition = ifelse(nitrogen_deposition > q_975_nitrogen_deposition, q_975_nitrogen_deposition, nitrogen_deposition),
          nitrogen_deposition = ifelse(nitrogen_deposition < q_025_nitrogen_deposition, q_025_nitrogen_deposition, nitrogen_deposition),
          human_modification = ifelse(human_modification > q_975_human_modification, q_975_human_modification, human_modification),
-         human_modification = ifelse(human_modification < q_025_human_modification, q_025_human_modification, human_modification)
+         human_modification = ifelse(human_modification < q_025_human_modification, q_025_human_modification, human_modification),
+         greenup_coef = ifelse(greenup_coef > q_975_greenup, q_975_greenup, greenup_coef),
+         greenup_coef = ifelse(greenup_coef < q_025_greenup, q_025_greenup, greenup_coef),
+         burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, q_975_burned_area, burned_area_coef),
+         burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, q_025_burned_area, burned_area_coef),
+         evi_coef = ifelse(evi_coef > q_975_evi, q_975_evi, evi_coef),
+         evi_coef = ifelse(evi_coef < q_025_evi, q_025_evi, evi_coef)
   )
 
 p_mat_shapes_sig <- ggplot() +

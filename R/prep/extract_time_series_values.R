@@ -100,7 +100,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(25)
+clust <- makeCluster(50)
 registerDoSNOW(clust)
 
 ## progress bar 

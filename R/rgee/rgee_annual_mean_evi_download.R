@@ -4,6 +4,7 @@ library(rgee)
 library(data.table)
 library(tidyverse)
 library(googledrive)
+library(terra)
 
 ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
 drive_auth(email = "jonas.trepel@bio.au.dk")

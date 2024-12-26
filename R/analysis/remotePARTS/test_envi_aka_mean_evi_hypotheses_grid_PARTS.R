@@ -143,7 +143,7 @@ p_h2 <- dt_est_h2 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H2: envi change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_envi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -173,7 +173,7 @@ p_h3 <- dt_est_h3 %>%
   # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H3: envi change ~\nsuper biome", subtitle = paste0("n = ", nrow(dt_envi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -202,7 +202,7 @@ p_h4 <- dt_est_h4 %>%
   # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H4: envi change ~\nprotection", subtitle = paste0("n = ", nrow(dt_envi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -233,7 +233,7 @@ p_h4.1 <- dt_est_h4.1 %>%
   # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H4.1: abs envi change ~\nprotection", subtitle = paste0("n = ", nrow(dt_envi)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -305,7 +305,7 @@ p_h5 <- dt_est_h5 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H5: envi change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -334,7 +334,7 @@ p_h5.1 <- dt_est_h5.1 %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
   labs(title = "H5.1: abs envi change ~\npa age & size", subtitle = paste0("n = ", nrow(dt_pa)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -486,7 +486,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                     alpha = 0.9, linewidth = 1.2) +
-    scale_color_manual(values = c("significant" = "forestgreen", "non-significant" = "grey")) +
+    scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
     labs(title = paste0(label), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
     theme_classic() +
     theme(legend.position = "none", 
