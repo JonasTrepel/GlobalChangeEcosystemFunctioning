@@ -956,7 +956,7 @@ sig_maps <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig,
                          p_map_shapes_sig, p_evi_shapes_sig, 
                          p_burned_area_shapes_sig, p_greenup_shapes_sig, ncol = 2)
 
-ggsave(plot = sig_maps, "builds/plots/grid_sig_map_shapes.png", dpi = 600)
+ggsave(plot = sig_maps, "builds/plots/grid_sig_map_shapes.png", dpi = 600, height = 7, width = 9)
 
 sig_maps_climate <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig, 
                          p_map_shapes_sig, ncol = 2)
