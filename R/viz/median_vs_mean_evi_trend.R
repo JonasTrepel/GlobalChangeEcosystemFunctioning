@@ -22,4 +22,4 @@ plot <- dt %>%
   theme_classic()
 plot
 
-ggsave(plot = plot, "builds/plots/mean_vs_median_evi.png", dpi = 600, height = 8, width = 8)
+ggsave(plot = plot, "builds/plots/mean_vs_median_evi.png", dpi = 600, height = 6, width = 6)
