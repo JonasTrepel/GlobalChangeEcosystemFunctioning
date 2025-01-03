@@ -30,7 +30,9 @@ shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
-  left_join(greenup_trend) %>% 
+  left_join(greenup_trend) %>%
+  mutate(evi_coef = evi_coef/100, 
+         burned_area_coef = burned_area_coef*100) %>%
   rename(functional_biome = FunctionalBiome) %>% 
   mutate(
     productivity = case_when(
@@ -204,8 +206,16 @@ ggsave(plot = p_all_trends_map_shapes, "builds/plots/pa_all_trends_map_shapes.pn
 ################################     ESTIMATES     ###################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-evi_est <- fread("builds/model_estimates/evi_pa_estimates.csv") %>% mutate(response = "evi")
-burned_area_est <- fread("builds/model_estimates/burned_area_pa_estimates.csv") %>% mutate(response = "burned_area")
+evi_est <- fread("builds/model_estimates/evi_pa_estimates.csv") %>% mutate(response = "evi",
+                                                                           estimate = estimate/100, 
+                                                                           std_error = std_error/100, 
+                                                                           ci_lb = ci_lb/100, 
+                                                                           ci_ub = ci_ub/100)
+burned_area_est <- fread("builds/model_estimates/burned_area_pa_estimates.csv") %>% mutate(response = "burned_area",
+                                                                                           estimate = estimate*100, 
+                                                                                           std_error = std_error*100, 
+                                                                                           ci_lb = ci_lb*100, 
+                                                                                           ci_ub = ci_ub*100)
 greenup_est <- fread("builds/model_estimates/greenup_pa_estimates.csv") %>% mutate(response = "greenup")
 
 dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>% 

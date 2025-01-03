@@ -12,7 +12,7 @@ library(RColorBrewer)
 
 
 evi_trend <- fread("data/processedData/dataFragments/grid_evi_trends.csv") %>%
-  dplyr::select(-c("X", "Y", "protection_cat_broad"))
+  dplyr::select(-c("X", "Y", "protection_cat_broad")) 
 burned_area_trend <- fread("data/processedData/dataFragments/grid_burned_area_trends.csv")%>%
   dplyr::select(-c("X", "Y", "protection_cat_broad"))
 greenup_trend <- fread("data/processedData/dataFragments/grid_greenup_trends.csv")%>%
@@ -36,6 +36,8 @@ shapes <- raw_shapes %>%
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
   left_join(greenup_trend) %>% 
+  mutate(evi_coef = evi_coef/100, 
+         burned_area_coef = burned_area_coef*100) %>%  # to convert to %/year
   rename(functional_biome = FunctionalBiomeShort) %>% 
   mutate(
     productivity = case_when(
@@ -209,8 +211,16 @@ ggsave(plot = p_all_trends_map_shapes, "builds/plots/grid_all_trends_map_shapes.
 ################################     ESTIMATES     ###################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-evi_est <- fread("builds/model_estimates/evi_grid_estimates.csv") %>% mutate(response = "evi")
-burned_area_est <- fread("builds/model_estimates/burned_area_grid_estimates.csv") %>% mutate(response = "burned_area")
+evi_est <- fread("builds/model_estimates/evi_grid_estimates.csv") %>% mutate(response = "evi", 
+                                                                             estimate = estimate/100, 
+                                                                             std_error = std_error/100, 
+                                                                             ci_lb = ci_lb/100, 
+                                                                             ci_ub = ci_ub/100)
+burned_area_est <- fread("builds/model_estimates/burned_area_grid_estimates.csv") %>% mutate(response = "burned_area", 
+                                                                                             estimate = estimate*100, 
+                                                                                             std_error = std_error*100, 
+                                                                                             ci_lb = ci_lb*100, 
+                                                                                             ci_ub = ci_ub*100)
 greenup_est <- fread("builds/model_estimates/greenup_grid_estimates.csv") %>% mutate(response = "greenup")
 
 dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>% 
