@@ -5,7 +5,8 @@
 
 ## macbook path /opt/anaconda3/envs/rgee_env/bin
 ## GIS04 server: "C:\\Users\\au713983\\.conda\\envs\\rgee_env" 
-rgee_env_dir <- c("C:\\Users\\au713983\\.conda\\envs\\rgee_env")
+## AU laptop: "C:\\Users\\au713983\\AppData\\Local\\anaconda3\\envs\\rgee_env"
+rgee_env_dir <- c("C:\\Users\\au713983\\AppData\\Local\\anaconda3\\envs\\rgee_env")
 
 library(rgee)
 
