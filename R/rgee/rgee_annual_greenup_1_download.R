@@ -27,7 +27,7 @@ for(year in years){
       qa <- img$select("QA_Overall_1")
       img$updateMask(qa$lte(2)) # Select only high-quality data
     })$
-    select('MidGreenup_1')$
+    select('Greenup_1')$
     filterDate(start_date, end_date)$
     median() # Result is a single ee$Image
   

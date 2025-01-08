@@ -6,73 +6,60 @@ library(data.table)
 library(tidyverse)
 
 
-grid_raw <- read_sf("data/spatialData/protectedAreas/gridWithCovs.gpkg") %>% 
-  filter(!is.na(FunctionalBiomeShort)) %>% 
-  dplyr::select(-Country) 
+dt_grid_raw <- fread("data/processedData/cleanData/gridWithCovs.csv")
 
-coords <- grid_raw %>% st_centroid() %>% st_coordinates()
+dt_grid <- dt_grid_raw %>% 
+  filter(!is.na(functional_biome)) %>% 
+  mutate(
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
+      iucn_cat == "unprotected" ~ "Unprotected"), 
+    super_biome = case_when(
+      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
+      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short")
+  ) %>%
+  rename(unique_id = gridID)  %>%
+  unique() %>% 
+  distinct(X, Y, .keep_all = TRUE)
 
-grid_raw$X <- coords[,1]
-grid_raw$Y <- coords[,2]
 
 set.seed(161)
-grid_int <- grid_raw %>%
-  rename(iucn_cat = iucnCat) %>% 
-  group_by(gridID) %>% 
-  slice_sample(n = 1) %>% 
-  ungroup() %>% 
-  #group_by(X, Y) %>% 
-  #slice_sample(n = 1) %>% 
-  #ungroup() %>% 
-  mutate(productivity = case_when(
-    grepl("L", FunctionalBiomeShort) ~ "low", 
-    grepl("M", FunctionalBiomeShort) ~ "medium", 
-    grepl("H", FunctionalBiomeShort) ~ "high"
-  ), 
-  ndvi_min = case_when(
-    grepl("C", FunctionalBiomeShort) ~ "cold", 
-    grepl("D", FunctionalBiomeShort) ~ "dry", 
-    grepl("B", FunctionalBiomeShort) ~ "cold_and_dry", 
-    grepl("N", FunctionalBiomeShort) ~ "non_seasonal"
-  ), 
-  iucn_cat = ifelse(is.na(iucn_cat), "NotProtected", iucn_cat), 
-  protection_cat_broad = case_when(
-    iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
-    iucn_cat %in% c("III", "IV", "V", "VI", "UnknownOrNA") ~ "Mixed",
-    iucn_cat == "NotProtected" ~ "Unprotected"
-  ), 
-  super_biome = case_when(
-    grepl("C", FunctionalBiomeShort) & grepl("T", FunctionalBiomeShort) ~ "cold_tall", 
-    grepl("C", FunctionalBiomeShort) & grepl("S", FunctionalBiomeShort) ~ "cold_short", 
-    !grepl("C", FunctionalBiomeShort) & grepl("T", FunctionalBiomeShort) ~ "not_cold_tall", 
-    !grepl("C", FunctionalBiomeShort) & grepl("S", FunctionalBiomeShort) ~ "not_cold_short"
-  )
-  ) %>% 
-  dplyr::select(-unique_id) %>%
-  rename(unique_id = gridID)
-
-grid_sub_1 <- grid_int %>% 
+grid_sub_1 <- dt_grid %>% 
+  filter(fract_prot == 1 | fract_prot == 0) %>% 
   group_by(protection_cat_broad) %>% 
-  filter(n() > 25000) %>% 
-  sample_n(25000) %>% 
+  filter(n() > 30000) %>% 
+  sample_n(30000) %>% 
   ungroup()
 
-grid_sub_2 <- grid_int %>% 
+table(grid_sub_1$protection_cat_broad)
+
+grid_sub_2 <- dt_grid %>% 
+  filter(fract_prot == 1 | fract_prot == 0) %>% 
   group_by(super_biome) %>% 
-  filter(n() > 25000) %>% 
-  sample_n(25000) %>% 
+  filter(n() > 30000) %>% 
+  sample_n(30000) %>% 
   ungroup()
 
+table(grid_sub_2$super_biome)
 
 
 grid_sub <- rbind(grid_sub_1, grid_sub_2) %>%
   unique() %>% 
   distinct(X, Y, .keep_all = TRUE)
 
+table(grid_sub$protection_cat_broad)
+table(grid_sub$super_biome)
 
-#coords <- grid_sub %>% st_centroid() %>% st_coordinates()
+keep <- grid_sub %>% dplyr::select(unique_id) %>% pull()
 
-#grid_sub$X <- coords[,1]
-#grid_sub$Y <- coords[,2]
 
-write_sf(grid_sub, "data/spatialData/grid_sample.gpkg")
+grid_sf <- read_sf("data/spatialData/protectedAreas/gridWithCovs.gpkg") %>% 
+  rename(unique_id = gridID) %>% 
+  filter(unique_id %in% keep)
+
+
+write_sf(grid_sf, "data/spatialData/grid_sample.gpkg")
+

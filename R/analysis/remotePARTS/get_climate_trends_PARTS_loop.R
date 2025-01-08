@@ -82,4 +82,4 @@ dt_res <- dt %>%
 
 fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
 #fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
-
+summary(dt_res)

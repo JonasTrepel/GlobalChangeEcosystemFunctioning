@@ -12,8 +12,8 @@ grid <- st_read("data/spatialData/grid_sample.gpkg")
 
 pas <- st_read("data/spatialData/pas_and_controls.gpkg")
 
-#vect <- pas
-vect <- grid
+vect <- pas
+#vect <- grid
 
 
 ## get file paths sorted 

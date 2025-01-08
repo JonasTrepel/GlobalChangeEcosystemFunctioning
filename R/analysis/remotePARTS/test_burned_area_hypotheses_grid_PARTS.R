@@ -8,43 +8,28 @@ library(remotePARTS)
 
 
 dt_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trends.csv") %>% 
-  group_by(FunctionalBiome) %>% 
-  mutate(n_per_functional_biome = n()) %>% 
-  ungroup() %>% 
-  as.data.frame() %>% 
-  # filter(n_per_functional_biome > 1000) %>% 
-  rename(functional_biome = FunctionalBiomeShort) %>% 
+  as.data.frame()
+
+dt_raw <- dt_raw %>% 
   mutate(
-    PaAge = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
-    productivity = case_when(
-      grepl("L", functional_biome) ~ "low", 
-      grepl("M", functional_biome) ~ "medium", 
-      grepl("H", functional_biome) ~ "high"
-    ), 
-    ndvi_min = case_when(
-      grepl("C", functional_biome) ~ "cold", 
-      grepl("D", functional_biome) ~ "dry", 
-      grepl("B", functional_biome) ~ "cold_and_dry", 
-      grepl("N", functional_biome) ~ "non_seasonal"
-    ), 
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
+      iucn_cat == "unprotected" ~ "Unprotected"), 
     super_biome = case_when(
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ),
-    nitrogen_depo = scale(NitrogenDepo),
+      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
+      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
+    pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
+    nitrogen_depo = scale(nitrogen_depo),
     mat_coef = scale(mat_coef),
     max_temp_coef = scale(max_temp_coef),
     map_coef = scale(map_coef),
-    human_modification = scale(HumanModification), 
+    human_modification = scale(human_modification), 
     area_km2_log = scale(log(area_km2 + 0.0001)),
-    pa_age_log = scale(log(PaAge + 0.0001))) 
+    pa_age_log = ifelse(!pa_age == 0, scale(log(pa_age + 0.0001)), NA)) 
 
-table(dt_raw[dt_raw$super_biome == "cold_tall", ]$functional_biome)
-table(dt_raw[dt_raw$super_biome == "cold_short", ]$functional_biome)
-table(dt_raw[dt_raw$super_biome == "not_cold_tall", ]$functional_biome)
-table(dt_raw[dt_raw$super_biome == "not_cold_short", ]$functional_biome)
 
 dt <- dt_raw
 
@@ -56,16 +41,20 @@ burned_area_cols <- grep("burned_area_", names(dt), value = T)
 
 #subset to complete cases
 dt_burned_area <- dt %>%
-  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y, unique_id, productivity, ndvi_min,
+  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y, lon, lat, unique_id, 
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, super_biome,
                 protection_cat_broad) %>% 
   filter(complete.cases(.))
+
+table(dt_burned_area$protection_cat_broad)
+table(dt_burned_area$super_biome)
+
 
 #get y matrix
 y_burned_area <- as.matrix(dt_burned_area[, burned_area_cols])
 
 #get coordinate matrix 
-coords_burned_area <- as.matrix(dt_burned_area[, c("X", "Y")])
+coords_burned_area <- as.matrix(dt_burned_area[, c("lon", "lat")])
 
 #fit autoregression, accounting for temporal autocorrelation 
 ar_burned_area <- fitAR_map(Y = y_burned_area, coords = coords_burned_area)
@@ -76,7 +65,7 @@ dt_burned_area$abs_burned_area_coef <- abs(ar_burned_area$coefficients[, "t"])
 dt_burned_area$burned_area_p_value <- ar_burned_area$pvals[, 2]
 
 fwrite(dt_burned_area %>% dplyr::select(
-  unique_id, X, Y, protection_cat_broad, burned_area_coef, abs_burned_area_coef, burned_area_p_value), "data/processedData/dataFragments/grid_burned_area_trends.csv")
+  unique_id, burned_area_coef, abs_burned_area_coef, burned_area_p_value), "data/processedData/dataFragments/grid_burned_area_trends.csv")
 
 # get distance matrix 
 #d_burned_area <- distm_scaled(coords_burned_area)
@@ -107,9 +96,9 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = T, 
-                           coord.names = c("X", "Y")
+                           coord.names = c("lon", "lat")
 )
-gls_h1 # yes. Est: -0.0002312834; SE: 3.678995e-05; pval.t: 3.253132e-10
+gls_h1 # yes. Est: 5.563445 ; SE: 0.4952674 ; pval.t: 2.871102e-29
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 
@@ -130,7 +119,7 @@ gls_h2 <- fitGLS_partition(burned_area_coef ~ 1 +
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("X", "Y"))
+                           coord.names = c("lon", "lat"))
 gls_h2 
 
 dt_est_h2 <- extract_gls_estimates(gls_h2, part = TRUE)
@@ -159,7 +148,7 @@ gls_h3 <- fitGLS_partition(burned_area_coef ~ 0 +
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("X", "Y"))
+                           coord.names = c("lon", "lat"))
 gls_h3 # 
 
 
@@ -167,7 +156,7 @@ dt_est_h3 <- extract_gls_estimates(gls_h3, part = TRUE)
 
 p_h3 <- dt_est_h3 %>% 
   ggplot() + 
-  geom_vline(xintercept = 0, linetype = "dashed") +
+  # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
@@ -189,14 +178,14 @@ gls_h4 <- fitGLS_partition(burned_area_coef ~ 0 +
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("X", "Y"))
+                           coord.names = c("lon", "lat"))
 gls_h4 # 
 
 
 dt_est_h4 <- extract_gls_estimates(gls_h4, part = TRUE)
 p_h4 <- dt_est_h4 %>% 
   ggplot() + 
-  geom_vline(xintercept = 0, linetype = "dashed") +
+  # geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
   scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
@@ -219,7 +208,7 @@ gls_h4.1 <- fitGLS_partition(abs_burned_area_coef ~ 0 +
                              ncores = 25,
                              progressbar = TRUE, 
                              parallel = TRUE, 
-                             coord.names = c("X", "Y"))
+                             coord.names = c("lon", "lat"))
 gls_h4.1 # 
 
 
@@ -245,8 +234,8 @@ burned_area_cols <- grep("burned_area_", names(dt), value = T)
 
 #subset to complete cases
 dt_pa <- dt %>% filter(protection_cat_broad == "Strict") %>%
-  dplyr::select(all_of(burned_area_cols), functional_biome, X, Y, super_biome,
-                nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, 
+  dplyr::select(all_of(burned_area_cols),functional_biome, X, Y, lon, lat, unique_id, 
+                nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, super_biome,
                 protection_cat_broad, area_km2_log, pa_age_log) %>% 
   filter(complete.cases(.))
 
@@ -254,7 +243,7 @@ dt_pa <- dt %>% filter(protection_cat_broad == "Strict") %>%
 y_pa <- as.matrix(dt_pa[, burned_area_cols])
 
 #get coordinate matrix 
-coords_pa <- as.matrix(dt_pa[, c("X", "Y")])
+coords_pa <- as.matrix(dt_pa[, c("lon", "lat")])
 
 #fit autoregression, accounting for temporal autocorrelation 
 ar_pa <- fitAR_map(Y = y_pa, coords = coords_pa)
@@ -269,7 +258,7 @@ dt_pa$burned_area_p_value <- ar_pa$pvals[, 2]
 
 ### estimate optimal r parameter (range of spatial autocorrelation)
 corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "covar_exp", 
-                    start = list(range = 0.1), fit.n = nrow(dt_pa))
+                    start = list(range = 0.1), fit.n = 15000)
 (range_opt_pa = corfit_pa$spcor)
 
 #use r to calculate optimal v parameter 
@@ -277,7 +266,7 @@ corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "
 
 #partition the data 
 
-pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1000, npart = NA)
+pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1500, npart = NA)
 dim(pm_pa)
 
 # change --- 
@@ -292,7 +281,7 @@ gls_h5 <- fitGLS_partition(burned_area_coef ~ 1 +
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("X", "Y"))
+                           coord.names = c("lon", "lat"))
 gls_h5 
 
 dt_est_h5 <- extract_gls_estimates(gls_h5, part = TRUE)
@@ -321,7 +310,7 @@ gls_h5.1 <- fitGLS_partition(abs_burned_area_coef ~ 1 +
                              ncores = 25,
                              progressbar = TRUE, 
                              parallel = TRUE, 
-                             coord.names = c("X", "Y"))
+                             coord.names = c("lon", "lat"))
 gls_h5.1 
 
 dt_est_h5.1 <- extract_gls_estimates(gls_h5.1, part = TRUE)
@@ -348,9 +337,9 @@ ggsave(plot = p_burned_area_a, "builds/plots/burned_area_remotePARTS_grid.png", 
 unique(dt$super_biome)
 
 
-super_b <- "not_cold_tall"
-col_pattern <- "burned_area_"
-dat = dt
+#super_b <- "not_cold_tall"
+#col_pattern <- "burned_area_"
+#dat = dt
 
 biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
                       dat = NA, part = TRUE, part_size = NA, fit_n = "row_n"){
@@ -358,7 +347,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   coi <- grep(col_pattern, names(dat), value = T)
   
   dat <- dat %>% filter(super_biome %in% super_b) %>%
-    dplyr::select(all_of(coi), functional_biome, X, Y, ndvi_min,
+    dplyr::select(all_of(coi), functional_biome, X, Y, super_biome, lon, lat, 
                   nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification) %>% 
     filter(complete.cases(.))
   
@@ -368,7 +357,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   y_biome <- as.matrix(dt_biome[, coi])
   
   #get coordinate matrix 
-  coords_biome <- as.matrix(dt_biome[, c("X", "Y")])
+  coords_biome <- as.matrix(dt_biome[, c("lon", "lat")])
   
   #fit autoregression, accounting for temporal autocorrelation 
   ar_biome <- fitAR_map(Y = y_biome, coords = coords_biome)
@@ -469,7 +458,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
                                   ncores = 25,
                                   progressbar = TRUE, 
                                   parallel = TRUE, 
-                                  coord.names = c("X", "Y"))
+                                  coord.names = c("lon", "lat"))
     gls_biome 
     
     dt_est_biome <- extract_gls_estimates(gls_biome, part = TRUE)
@@ -494,7 +483,6 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
   
 }
 
-## NDVI min 
 table(dt_raw[dt_raw$super_biome == "cold_tall", ]$functional_biome)
 table(dt_raw[dt_raw$super_biome == "cold_short", ]$functional_biome)
 table(dt_raw[dt_raw$super_biome == "not_cold_tall", ]$functional_biome)
@@ -502,7 +490,7 @@ table(dt_raw[dt_raw$super_biome == "not_cold_short", ]$functional_biome)
 
 
 nrow(dt[dt$super_biome == "cold_tall",])
-p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000, part_size = 1500, 
+p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = 15000, part_size = 1500,
                          col_pattern = "burned_area_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_tall <- p_cold_tall$data
 p_cold_tall

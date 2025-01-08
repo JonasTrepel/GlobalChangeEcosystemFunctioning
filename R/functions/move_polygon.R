@@ -1,13 +1,13 @@
-movePolygon <- function(ogPoly, potSpace, maxAttempts = 1000, seed = 161) {
+move_polygon <- function(og_poly, pot_space, max_attempts = 1000, seed = 161) {
  
    # Extract the geometry of the input polygon
   set.seed(seed)
   
-  newPoly <- sf::st_geometry(ogPoly)
+  newPoly <- sf::st_geometry(og_poly)
   
   # Calculate the centroid of the bounding polygon and the input polygon
   polyCenter <- sf::st_centroid(newPoly)
-  potSpaceCenter <- sf::st_centroid(potSpace)
+  pot_spaceCenter <- sf::st_centroid(pot_space)
   
   centeredPoly <- newPoly - polyCenter
   
@@ -15,21 +15,21 @@ movePolygon <- function(ogPoly, potSpace, maxAttempts = 1000, seed = 161) {
   attempt <- 0
   placedPoly <- NULL
   
-  while (attempt < maxAttempts) {
+  while (attempt < max_attempts) {
     attempt <- attempt + 1
     print(attempt)
     
     # Generate random translation within the bounding polygon's bounding box
-    boundingBox <- sf::st_bbox(potSpace)
+    boundingBox <- sf::st_bbox(pot_space)
     xShift <- runif(1, boundingBox["xmin"], boundingBox["xmax"])
     yShift <- runif(1, boundingBox["ymin"], boundingBox["ymax"])
     
     # Translate the polygon to the new random location
     translatedPolyRaw <- centeredPoly + c(xShift, yShift)
-    translatedPoly <- st_as_sf(translatedPolyRaw, crs = st_crs(potSpace))
+    translatedPoly <- st_as_sf(translatedPolyRaw, crs = st_crs(pot_space))
     
     # 
-    if (all(sf::st_within(translatedPoly, potSpace, sparse = FALSE))) {
+    if (all(sf::st_within(translatedPoly, pot_space, sparse = FALSE))) {
       placedPoly <- translatedPoly
       break
     }

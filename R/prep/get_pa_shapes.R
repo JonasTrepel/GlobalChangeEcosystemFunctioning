@@ -6,29 +6,26 @@ library(tidyverse)
 library(data.table)
 library(terra)
 
-shp1.raw <- read_sf("../../../../resources/spatial/WDPA/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_0/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
+shp1.raw <- read_sf("data/spatialData/protectedAreas/rawPAs/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_0/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
 
 table(shp1.raw$IUCN_CAT)
 shp1 <- shp1.raw %>% 
-  filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
-  filter(!grepl("arine", DESIG_ENG)) %>% 
-  filter(!grepl("Hunting Area", DESIG_ENG))
+ # filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
+  filter(!grepl("arine", DESIG_ENG)) #%>% filter(!grepl("Hunting Area", DESIG_ENG))
 
 
-shp2.raw <- read_sf("../../../../resources/spatial/WDPA/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_1/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
+shp2.raw <- read_sf("data/spatialData/protectedAreas/rawPAs/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_1/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
 
 shp2 <- shp2.raw %>% 
-  filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
-  filter(!grepl("arine", DESIG_ENG)) %>% 
-  filter(!grepl("Hunting Area", DESIG_ENG))
+ # filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
+  filter(!grepl("arine", DESIG_ENG)) #%>% filter(!grepl("Hunting Area", DESIG_ENG))
 
 
-shp3.raw <- read_sf("../../../../resources/spatial/WDPA/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_2/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
+shp3.raw <- read_sf("data/spatialData/protectedAreas/rawPAs/WDPA_WDOECM_May2024_Public_all_shp/WDPA_WDOECM_May2024_Public_all_shp_2/WDPA_WDOECM_May2024_Public_all_shp-polygons.shp")
 
 shp3 <- shp3.raw %>% 
-  filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
-  filter(!grepl("arine", DESIG_ENG)) %>% 
-  filter(!grepl("Hunting Area", DESIG_ENG))
+ # filter(IUCN_CAT %in% c("Ia", "Ib", "II") | grepl("ional park", DESIG_ENG) | grepl("ional Park", DESIG_ENG)) %>% 
+  filter(!grepl("arine", DESIG_ENG)) #%>%  filter(!grepl("Hunting Area", DESIG_ENG))
 
 pas <- rbind(shp1, shp2, shp3)
 pas <- pas[!duplicated(data.frame(pas)),]
@@ -60,10 +57,17 @@ pas.largest <- pas.cont %>%
   slice_max(area_km2) %>% 
   rename(Country = sovereignt, 
          Continent = continent) %>% 
-  dplyr::select(WDPAID, WDPA_PID, NAME, unique_id, area_km2, STATUS_YR, iucnCatOrd, IUCN_CAT, DESIG_ENG, GIS_AREA, Continent, Country)
+  dplyr::select(WDPAID, WDPA_PID, NAME, unique_id, area_km2, STATUS_YR, iucnCatOrd, IUCN_CAT, DESIG_ENG, GIS_AREA, Continent, Country) %>%
+  filter(GIS_AREA > 1) %>%   
+  group_by(WDPA_PID) %>%
+  slice_sample(n = 1) %>% 
+  ungroup() %>% 
+  mutate(own_pa_id = 1:nrow(.))
   
+
 
 nrow(pas.largest[pas.largest$STATUS_YR <= 2013,])
 nrow(pas.largest[pas.largest$STATUS_YR <= 2003,])
+
 
 write_sf(pas.largest, "data/spatialData/protectedAreas/paShapes.gpkg", append = FALSE)
