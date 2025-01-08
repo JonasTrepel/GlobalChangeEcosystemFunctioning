@@ -1,6 +1,13 @@
 library(tidyverse)
 library(data.table)
 library(remotePARTS)
+library(tidylog)
+
+#load trends 
+
+evi_trends <- fread("data/processedData/dataFragments/pa_evi_trends.csv")
+burned_area_trends <- fread("data/processedData/dataFragments/pa_burned_area_trends.csv")
+greenup_trends <- fread("data/processedData/dataFragments/pa_greenup_trends.csv")
 
 
 dt <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
@@ -33,8 +40,12 @@ dt <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_w
     max_temp_coef = max_temp_coef,
     map_coef = map_coef,
     human_modification = HumanModification, 
-    area_km2_log = scale(log(area_km2 + 0.0001)),
-    pa_age_log = scale(log(PaAge + 0.0001))) 
+    area_km2_log = log(area_km2 + 0.0001),
+    pa_age_log = log(PaAge + 0.0001)) %>%
+  rename(pa_age = PaAge) %>% 
+  left_join(evi_trends) %>% 
+  left_join(burned_area_trends) %>% 
+  left_join(greenup_trends)
 
 p_comp <- dt %>% 
   pivot_longer(cols = c(human_modification, nitrogen_depo, mat_coef, max_temp_coef, map_coef), 
@@ -51,11 +62,140 @@ p_comp <- dt %>%
       og_layer == "protected_areas" ~ "Protected")) %>% 
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
-  geom_jitter(aes(x = clean_prot, y = global_change_value), alpha = 0.25, size = 0.5) +
-  geom_boxplot(aes(x = clean_prot, y = global_change_value), outlier.size = 0.25, outlier.shape = NA) +
+  geom_jitter(aes(x = clean_prot, y = global_change_value), alpha = 0.25, size = 0.5, color = "grey50") +
+  geom_boxplot(aes(x = clean_prot, y = global_change_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) +
   facet_wrap(~clean_driver, scales = "free") +
   labs(x = "", y = "Driver Value") +
   theme_bw()
 p_comp
 
-ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600)
+ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600, height = 4, width = 7)
+
+#### calculate differences 
+
+dt_pa <- dt %>% 
+  filter(og_layer == "protected_areas")
+
+dt_diff <- data.table()
+
+for(pa_id in unique(dt_pa$unique_id)){
+  
+  tmp_diff <- data.table()
+  
+  tmp_diff$evi_diff <- dt[dt$unique_id %in% pa_id, ]$evi_coef - dt[dt$control_for %in% pa_id, ]$evi_coef
+  tmp_diff$burned_area_diff <- dt[dt$unique_id %in% pa_id, ]$burned_area_coef - dt[dt$control_for %in% pa_id, ]$burned_area_coef
+  tmp_diff$greenup_diff <- dt[dt$unique_id %in% pa_id, ]$greenup_coef - dt[dt$control_for %in% pa_id, ]$greenup_coef
+  tmp_diff$unique_id <- pa_id
+  tmp_diff$functional_biome <- dt[dt$unique_id %in% pa_id, ]$functional_biome
+  tmp_diff$super_biome <- dt[dt$unique_id %in% pa_id, ]$super_biome
+  tmp_diff$pa_age <- dt[dt$unique_id %in% pa_id, ]$pa_age
+  tmp_diff$pa_age_log <- dt[dt$unique_id %in% pa_id, ]$pa_age_log
+  tmp_diff$area_km2_log <- dt[dt$unique_id %in% pa_id, ]$area_km2_log
+  tmp_diff$area_km2 <- dt[dt$unique_id %in% pa_id, ]$area_km2
+  
+
+  dt_diff <- rbind(tmp_diff, dt_diff) 
+  
+  print(paste0(pa_id, " done"))
+}
+
+
+dt_diff %>%
+  mutate(clean_biome = case_when(
+    super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
+    super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
+    super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
+    super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
+  )) %>% 
+  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff"), 
+               names_to = "diff_name", values_to = "diff_value") %>% 
+  mutate(clean_diff = case_when(
+    diff_name == "evi_diff" ~ "EVI\nTrend Diff.", 
+    diff_name == "greenup_diff" ~ "Greenup\nTrend Diff.", 
+    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff."
+  )) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
+  geom_jitter(aes(x = clean_biome, y = diff_value), alpha = 0.25, size = 0.5, color = "grey50", width = 0.2) +
+  geom_boxplot(aes(x = clean_biome, y = diff_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) + 
+  facet_wrap(~clean_diff, scales = "free") +
+  theme_bw() +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
+
+
+summary(lm(evi_diff ~ 1, data = dt_diff)); AIC(lm(evi_diff ~ 1, data = dt_diff))#66521.04
+summary(lm(evi_diff ~ pa_age, data = dt_diff)); AIC(lm(evi_diff ~ pa_age, data = dt_diff)) #63816.09
+summary(lm(evi_diff ~ pa_age_log, data = dt_diff)); AIC(lm(evi_diff ~ pa_age_log, data = dt_diff)) #63820.1
+summary(lm(evi_diff ~ area_km2, data = dt_diff)); AIC(lm(evi_diff ~ area_km2, data = dt_diff)) #66522.99
+summary(lm(evi_diff ~ area_km2_log, data = dt_diff)); AIC(lm(evi_diff ~ area_km2_log, data = dt_diff)) #66521.53
+summary(lm(evi_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)); AIC(lm(evi_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)) #63820.64
+summary(lm(evi_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)); AIC(lm(evi_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)) #63818.04
+#best is PA age unlogged, second best is logged 
+
+summary(lm(burned_area_diff ~ 1, data = dt_diff)); AIC(lm(burned_area_diff ~ 1, data = dt_diff))#-65565.77
+summary(lm(burned_area_diff ~ pa_age, data = dt_diff)); AIC(lm(burned_area_diff ~ pa_age, data = dt_diff)) #-62799.76
+summary(lm(burned_area_diff ~ pa_age_log, data = dt_diff)); AIC(lm(burned_area_diff ~ pa_age_log, data = dt_diff)) #-62797.45
+summary(lm(burned_area_diff ~ area_km2, data = dt_diff)); AIC(lm(burned_area_diff ~ area_km2, data = dt_diff)) #-65563.79
+summary(lm(burned_area_diff ~ area_km2_log, data = dt_diff)); AIC(lm(burned_area_diff ~ area_km2_log, data = dt_diff)) #-65565.38
+summary(lm(burned_area_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)); AIC(lm(burned_area_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)) #-62796.11
+summary(lm(burned_area_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)); AIC(lm(burned_area_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)) #-62797.9
+#best seems to be intercept only 
+
+summary(lm(greenup_diff ~ 1, data = dt_diff)); AIC(lm(greenup_diff ~ 1, data = dt_diff))#18449.42
+summary(lm(greenup_diff ~ pa_age, data = dt_diff)); AIC(lm(greenup_diff ~ pa_age, data = dt_diff)) #17799.91
+summary(lm(greenup_diff ~ pa_age_log, data = dt_diff)); AIC(lm(greenup_diff ~ pa_age_log, data = dt_diff)) #17798.39
+summary(lm(greenup_diff ~ area_km2, data = dt_diff)); AIC(lm(greenup_diff ~ area_km2, data = dt_diff)) #18451.34
+summary(lm(greenup_diff ~ area_km2_log, data = dt_diff)); AIC(lm(greenup_diff ~ area_km2_log, data = dt_diff)) #18451.23
+summary(lm(greenup_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)); AIC(lm(greenup_diff ~ scale(area_km2_log) + scale(pa_age_log), data = dt_diff)) #17800.39
+summary(lm(greenup_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)); AIC(lm(greenup_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)) #17801.85
+#best is PA logged
+
+
+dt_diff %>%
+  mutate(clean_biome = case_when(
+    super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
+    super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
+    super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
+    super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
+  )) %>% 
+  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff"), 
+               names_to = "diff_name", values_to = "diff_value") %>% 
+  mutate(clean_diff = case_when(
+    diff_name == "evi_diff" ~ "EVI\nTrend Diff.", 
+    diff_name == "greenup_diff" ~ "Greenup\nTrend Diff.", 
+    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff."
+  )) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
+  geom_point(aes(x = pa_age, y = diff_value), alpha = 0.25, size = 0.5, color = "grey50", width = 0.2) +
+  geom_smooth(aes(x = pa_age, y = diff_value), method = "lm") +
+  facet_wrap(~clean_diff, scales = "free") +
+  theme_bw() +
+  labs(x = "PA age (years)", y = "") +
+  theme(axis.text.x = element_text(angle = 0))  
+
+dt_diff %>%
+  mutate(clean_biome = case_when(
+    super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
+    super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
+    super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
+    super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
+  )) %>% 
+  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff"), 
+               names_to = "diff_name", values_to = "diff_value") %>% 
+  mutate(clean_diff = case_when(
+    diff_name == "evi_diff" ~ "EVI\nTrend Diff.", 
+    diff_name == "greenup_diff" ~ "Greenup\nTrend Diff.", 
+    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff."
+  )) %>% 
+  ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
+  geom_point(aes(x = area_km2, y = diff_value), alpha = 0.25, size = 0.5, color = "grey50", width = 0.2) +
+  geom_smooth(aes(x = area_km2, y = diff_value), method = "lm") +
+  facet_wrap(~clean_diff, scales = "free") +
+  theme_bw() +
+  labs(x = "PA area (km^2)", y = "") +
+  #scale_x_log10() +
+  theme(axis.text.x = element_text(angle = 0))  
+
