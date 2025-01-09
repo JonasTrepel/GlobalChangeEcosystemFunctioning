@@ -7,33 +7,34 @@ library(scico)
 library(rnaturalearth)
 library(sf)
 library(gridExtra)
+library(tidylog)
+library(RColorBrewer)
 
-evi_trend <- fread("data/processedData/dataFragments/pa_evi_trends.csv")
-burned_area_trend <- fread("data/processedData/dataFragments/pa_burned_area_trends.csv")
-greenup_trend <- fread("data/processedData/dataFragments/pa_greenup_trends.csv")
+evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv") 
+burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv")
+greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv")
 
-
-climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
-  dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef)
+climate_trends <- fread("data/processedData/dataFragments/pas_sample_with_climate_trends.csv") %>% 
+  dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef, mat_p_value, map_p_value, max_temp_p_value)
 
 sf_use_s2(FALSE)
 world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
   st_transform(crs = 'ESRI:54030') %>% 
-  mutate(geometry = st_make_valid(geometry)) %>% 
-  group_by(continent) %>% 
+  mutate(geometry = st_make_valid(geometry), 
+         world = "world") %>% 
+  group_by(world) %>% 
   summarize()
 
 
-raw_shapes <- read_sf("data/spatialData/pas_and_controls.gpkg")
+raw_shapes <- read_sf("data/spatialData/pas_sample.gpkg")
 
 shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
-  left_join(greenup_trend) %>%
-  mutate(evi_coef = evi_coef/100, 
-         burned_area_coef = burned_area_coef*100) %>%
-  rename(functional_biome = FunctionalBiome) %>% 
+  left_join(greenup_trend) %>% 
+  mutate(mean_evi_coef = mean_evi_coef /100, 
+         burned_area_coef = burned_area_coef*100) %>%  # to convert to %/year
   mutate(
     productivity = case_when(
       grepl("L", functional_biome) ~ "low", 
@@ -51,50 +52,32 @@ shapes <- raw_shapes %>%
       (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
       !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
       !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ))
+    ),
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
+      iucn_cat == "unprotected" ~ "Unprotected"))
 
-coords <- st_coordinates(st_centroid(shapes))
-shapes$X <- coords[,1]
-shapes$Y <- coords[,2]
 
-sum(is.na(shapes$evi_coef))
+sum(is.na(shapes$mean_evi_coef))
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ##################################     MAPS    #######################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 ## evi maps -------------
-quantile(shapes$evi_coef, c(.025, .975), na.rm = T)
+quantile(shapes$mean_evi_coef, c(.025, .975), na.rm = T)
 
-q_025_evi <- as.numeric(quantile(shapes$evi_coef, c(.025), na.rm = T))
-q_975_evi <- as.numeric(quantile(shapes$evi_coef, c(.975), na.rm = T))
+q_025_evi <- as.numeric(quantile(shapes$mean_evi_coef, c(.025), na.rm = T))
+q_975_evi <- as.numeric(quantile(shapes$mean_evi_coef, c(.975), na.rm = T))
 
 p_evi_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>%
-            filter(!is.na(evi_coef)) %>% 
-            mutate(evi_coef = ifelse(evi_coef > q_975_evi, q_975_evi, evi_coef),
-                   evi_coef = ifelse(evi_coef < q_025_evi, q_025_evi, evi_coef)),
-          aes(color = evi_coef, fill = evi_coef)) +
-  scale_color_scico(palette = "bam", midpoint = 0) +
-  scale_fill_scico(palette = "bam", midpoint = 0) +
-  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
-  theme_void() +
-  theme(legend.position = "right", 
-       # legend.key.width = unit(1, "cm"),
-       # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
-p_evi_shapes
-
-ggsave(plot = p_evi_shapes, "builds/plots/evi_pa_shapes_map.png", dpi = 600)
-
-p_evi_points <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
-  geom_point(data = shapes %>%
-            filter(!is.na(evi_coef)) %>% 
-            mutate(evi_coef = ifelse(evi_coef > q_975_evi, q_975_evi, evi_coef),
-                   evi_coef = ifelse(evi_coef < q_025_evi, q_025_evi, evi_coef)),
-          aes(x = X, y = Y, color = evi_coef, fill = evi_coef)) +
+            filter(!is.na(mean_evi_coef)) %>% 
+            mutate(mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, q_975_evi, mean_evi_coef),
+                   mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, q_025_evi, mean_evi_coef)),
+          aes(color = mean_evi_coef, fill = mean_evi_coef)) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
@@ -102,10 +85,10 @@ p_evi_points <- ggplot() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
-p_evi_points
+        legend.text = element_text(angle = 0))
+p_evi_shapes
 
-ggsave(plot = p_evi_points, "builds/plots/evi_pa_points_map.png", dpi = 600)
+ggsave(plot = p_evi_shapes, "builds/plots/evi_pas_shapes_map.png", dpi = 600)
 
 ## burned area maps-------
 quantile(shapes$burned_area_coef, c(.025, .975), na.rm = T)
@@ -114,7 +97,7 @@ q_025_burned_area <- as.numeric(quantile(shapes$burned_area_coef, c(.025), na.rm
 q_975_burned_area <- as.numeric(quantile(shapes$burned_area_coef, c(.975), na.rm = T))
 
 p_burned_area_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>%
             filter(!is.na(burned_area_coef)) %>% 
             mutate(burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, q_975_burned_area, burned_area_coef),
@@ -127,29 +110,10 @@ p_burned_area_shapes <- ggplot() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
+        legend.text = element_text(angle = 0))
 p_burned_area_shapes
 
-ggsave(plot = p_burned_area_shapes, "builds/plots/burned_area_pa_shapes_map.png", dpi = 600)
-
-p_burned_area_points <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
-  geom_point(data = shapes %>%
-               filter(!is.na(burned_area_coef)) %>% 
-               mutate(burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, q_975_burned_area, burned_area_coef),
-                      burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, q_025_burned_area, burned_area_coef)),
-             aes(x = X, y = Y, color = burned_area_coef, fill = burned_area_coef)) +
-  scale_color_scico(palette = "vik", midpoint = 0) +
-  scale_fill_scico(palette = "vik", midpoint = 0) +
-  labs(color = "Burned\nArea\nTrend", fill = "Burned Area\nTrend") +
-  theme_void() +
-  theme(legend.position = "right", 
-        # legend.key.width = unit(1, "cm"),
-        # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
-p_burned_area_points
-
-ggsave(plot = p_burned_area_points, "builds/plots/burned_area_pa_points_map.png", dpi = 600)
+ggsave(plot = p_burned_area_shapes, "builds/plots/burned_area_pas_shapes_map.png", dpi = 600)
 
 ## greenup maps ---------------------
 quantile(shapes$greenup_coef, c(.025, .975), na.rm = T)
@@ -158,7 +122,7 @@ q_025_greenup <- as.numeric(quantile(shapes$greenup_coef, c(.025), na.rm = T))
 q_975_greenup <- as.numeric(quantile(shapes$greenup_coef, c(.975), na.rm = T))
 
 p_greenup_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>%
             filter(!is.na(greenup_coef)) %>% 
             mutate(greenup_coef = ifelse(greenup_coef > q_975_greenup, q_975_greenup, greenup_coef),
@@ -166,57 +130,35 @@ p_greenup_shapes <- ggplot() +
           aes(color = greenup_coef, fill = greenup_coef)) +
   scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  labs(color = "Greenup\nTrend", fill = "Greenup\nTrend") +
+  labs(color = "Vegetation\nGreen-Up\nTrend", fill = "Vegetation\nGreen-Up\nTrend") +
   theme_void() +
   theme(legend.position = "right", 
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
+        legend.text = element_text(angle = 0))
 p_greenup_shapes
 
-ggsave(plot = p_greenup_shapes, "builds/plots/greenup_pa_shapes_map.png", dpi = 600)
-
-p_greenup_points <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
-  geom_point(data = shapes %>%
-               filter(!is.na(greenup_coef)) %>% 
-               mutate(greenup_coef = ifelse(greenup_coef > q_975_greenup, q_975_greenup, greenup_coef),
-                      greenup_coef = ifelse(greenup_coef < q_025_greenup, q_025_greenup, greenup_coef)),
-             aes(x = X, y = Y, color = greenup_coef, fill = greenup_coef)) +
-  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  labs(color = "Greenup\nTrend", fill = "Greenup\nTrend") +
-  theme_void() +
-  theme(legend.position = "right", 
-        # legend.key.width = unit(1, "cm"),
-        # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 25))
-p_greenup_points
-
-ggsave(plot = p_greenup_points, "builds/plots/greenup_pa_points_map.png", dpi = 600)
-
-p_all_trends_map_points <- gridExtra::grid.arrange(p_evi_points, p_burned_area_points, p_greenup_points, ncol = 1)
-ggsave(plot = p_all_trends_map_points, "builds/plots/pa_all_trends_map_points.png", dpi = 600, height = 10, width = 8)
+ggsave(plot = p_greenup_shapes, "builds/plots/greenup_pas_shapes_map.png", dpi = 600)
 
 p_all_trends_map_shapes <- gridExtra::grid.arrange(p_evi_shapes, p_burned_area_shapes, p_greenup_shapes, ncol = 1)
-ggsave(plot = p_all_trends_map_shapes, "builds/plots/pa_all_trends_map_shapes.png", dpi = 600, height = 10, width = 8)
+ggsave(plot = p_all_trends_map_shapes, "builds/plots/pas_all_trends_map_shapes.png", dpi = 600, height = 10, width = 8)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################     ESTIMATES     ###################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-evi_est <- fread("builds/model_estimates/evi_pa_estimates.csv") %>% mutate(response = "evi",
-                                                                           estimate = estimate/100, 
-                                                                           std_error = std_error/100, 
-                                                                           ci_lb = ci_lb/100, 
-                                                                           ci_ub = ci_ub/100)
-burned_area_est <- fread("builds/model_estimates/burned_area_pa_estimates.csv") %>% mutate(response = "burned_area",
-                                                                                           estimate = estimate*100, 
-                                                                                           std_error = std_error*100, 
-                                                                                           ci_lb = ci_lb*100, 
-                                                                                           ci_ub = ci_ub*100)
-greenup_est <- fread("builds/model_estimates/greenup_pa_estimates.csv") %>% mutate(response = "greenup")
+evi_est <- fread("builds/model_estimates/envi_pas_estimates.csv") %>% mutate(response = "evi", 
+                                                                              estimate = estimate/100, 
+                                                                              std_error = std_error/100, 
+                                                                              ci_lb = ci_lb/100, 
+                                                                              ci_ub = ci_ub/100)
+burned_area_est <- fread("builds/model_estimates/burned_area_pas_estimates.csv") %>% mutate(response = "burned_area", 
+                                                                                             estimate = estimate*100, 
+                                                                                             std_error = std_error*100, 
+                                                                                             ci_lb = ci_lb*100, 
+                                                                                             ci_ub = ci_ub*100)
+greenup_est <- fread("builds/model_estimates/greenup_pas_estimates.csv") %>% mutate(response = "greenup")
 
 dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>% 
   as.data.table() %>%
@@ -231,14 +173,15 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
     term == "super_biomecold_tall" ~ "Cold Limited\nTall Vegetation",
     term == "super_biomenot_cold_short" ~ "Not Cold Limited\nShort Vegetation",
     term == "super_biomenot_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
-    term == "og_layercontrols" ~ "Control", 
-    term == "og_layerprotected_areas" ~ "Protected", 
+    term == "protection_cat_broadStrict" ~ "Strict", 
+    term == "protection_cat_broadMixed" ~ "Mixed", 
+    term == "protection_cat_broadUnprotected" ~ "Unprotected", 
     term == "area_km2_log" ~ "PA Area",
     term == "pa_age_log" ~ "PA Age"),
     sig_pn = case_when(
       estimate < 0 & p_value < 0.05 ~ "Sig. Negative", 
       estimate > 0 & p_value < 0.05 ~ "Sig. Positive", 
-       p_value >= 0.05 ~ "Non-Significant"
+      p_value >= 0.05 ~ "Non-Significant"
     ),
     facet_label = case_when(
       model == "H1" ~ "H1: Trend ~\nIntercept", 
@@ -253,7 +196,7 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
       model == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
       model == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
     )
-    )
+  )
 
 # Evi estimates -----
 scico(palette = "bam", n = 10)
@@ -268,15 +211,19 @@ p_est_evi_b <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
-                                )) +
+  )) +
   labs(title = "b)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
         plot.title = element_text(size = 12))
-  
+
 p_est_evi_b
 
 p_est_evi_c <- dt_est %>% 
@@ -288,13 +235,17 @@ p_est_evi_c <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
   )) +
   labs(title = "c)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
         plot.title = element_text(size = 12))
 
 p_est_evi_c
@@ -302,7 +253,7 @@ p_est_evi_c
 fig_evi <- grid.arrange(p_evi_shapes + labs(title = "a)"), 
                         p_est_evi_b, p_est_evi_c, 
                         heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_evi, "builds/plots/pa_evi_figure.png", height = 10.5, width = 9, dpi = 600)
+ggsave(plot = fig_evi, "builds/plots/pas_evi_figure.png", height = 10.5, width = 9.5, dpi = 600)
 
 # burned area estimates -----
 scico(palette = "vik", n = 10)
@@ -317,13 +268,18 @@ p_est_burned_area_b <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
   )) +
   labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
+        axis.text.x = element_text(angle = 22.5, hjust = 1),
         plot.title = element_text(size = 12))
 
 p_est_burned_area_b
@@ -337,21 +293,26 @@ p_est_burned_area_c <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
   )) +
   labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_bw() +
+  theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
+        axis.text.x = element_text(angle = 22.5, hjust = 1),
         plot.title = element_text(size = 12))
 
 p_est_burned_area_c
 
 fig_burned_area <- grid.arrange(p_burned_area_shapes + labs(title = "a)"), 
-                        p_est_burned_area_b, p_est_burned_area_c, 
-                        heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_burned_area, "builds/plots/pa_burned_area_figure.png", height = 10.5, width = 9, dpi = 600)
+                                p_est_burned_area_b, p_est_burned_area_c, 
+                                heights = c(1.3, 0.8, 1))
+ggsave(plot = fig_burned_area, "builds/plots/pas_burned_area_figure.png", height = 10.5, width = 9.5, dpi = 600)
 
 # Greenup estimates -----
 scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9)
@@ -366,13 +327,17 @@ p_est_greenup_b <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
   )) +
-  labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_bw() +
+  labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
+  theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
         plot.title = element_text(size = 12))
 
 p_est_greenup_b
@@ -386,21 +351,26 @@ p_est_greenup_c <- dt_est %>%
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
-                                "Non-Significant" = "grey", 
+                                "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
   )) +
-  labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_bw() +
+  labs(title = "c)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
+  theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        panel.pas = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow1", color = "snow1"),
+        panel.border = element_blank(),
         plot.title = element_text(size = 12))
 
 p_est_greenup_c
 
 fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"), 
-                                p_est_greenup_b, p_est_greenup_c, 
-                                heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_greenup, "builds/plots/pa_greenup_figure.png", height = 10.5, width = 9, dpi = 600)
+                            p_est_greenup_b, p_est_greenup_c, 
+                            heights = c(1.3, 0.8, 1))
+ggsave(plot = fig_greenup, "builds/plots/pas_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     CORRELATION     ##################################
@@ -408,18 +378,15 @@ ggsave(plot = fig_greenup, "builds/plots/pa_greenup_figure.png", height = 10.5, 
 
 dt_corr <- shapes %>% 
   left_join(climate_trends) %>% 
-  rename(pa_age = PaAge, 
-         pa_area = area_km2, 
-         nitrogen_depo = NitrogenDepo, 
-         human_modification = HumanModification
-         ) %>% 
+  mutate(pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA)) %>%
+  rename(pa_area = area_km2) %>% 
   as.data.table() %>% 
   dplyr::select(
-                evi_coef, burned_area_coef, greenup_coef,
-                mat_coef, map_coef, max_temp_coef, 
-                nitrogen_depo, human_modification) %>% 
+    mean_evi_coef, burned_area_coef, greenup_coef,
+    mat_coef, map_coef, max_temp_coef, 
+    nitrogen_depo, human_modification) %>% 
   filter(complete.cases(.)) %>% 
-  rename(`EVI Trend` = evi_coef, 
+  rename(`EVI Trend` = mean_evi_coef, 
          `Burned Area Trend` = burned_area_coef, 
          `Greenup Trend` = greenup_coef, 
          `MAT Trend` = mat_coef,
@@ -431,28 +398,30 @@ dt_corr <- shapes %>%
 library(ggcorrplot)
 corr <- round(cor(dt_corr), 1)
 p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
-           lab = TRUE)
+                     lab = TRUE)
 p_corr
-ggsave(plot = p_corr, "builds/plots/pa_variable_correlations.png", dpi = 600, height = 8, width = 8)
+ggsave(plot = p_corr, "builds/plots/pas_variable_correlations.png", dpi = 600, height = 8, width = 8)
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     TREND DISTRIBUTION     ##############################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
- 
-library(ggridges)
+
+library(gpasges)
 
 dt_ridges <- shapes %>% 
   as.data.table() %>%
   mutate(geom = NULL, 
-         evi_coef = ifelse(evi_coef > q_975_evi, NA, evi_coef),
-         evi_coef = ifelse(evi_coef < q_025_evi, NA, evi_coef), 
+         mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
+         mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef), 
          burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, NA, burned_area_coef),
          burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, NA, burned_area_coef), 
          greenup_coef = ifelse(greenup_coef > q_975_greenup, NA, greenup_coef),
          greenup_coef = ifelse(greenup_coef < q_025_greenup, NA, greenup_coef), 
          protection_status = case_when(
-           og_layer == "protected_areas" ~ "Protected",
-           og_layer == "controls" ~ "Control"), 
+           protection_cat_broad == "Strict" ~ "Strict",
+           protection_cat_broad == "Unprotected" ~ "Unprotected",
+           protection_cat_broad == "Mixed" ~ "Mixed"), 
          biome_clean = case_when(
            super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
            super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
@@ -462,8 +431,8 @@ dt_ridges <- shapes %>%
 #evi ridges
 p_evi_prot <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(evi_coef)),
-                               aes(x = evi_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
+                                 filter(!is.na(mean_evi_coef)),
+                               aes(x = mean_evi_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   geom_vline(xintercept = 0, linetype = "dashed") +
@@ -476,8 +445,8 @@ p_evi_prot
 
 p_evi_biome <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(evi_coef)),
-                               aes(x = evi_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
+                                 filter(!is.na(mean_evi_coef)),
+                               aes(x = mean_evi_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
   scale_color_scico(palette = "bam", midpoint = 0) +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   geom_vline(xintercept = 0, linetype = "dashed") +
@@ -531,7 +500,7 @@ p_greenup_prot <- ggplot() +
   scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw() +
-  labs(y = "", x = "Greenup Trend") + 
+  labs(y = "", x = "Vegetation Green-Up Trend") + 
   theme(legend.position = "none", 
         axis.text.y = element_text(size = 12))
 
@@ -545,7 +514,7 @@ p_greenup_biome <- ggplot() +
   scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw() +
-  labs(y = "", x = "Greenup Trend") + 
+  labs(y = "", x = "Vegetation Green-Up Trend") + 
   theme(legend.position = "none", 
         axis.text.y = element_text(size = 12))
 
@@ -554,7 +523,7 @@ p_greenup_biome
 p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol = 1)
 
 p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
-ggsave(plot = p_ridges, "builds/plots/pa_ridges.png", dpi = 600, height = 6, width = 12)
+ggsave(plot = p_ridges, "builds/plots/pas_ridges.png", dpi = 600, height = 6, width = 12)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -562,15 +531,15 @@ ggsave(plot = p_ridges, "builds/plots/pa_ridges.png", dpi = 600, height = 6, wid
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 p_biome_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>% 
-            filter(!is.na(evi_coef)) %>%
-               mutate(biome_clean = case_when(
-                 super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
-                 super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
-                 super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
-                 super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation")),
-             aes(color = biome_clean, fill = biome_clean), alpha = 1) +
+            filter(!is.na(mean_evi_coef)) %>%
+            mutate(biome_clean = case_when(
+              super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
+              super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
+              super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
+              super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation")),
+          aes(color = biome_clean, fill = biome_clean), alpha = 1) +
   scale_color_scico_d(palette = "batlowK") +
   scale_fill_scico_d(palette = "batlowK") +
   theme_void() +
@@ -578,37 +547,31 @@ p_biome_shapes <- ggplot() +
   theme(axis.title = element_blank())
 p_biome_shapes
 
-ggsave(plot = p_biome_shapes, "builds/plots/pa_biome_maps_shapes.png", dpi = 600)
+ggsave(plot = p_biome_shapes, "builds/plots/pas_biome_maps_shapes.png", dpi = 600)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   PROTECTION MAP   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-p_prot_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+p_pa_shapes <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>% 
-               filter(!is.na(evi_coef)) %>%
-               mutate(prot_clean = case_when(
-                 og_layer == "protected_areas" ~ "Protected",
-                 og_layer == "controls" ~ "Control")),
-             aes(color = prot_clean, fill = prot_clean), alpha = 1) +
-  scale_color_scico_d(palette = "batlow") +
-  scale_fill_scico_d(palette = "batlow") +
+            filter(!is.na(mean_evi_coef)),
+          aes(color = protection_cat_broad, fill = protection_cat_broad), alpha = 1) +
+  scale_color_scico_d(palette = "bamako") +
+  scale_fill_scico_d(palette = "bamako") +
   theme_void() +
   labs(color = "Protection\nStatus", fill = "Protection\nStatus") +
   theme(axis.title = element_blank())
-p_prot_shapes
+p_pa_shapes
 
-
-ggsave(plot = p_prot_shapes, "builds/plots/pa_protection_map_points.png", dpi = 600)
+ggsave(plot = p_pa_shapes, "builds/plots/pas_protection_map_shapes.png", dpi = 600)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     GLOBAL CHANGE MAPS     ##############################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 dt_env_raw <- shapes %>% 
-  left_join(climate_trends)  %>% 
-  rename(nitrogen_deposition = NitrogenDepo, 
-         human_modification = HumanModification)
+  left_join(climate_trends) 
 
 q_025_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.025), na.rm = T))
 q_975_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.975), na.rm = T))
@@ -616,8 +579,8 @@ q_025_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.025), na.rm = T))
 q_975_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.975), na.rm = T))
 q_025_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.025), na.rm = T))
 q_975_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.975), na.rm = T))
-q_025_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition, c(.025), na.rm = T))
-q_975_nitrogen_deposition <- as.numeric(quantile(dt_env_raw$nitrogen_deposition, c(.975), na.rm = T))
+q_025_nitrogen_depo <- as.numeric(quantile(dt_env_raw$nitrogen_depo, c(.025), na.rm = T))
+q_975_nitrogen_depo <- as.numeric(quantile(dt_env_raw$nitrogen_depo, c(.975), na.rm = T))
 q_025_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.025), na.rm = T))
 q_975_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.975), na.rm = T))
 
@@ -628,131 +591,317 @@ dt_env <-  dt_env_raw %>%
          map_coef = ifelse(map_coef < q_025_map, q_025_map, map_coef),
          max_temp_coef = ifelse(max_temp_coef > q_975_max_temp, q_975_max_temp, max_temp_coef),
          max_temp_coef = ifelse(max_temp_coef < q_025_max_temp, q_025_max_temp, max_temp_coef),
-         nitrogen_deposition = ifelse(nitrogen_deposition > q_975_nitrogen_deposition, q_975_nitrogen_deposition, nitrogen_deposition),
-         nitrogen_deposition = ifelse(nitrogen_deposition < q_025_nitrogen_deposition, q_025_nitrogen_deposition, nitrogen_deposition),
+         nitrogen_depo = ifelse(nitrogen_depo > q_975_nitrogen_depo, q_975_nitrogen_depo, nitrogen_depo),
+         nitrogen_depo = ifelse(nitrogen_depo < q_025_nitrogen_depo, q_025_nitrogen_depo, nitrogen_depo),
          human_modification = ifelse(human_modification > q_975_human_modification, q_975_human_modification, human_modification),
          human_modification = ifelse(human_modification < q_025_human_modification, q_025_human_modification, human_modification)
   )
 
 p_mat_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = dt_env %>% 
-            filter(!is.na(evi_coef)),
+            filter(!is.na(mean_evi_coef)),
           aes(color = mat_coef, fill = mat_coef), alpha = 1) +
   scale_color_viridis_c(option = "A") +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_mat_shapes
 
-ggsave(plot = p_mat_shapes, "builds/plots/pa_mat_map_shapes.png", dpi = 600)
+ggsave(plot = p_mat_shapes, "builds/plots/pas_mat_map_shapes.png", dpi = 600)
 
 p_map_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = dt_env %>% 
-            filter(!is.na(evi_coef)),
+            filter(!is.na(mean_evi_coef)),
           aes(color = map_coef, fill = map_coef), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+  scale_color_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  scale_fill_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
   theme_void() +
   labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_map_shapes
 
-ggsave(plot = p_map_shapes, "builds/plots/pa_map_map_shapes.png", dpi = 600)
+ggsave(plot = p_map_shapes, "builds/plots/pas_map_map_shapes.png", dpi = 600)
 
 
 p_max_temp_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = dt_env %>% 
-            filter(!is.na(evi_coef)),
+            filter(!is.na(mean_evi_coef)),
           aes(color = max_temp_coef, fill = max_temp_coef), alpha = 1) +
   scale_color_viridis_c(option = "A") +
   scale_fill_viridis_c(option = "A") +
   theme_void() +
   labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_max_temp_shapes
 
-ggsave(plot = p_max_temp_shapes, "builds/plots/pa_max_temp_map_shapes.png", dpi = 600)
+ggsave(plot = p_max_temp_shapes, "builds/plots/pas_max_temp_map_shapes.png", dpi = 600)
+
 
 p_n_depo_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = dt_env %>% 
-            filter(!is.na(evi_coef)),
-          aes(color = nitrogen_deposition, fill = nitrogen_deposition), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+            filter(!is.na(mean_evi_coef)),
+          aes(color = nitrogen_depo, fill = nitrogen_depo), alpha = 1) +
+  scale_color_scico(palette = "batlow") +
+  scale_fill_scico(palette = "batlow") +
   theme_void() +
   labs(color = "Nitrogen\nDeposition", fill = "Nitrogen\nDeposition") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_n_depo_shapes
 
-ggsave(plot = p_n_depo_shapes, "builds/plots/pa_n_depo_map_shapes.png", dpi = 600)
+ggsave(plot = p_n_depo_shapes, "builds/plots/pas_n_depo_map_shapes.png", dpi = 600)
 
 p_human_modification_shapes <- ggplot() +
-  geom_sf(data = world, fill = "grey99", color = "grey75") +
+  geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = dt_env %>% 
-            filter(!is.na(evi_coef)),
+            filter(!is.na(mean_evi_coef)),
           aes(color = human_modification, fill = human_modification), alpha = 1) +
-  scale_color_viridis_c(option = "A") +
-  scale_fill_viridis_c(option = "A") +
+  scale_color_scico(palette = "bamako") +
+  scale_fill_scico(palette = "bamako") +
   theme_void() +
   labs(color = "Human\nModification", fill = "Human\nModification") +
   theme(axis.title = element_blank(),
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 12),
-        legend.key.size = unit(1.5, "lines"))
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
 p_human_modification_shapes
 
-ggsave(plot = p_human_modification_shapes, "builds/plots/pa_human_modification_map_shapes.png", dpi = 600)
+ggsave(plot = p_human_modification_shapes, "builds/plots/pas_human_modification_map_shapes.png", dpi = 600)
 
+gc_maps <- grid.arrange(p_n_depo_shapes, p_human_modification_shapes, 
+                        p_mat_shapes, p_max_temp_shapes, 
+                        p_map_shapes, ncol = 2)
+
+ggsave(plot = gc_maps, "builds/plots/pas_global_change_map_shapes.png", dpi = 600)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #################################     QUANTILES     ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 dt_env_raw <- shapes %>% 
-  left_join(climate_trends)  %>% 
-  rename(nitrogen_deposition = NitrogenDepo, 
-         human_modification = HumanModification)
+  left_join(climate_trends) 
 
 
 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$mat_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$mat_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
 #          0%           5%          25%          50%          75%          95%         100% 
-#-0.040871137  0.002113063  0.011041658  0.017943548  0.025513459  0.030837586  0.061575663 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$max_temp_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#-0.045576069  0.004695984  0.012743080  0.022046219  0.029451839  0.040541147  0.079413342
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$max_temp_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
 #          0%           5%          25%          50%          75%          95%         100% 
-#-0.066161953 -0.005806273  0.007165408  0.015833825  0.024810994  0.036342111  0.139455726 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$map_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#-0.081249289 -0.004047223  0.008281520  0.017152691  0.025692758  0.041528039  0.219463404 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$map_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
 #          0%           5%          25%          50%          75%          95%         100% 
-#-29.67555174  -2.07683237   0.09181447   0.79981597   1.60869519   4.49253768  15.60217714 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$nitrogen_deposition, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#-50.77784118  -4.59155461  -0.07938528   0.47506487   1.21686432   4.28346692  43.26811849 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$nitrogen_depo, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
 #        0%         5%        25%        50%        75%        95%       100% 
-#  19.41463  100.25536  215.19000  332.70844  579.09265 1179.13915 4738.10938 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$human_modification, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#         0%          5%         25%         50%         75%         95%        100%
-#0.000000000 0.002115423 0.039965609 0.113280658 0.230818849 0.449265328 0.885243416 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$evi_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#         0%          5%         25%         50%         75%         95%        100%
-#-98.4236617 -13.7772218   0.1529625   7.2733991  15.5606324  31.1578728 113.6631148 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$burned_area_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100%  
-#-0.038989831 -0.001550148  0.000000000  0.000000000  0.000000000  0.001209549  0.044689271 
-quantile(dt_env_raw[!is.na(dt_env_raw$evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#         0%          5%         25%         50%         75%         95%        100%
-#-7.92594632 -1.11387837 -0.22116058 -0.03874859  0.13539879  1.30038490  6.70514126 
+#   8.93624   38.26200  108.45508  215.97137  446.29657 1136.52124 6848.16553 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$human_modification, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#0.000000e+00 1.911390e-06 5.226702e-03 5.079506e-02 1.635810e-01 4.231209e-01 9.732789e-01 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$mean_evi_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-163.8214168  -14.7408541   -0.7717181    4.5138879   13.1196674   29.2534735  180.7633833 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$burned_area_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#          0%           5%          25%          50%          75%          95%         100% 
+#-0.049467534 -0.004512144  0.000000000  0.000000000  0.000000000  0.002043215  0.048151842 
+quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
+#           0%            5%           25%           50%           75%           95%          100%
+#-11.590909090  -0.922264706  -0.246465032  -0.009843419   0.238165137   1.726039631  11.247583560 
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#########################     SIG. GLOBAL CHANGE MAPS     ############################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+dt_env_raw <- shapes %>% 
+  left_join(climate_trends)  
+
+q_025_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.025), na.rm = T))
+q_975_mat <- as.numeric(quantile(dt_env_raw$mat_coef, c(.975), na.rm = T))
+q_025_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.025), na.rm = T))
+q_975_map <- as.numeric(quantile(dt_env_raw$map_coef, c(.975), na.rm = T))
+q_025_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.025), na.rm = T))
+q_975_max_temp <- as.numeric(quantile(dt_env_raw$max_temp_coef, c(.975), na.rm = T))
+q_025_nitrogen_depo <- as.numeric(quantile(dt_env_raw$nitrogen_depo, c(.025), na.rm = T))
+q_975_nitrogen_depo <- as.numeric(quantile(dt_env_raw$nitrogen_depo, c(.975), na.rm = T))
+q_025_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.025), na.rm = T))
+q_975_human_modification <- as.numeric(quantile(dt_env_raw$human_modification, c(.975), na.rm = T))
+q_025_evi <- as.numeric(quantile(dt_env_raw$mean_evi_coef, c(.025), na.rm = T))
+q_975_evi <- as.numeric(quantile(dt_env_raw$mean_evi_coef, c(.975), na.rm = T))
+q_025_burned_area <- as.numeric(quantile(dt_env_raw$burned_area_coef, c(.025), na.rm = T))
+q_975_burned_area <- as.numeric(quantile(dt_env_raw$burned_area_coef, c(.975), na.rm = T))
+q_025_greenup <- as.numeric(quantile(dt_env_raw$greenup_coef, c(.025), na.rm = T))
+q_975_greenup <- as.numeric(quantile(dt_env_raw$greenup_coef, c(.975), na.rm = T))
+
+dt_env <-  dt_env_raw %>%
+  mutate(mat_coef = ifelse(mat_coef > q_975_mat, q_975_mat, mat_coef),
+         mat_coef = ifelse(mat_coef < q_025_mat, q_025_mat, mat_coef),
+         map_coef = ifelse(map_coef > q_975_map, q_975_map, map_coef),
+         map_coef = ifelse(map_coef < q_025_map, q_025_map, map_coef),
+         max_temp_coef = ifelse(max_temp_coef > q_975_max_temp, q_975_max_temp, max_temp_coef),
+         max_temp_coef = ifelse(max_temp_coef < q_025_max_temp, q_025_max_temp, max_temp_coef),
+         nitrogen_depo = ifelse(nitrogen_depo > q_975_nitrogen_depo, q_975_nitrogen_depo, nitrogen_depo),
+         nitrogen_depo = ifelse(nitrogen_depo < q_025_nitrogen_depo, q_025_nitrogen_depo, nitrogen_depo),
+         human_modification = ifelse(human_modification > q_975_human_modification, q_975_human_modification, human_modification),
+         human_modification = ifelse(human_modification < q_025_human_modification, q_025_human_modification, human_modification),
+         greenup_coef = ifelse(greenup_coef > q_975_greenup, q_975_greenup, greenup_coef),
+         greenup_coef = ifelse(greenup_coef < q_025_greenup, q_025_greenup, greenup_coef),
+         burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, q_975_burned_area, burned_area_coef),
+         burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, q_025_burned_area, burned_area_coef),
+         mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, q_975_evi, mean_evi_coef),
+         mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, q_025_evi, mean_evi_coef)
+  )
+
+p_mat_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(mat_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(mat_p_value < 0.05),
+          aes(color = mat_coef, fill = mat_coef), alpha = 1) +
+  scale_color_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A") +
+  theme_void() +
+  labs(color = "MAT\nTrend", fill = "MAT\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_mat_shapes_sig
+
+ggsave(plot = p_mat_shapes_sig, "builds/plots/pas_mat_map_shapes_sig.png", dpi = 600)
+
+p_map_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(map_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(map_p_value < 0.05),
+          aes(color = map_coef, fill = map_coef), alpha = 1) +
+  scale_color_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  scale_fill_scico(palette = "broc", midpoint = 0, direction = -1, end = 0.9, begin = 0.1) +
+  theme_void() +
+  labs(color = "MAP\nTrend", fill = "MAP\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_map_shapes_sig
+
+ggsave(plot = p_map_shapes_sig, "builds/plots/pas_map_map_shapes_sig.png", dpi = 600)
+
+
+p_max_temp_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(max_temp_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(max_temp_p_value < 0.05),
+          aes(color = max_temp_coef, fill = max_temp_coef), alpha = 1) +
+  scale_color_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A") +
+  theme_void() +
+  labs(color = "Max\nTemp\nTrend", fill = "Max\nTemp\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_max_temp_shapes_sig
+
+ggsave(plot = p_max_temp_shapes_sig, "builds/plots/pas_max_temp_map_shapes_sig.png", dpi = 600)
+
+p_evi_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(mean_evi_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(mean_evi_coef)) %>% 
+            filter(mean_evi_p_value < 0.05),
+          aes(color = mean_evi_coef, fill = mean_evi_coef), alpha = 1) +
+  scale_color_scico(palette = "bam", midpoint = 0) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  theme_void() +
+  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_evi_shapes_sig
+
+ggsave(plot = p_evi_shapes_sig, "builds/plots/pas_evi_map_shapes_sig.png", dpi = 600)
+
+p_burned_area_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(burned_area_coef)) %>% 
+            filter(burned_area_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(burned_area_coef)) %>% 
+            filter(burned_area_p_value < 0.05),
+          aes(color = burned_area_coef, fill = burned_area_coef), alpha = 1) +
+  scale_color_scico(palette = "vik", midpoint = 0) +
+  scale_fill_scico(palette = "vik", midpoint = 0) +
+  theme_void() +
+  labs(color = "Burned\nArea\nTrend", fill = "Burned\nArea\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_burned_area_shapes_sig
+
+ggsave(plot = p_burned_area_shapes_sig, "builds/plots/pas_burned_area_map_shapes_sig.png", dpi = 600)
+
+p_greenup_shapes_sig <- ggplot() +
+  geom_sf(data = world, fill = "white", color = "grey85") +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(greenup_coef)) %>% 
+            filter(greenup_p_value >= 0.05), color = "grey70", alpha = 1) +
+  geom_sf(data = dt_env %>% 
+            filter(!is.na(greenup_coef)) %>% 
+            filter(greenup_p_value < 0.05),
+          aes(color = greenup_coef, fill = greenup_coef), alpha = 1) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  theme_void() +
+  labs(color = "Vegetation\nGreen-Up\nTrend", fill = "Vegetation\nGreen-Up\nTrend") +
+  theme(axis.title = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, "lines"))
+p_greenup_shapes_sig
+
+ggsave(plot = p_greenup_shapes_sig, "builds/plots/pas_greenup_map_shapes_sig.png", dpi = 600)
+
+sig_maps <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig, 
+                         p_map_shapes_sig, p_evi_shapes_sig, 
+                         p_burned_area_shapes_sig, p_greenup_shapes_sig, ncol = 2)
+
+ggsave(plot = sig_maps, "builds/plots/pas_sig_map_shapes.png", dpi = 600, height = 7, width = 9)
+
+sig_maps_climate <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig, 
+                                 p_map_shapes_sig, ncol = 2)
+
+ggsave(plot = sig_maps_climate, "builds/plots/pas_sig_climate_map_shapes.png", dpi = 600, width = 10, height = 4.5) 
+

@@ -98,7 +98,7 @@ gls_h1 <- fitGLS_partition(burned_area_coef ~ 1,
                            parallel = T, 
                            coord.names = c("lon", "lat")
 )
-gls_h1 # yes. Est: 5.563445 ; SE: 0.4952674 ; pval.t: 2.871102e-29
+gls_h1 # no Est: -0.0003185712 ; SE: 3.527051e-05 ; pval.t:1.696381e-19
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 

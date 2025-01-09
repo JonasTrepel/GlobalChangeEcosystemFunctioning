@@ -25,6 +25,9 @@ dt_grid <- dt_grid_raw %>%
   unique() %>% 
   distinct(X, Y, .keep_all = TRUE)
 
+columns_to_check <- c("functional_biome", "X", "Y", "lon", "lat", "unique_id",
+                      "nitrogen_depo", "human_modification", "super_biome", "protection_cat_broad")
+dt_grid <- dt_grid[complete.cases(dt_grid[, ..columns_to_check])]
 
 set.seed(161)
 grid_sub_1 <- dt_grid %>% 
@@ -36,6 +39,7 @@ grid_sub_1 <- dt_grid %>%
 
 table(grid_sub_1$protection_cat_broad)
 
+set.seed(161)
 grid_sub_2 <- dt_grid %>% 
   filter(fract_prot == 1 | fract_prot == 0) %>% 
   group_by(super_biome) %>% 

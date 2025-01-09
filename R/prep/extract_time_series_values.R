@@ -7,13 +7,14 @@ library(data.table)
 library(tidyverse)
 
 #read vectors 
+#param = "grid"
+param = "pas"
 
-grid <- st_read("data/spatialData/grid_sample.gpkg") 
-
-pas <- st_read("data/spatialData/pas_and_controls.gpkg")
-
-vect <- pas
-#vect <- grid
+if(param == "grid"){
+  vect <- st_read("data/spatialData/grid_sample.gpkg") 
+}else if(param == "pas"){
+  vect <- st_read("data/spatialData/pas_and_controls.gpkg")
+}
 
 
 ## get file paths sorted 
@@ -54,7 +55,7 @@ evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series/evi/
                                               pattern = ".tif", 
                                               full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename), 
-         colname = gsub("evi_modis_median_500m", "evi", filename))
+         colname = gsub("evi_modis_median_500m", "median_evi", filename))
 
 burned_area_files <- data.table(filepath = list.files("data/rawData/raw_time_series/fire/burned_area/",
                                                       pattern = ".tif", 
@@ -83,7 +84,7 @@ mean_evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series
                                               pattern = "envi_", 
                                               full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("envi_mean_500m", "envi", filename))
+         colname =  gsub("envi_mean_500m", "mean_evi", filename))
 
 
 covs <- rbind(mat_files, 
@@ -100,7 +101,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(50)
+clust <- makeCluster(25)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -119,6 +120,7 @@ dt_covs <- foreach(i = 1:nrow(covs),
                   .packages = c('tidyverse', 'exactextractr', 'data.table', 'terra', 'sf'),
                   .options.snow = opts,
                   .inorder = TRUE,
+                  .verbose = TRUE,
                   .combine = left_join) %dopar% {
                     
                     #for(i in 1:nrow(covs)){
@@ -128,21 +130,13 @@ dt_covs <- foreach(i = 1:nrow(covs),
                     vect_trans <- st_transform(vect, crs = st_crs(cov_r))
                     
                     extr <- exactextractr::exact_extract(cov_r, 
+                                                         append_cols = c("unique_id"),
                                                          vect_trans, 
                                                          fun = "mean")
-                    dt_extr <- data.table(
-                      extr_col = extr
-                    )
-                   
-                    setnames(dt_extr, "extr_col", covs[i, ]$colname)
+     
+                    setnames(extr, "mean", covs[i, ]$colname)
                     
-                    dt_extr2 <- cbind(vect[, "unique_id"], dt_extr) %>%
-                      as.data.table() %>%
-                      mutate(geom = NULL) %>% 
-                      unique()
-                    
-                    dt_extr_fin <- vect[, "unique_id"] %>% 
-                      left_join(dt_extr2) %>% 
+                    dt_extr_fin <- extr %>% 
                       as.data.table() %>%
                       mutate(geom = NULL) %>% 
                       unique()
@@ -152,7 +146,8 @@ dt_covs <- foreach(i = 1:nrow(covs),
     }
 
 toc()
-
+print(Sys.time())
+stopCluster(clust)
 
 #combine
 vect_covs <- vect %>% 
@@ -164,10 +159,10 @@ vect_covs <- vect %>%
          geom = NULL,
          geometry = NULL)
 
-if(nrow(pas) == nrow(vect)){
+
+if(param == "grid"){
+  fwrite(vect_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv")
+}else if(param == "pas"){
   fwrite(vect_covs, "data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv")
 }
 
-if(nrow(grid) == nrow(vect)){
-  fwrite(vect_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv")
-}

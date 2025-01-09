@@ -20,7 +20,7 @@ library(terra)
 ### define if we want to run it for control or PA 
 
 #param <- "pa"
-param <- "pa"
+param <- "control"
 
 if(param == "pa"){
   pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
@@ -214,7 +214,7 @@ dt_pas_covs <- pas_covs_raw %>%
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL) %>% 
-  dplyr::select(-land_cover_num, functional_biome_num, olson_biome_num, climatic_region_num)
+  dplyr::select(-land_cover_num, -functional_biome_num, -olson_biome_num, -climatic_region_num)
 summary(dt_pas_covs)
 pa.shapes <- dt_pas_covs %>% left_join(pas) %>% st_as_sf
 

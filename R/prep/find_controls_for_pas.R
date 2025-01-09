@@ -193,7 +193,7 @@ print(Sys.time())
 print(paste0("Found controls for ", 
              round((nrow(pa_controls)/nrow(pas_t)*100), 1), "% of the PAs (", nrow(pa_controls), " in total)"))
 
-#"Found controls for 69.7% of the PAs (7302 in total)"
+#""Found controls for 69.7% of the PAs (7278 in total)"
 table(pa_controls$control_within_dist)
 
 pa_controls_final <- pa_controls %>% 

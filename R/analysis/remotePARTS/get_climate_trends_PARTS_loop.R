@@ -2,15 +2,19 @@ library(remotePARTS)
 library(tidyverse)
 library(data.table)
 
+#param = "pas"
+param = "pas"
 
-# Read the data
-dt <- fread("data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv") %>% 
-  as.data.frame() 
+if(param == "grid"){
+  dt <- fread("data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv") %>% 
+    as.data.frame() 
+}
+if(param == "pas"){
+  dt <- fread("data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv") %>% 
+      as.data.frame()
+}
 
-# dt <- fread("data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv") %>% 
-#  as.data.frame() %>% 
-#  rename(X = Longitude, 
-#         Y = Latitude)
+
 
 #dt <- dt %>% sample_n(1000)
 
@@ -19,11 +23,11 @@ process_trend <- function(cols_pattern, trend_name, dt) {
   
   cols <- grep(cols_pattern, names(dt), value = TRUE)
   
-  dt_subset <- dt %>% dplyr::select(all_of(cols), X, Y, unique_id) %>% 
+  dt_subset <- dt %>% dplyr::select(all_of(cols), lon, lat, unique_id) %>% 
     filter(complete.cases(.)) %>% as.data.frame()
   
   Y <- as.matrix(dt_subset[, cols])
-  coords <- as.matrix(dt_subset[, c("X", "Y")])
+  coords <- as.matrix(dt_subset[, c("lon", "lat")])
   
   ar_results <- fitAR_map(Y = Y, coords = coords)
   
@@ -41,30 +45,46 @@ process_trend <- function(cols_pattern, trend_name, dt) {
 
 # List of trends
 trend_configs <- data.frame(
-  pattern = c("mat_", "max_temp_", "map_"#, "evi_", "burned_area_", "doy_greenup_1_"
-              ),
-  name = c("mat", "max_temp", "map"#, "evi", "burned_area", "doy_greenup_1"
-           ),
+  pattern = c("mat_", "max_temp_", "map_"),
+  name = c("mat", "max_temp", "map"),
   stringsAsFactors = FALSE
 )
 
-# 
-for (i in 1:nrow(trend_configs)) {
-  
+# loop through trends  
+############### create cluster and run loop in parallel ####################
+library(doSNOW)
+library(foreach)
+library(tictoc)
+
+# Create and register a cluster
+clust <- makeCluster(3)
+registerDoSNOW(clust)
+
+## progress bar 
+iterations <- nrow(trend_configs)
+pb <- txtProgressBar(max = iterations, style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+
+
+dt_trend <- foreach(i = 1:nrow(trend_configs),
+                   .packages = c('tidyverse', 'remotePARTS', 'data.table', 'sf'),
+                   .options.snow = opts,
+                   .inorder = TRUE,
+                   .verbose = TRUE,
+                   .combine = left_join) %dopar% {
+
   config <- trend_configs[i, ]
  
   dt_sub <- process_trend(config$pattern, config$name, dt)
   
-  if(i == 1){
-    dt_trend <- dt_sub
-  }else{
-    dt_trend <- left_join(dt_trend, dt_sub)
-  }
+  return(dt_sub)
   
   print(paste0(config$name, " done! ", Sys.time()))
   
 }
 
+stopCluster(clust)
 print(paste0("done! ", Sys.time()))
 
 
@@ -74,12 +94,15 @@ dt_res <- dt %>%
   left_join(dt_trend) %>%
   dplyr::select(-all_of(grep("mat_", names(dt), value = T)),
                 -all_of(grep("max_temp_", names(dt), value = T)),
-        #       -all_of(grep("evi_", names(dt), value = T)),
-        #       -all_of(grep("burned_area_", names(dt), value = T)),
-        #       -all_of(grep("doy_greenup_1_", names(dt), value = T)),
-                -all_of(grep("map_", names(dt), value = T))
-) 
+                -all_of(grep("map_", names(dt), value = T))) 
 
-fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
-#fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
+
 summary(dt_res)
+
+if(param == "grid"){
+  fwrite(dt_res, "data/processedData/dataFragments/grid_sample_with_climate_trends.csv")
+}
+if(param == "pas"){
+  fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
+}
+
