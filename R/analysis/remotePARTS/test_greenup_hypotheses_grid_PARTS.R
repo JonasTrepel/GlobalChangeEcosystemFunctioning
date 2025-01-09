@@ -384,7 +384,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
     
   }else{
     
-    print("start estimating range on three different subsets of the data")
+    print(paste0("start estimating range on a subset of ", fit_n, " datapoints"))
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
     corfit_biome1 <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 

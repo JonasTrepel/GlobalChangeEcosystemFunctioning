@@ -382,7 +382,7 @@ biome_gls <- function(super_b = NA, col_pattern = NA, start = list(range = 0.1),
     
   }else{
     
-    print("start estimating range on three different subsets of the data")
+    print(paste0("start estimating range on a subset of ", fit_n, " datapoints"))
     
     ### estimate optimal r parameter (range of spatial autocorrelation)
     corfit_biome1 <- fitCor(resids = residuals(ar_biome), coords = coords_biome, covar_FUN = "covar_exp", 
@@ -503,7 +503,7 @@ p_cold_short
 
 nrow(dt[dt$super_biome == "not_cold_tall",])
 p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = 15000, part_size = 1500,
-                             col_pattern = "burned_area_", dat = dt, part = TRUE, start = list(range = 0.1))
+                             col_pattern = "burned_area_", dat = dt, part = TRUE, start = list(range = 0.5))
 dt_est_not_cold_tall <- p_not_cold_tall$data
 p_not_cold_tall
 

@@ -19,8 +19,8 @@ library(terra)
 
 ### define if we want to run it for control or PA 
 
+#param <- "pa"
 param <- "pa"
-#param <- "control"
 
 if(param == "pa"){
   pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
@@ -62,7 +62,7 @@ land_cover <- c("Unknown",
                "OpenForestOther",
                "Ocean")
 
-lc_leg <- data.frame(land_cover_num = land_cover_num, land_cover = land_cover)
+land_cover_leg <- data.frame(land_cover_num = land_cover_num, land_cover = land_cover)
 
 wwfBiome <- read_sf("data/spatialData/otherCovariates/WWF_BIOMES.gpkg")
 
@@ -151,7 +151,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(5)
+clust <- makeCluster(15)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -186,7 +186,7 @@ dtCovs <- foreach(i = 1:nrow(covs),
                     
                     extr <- exactextractr::exact_extract(covR, 
                                                          world_grid_t, 
-                                                         append_cols = c("gridID"),
+                                                         append_cols = c("unique_id"),
                                                          fun = func)
                     
                     setnames(extr, func, covs[i, ]$colName)
@@ -215,12 +215,12 @@ dt_pas_covs <- pas_covs_raw %>%
   mutate(x = NULL, 
          geom = NULL) %>% 
   dplyr::select(-land_cover_num, functional_biome_num, olson_biome_num, climatic_region_num)
-
+summary(dt_pas_covs)
 pa.shapes <- dt_pas_covs %>% left_join(pas) %>% st_as_sf
 
 
 if(param == "pa"){
-  fwrite(dt_pas_covs, "data/processedData/cleanData/pasWithCovs.csv")
+  fwrite(dt_pas_covs, "data/processedData/cleanData/pas_with_covs.csv")
 }
 if(param == "control"){
   fwrite(dt_pas_covs, "data/processedData/cleanData/controls_with_covs.csv")

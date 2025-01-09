@@ -15,10 +15,10 @@ library(mapview)
 source("R/functions/move_polygon.R")
 source("R/functions/resolve_overlaps.R")
 
-pasCovsDTRaw <- fread("data/processedData/cleanData/pasWithCovs.csv") %>% 
+pasCovsDTRaw <- fread("data/processedData/cleanData/pas_with_covs.csv") %>% 
   mutate(STATUS_YR = ifelse(STATUS_YR == 0, NA, STATUS_YR), 
          PaAge = 2023-STATUS_YR) %>% 
-  filter(!LandCover %in% c("Water", "Ocean", "Urban", "Cultivated") & 
+  filter(!land_cover %in% c("Water", "Ocean", "Urban", "Cultivated") & 
            IUCN_CAT %in% c("Ib", "Ia", "II")) %>% unique()
 
 
@@ -59,7 +59,7 @@ library(tictoc)
 
 nCores <- parallel::detectCores()
 # Create and register a cluster
-clust <- makeCluster(25)
+clust <- makeCluster(40)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -84,7 +84,7 @@ pa_controls_raw <- foreach(i = 1:nrow(pas_t),
   
   mat <- pa$MAT
   map <- pa$MAP
-  biome <- pa$FunctionalBiome
+  biome <- pa$functional_biome
   cont <- pa$Continent 
   Seed <- pa$seed 
   
@@ -174,7 +174,7 @@ pa_controls_raw <- foreach(i = 1:nrow(pas_t),
      new_poly <- new_poly %>% 
        mutate(control_for = pas_t[i,]$unique_id, 
               Continent = cont, 
-              FunctionalBiome = biome, 
+              functional_biome = biome, 
               control_within_dist = dist_cat)
   }
   
@@ -185,18 +185,18 @@ pa_controls_raw <- foreach(i = 1:nrow(pas_t),
 toc()
 stopCluster(clust)
 print(paste0("Loop done!"))
-
+print(Sys.time())
       
 pa_controls <- resolve_overlaps(polygons = pa_controls_raw, keep_largest = TRUE)
 
-
+print(Sys.time())
 print(paste0("Found controls for ", 
              round((nrow(pa_controls)/nrow(pas_t)*100), 1), "% of the PAs (", nrow(pa_controls), " in total)"))
 
-#"Found controls for 74% of the PAs (7751 in total)"
+#"Found controls for 69.7% of the PAs (7302 in total)"
+table(pa_controls$control_within_dist)
 
 pa_controls_final <- pa_controls %>% 
- # rename(control_for = controlFor) %>%
   mutate(unique_id = paste0(control_for, "_control"))
 
 write_sf(pa_controls_final, "data/spatialData/protectedAreas/controls_for_strict_pas.gpkg")
