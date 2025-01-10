@@ -217,7 +217,7 @@ p_est_evi_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -241,7 +241,7 @@ p_est_evi_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -274,7 +274,7 @@ p_est_burned_area_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -299,7 +299,7 @@ p_est_burned_area_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -333,7 +333,7 @@ p_est_greenup_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -357,7 +357,7 @@ p_est_greenup_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.grid = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -370,6 +370,34 @@ fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"),
                             p_est_greenup_b, p_est_greenup_c, 
                             heights = c(1.3, 0.8, 1))
 ggsave(plot = fig_greenup, "builds/plots/grid_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
+
+
+## Alternative layout #####
+fig_evi_alt <- grid.arrange(p_est_evi_b + labs(title = "a)"), 
+                                p_evi_shapes + labs(title = "b)"), 
+                                p_est_evi_c + labs(title = "c)"), 
+                                heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_evi_alt, "builds/plots/grid_evi_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
+
+
+
+fig_burned_area_alt <- grid.arrange(p_est_burned_area_b + labs(title = "a)"), 
+                                p_burned_area_shapes + labs(title = "b)"), 
+                                p_est_burned_area_c + labs(title = "c)"), 
+                                heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_burned_area_alt, "builds/plots/grid_burned_area_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
+
+
+
+
+fig_greenup_alt <- grid.arrange(p_est_greenup_b + labs(title = "a)"), 
+                                p_greenup_shapes + labs(title = "b)"), 
+                                p_est_greenup_c + labs(title = "c)"), 
+                            heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_greenup_alt, "builds/plots/grid_greenup_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -401,6 +429,7 @@ p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
                      lab = TRUE)
 p_corr
 ggsave(plot = p_corr, "builds/plots/grid_variable_correlations.png", dpi = 600, height = 8, width = 8)
+
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
