@@ -501,7 +501,7 @@ p_cold_short
 
 nrow(dt[dt$super_biome == "not_cold_tall",])
 p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = "row_n", part_size = 1000,
-                             col_pattern = "mean_evi_", dat = dt, part = TRUE, start = list(range = 0.1))
+                             col_pattern = "mean_evi_", dat = dt, part = TRUE, start = list(range = 0.01))
 dt_est_not_cold_tall <- p_not_cold_tall$data
 p_not_cold_tall
 

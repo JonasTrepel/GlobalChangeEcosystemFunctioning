@@ -14,7 +14,7 @@ evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv")
 burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv")
 greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv")
 
-climate_trends <- fread("data/processedData/dataFragments/pas_sample_with_climate_trends.csv") %>% 
+climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
   dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef, mat_p_value, map_p_value, max_temp_p_value)
 
 sf_use_s2(FALSE)
@@ -26,7 +26,7 @@ world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
   summarize()
 
 
-raw_shapes <- read_sf("data/spatialData/pas_sample.gpkg")
+raw_shapes <- read_sf("data/spatialData/pas_and_controls.gpkg")
 
 shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
@@ -54,9 +54,8 @@ shapes <- raw_shapes %>%
       !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
     ),
     protection_cat_broad = case_when(
-      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
-      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
-      iucn_cat == "unprotected" ~ "Unprotected"))
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "strictly_protected", 
+      is.na(iucn_cat) ~ "control"))
 
 
 sum(is.na(shapes$mean_evi_coef))
@@ -148,7 +147,7 @@ ggsave(plot = p_all_trends_map_shapes, "builds/plots/pas_all_trends_map_shapes.p
 ################################     ESTIMATES     ###################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-evi_est <- fread("builds/model_estimates/envi_pas_estimates.csv") %>% mutate(response = "evi", 
+evi_est <- fread("builds/model_estimates/mean_evi_pas_estimates.csv") %>% mutate(response = "evi", 
                                                                               estimate = estimate/100, 
                                                                               std_error = std_error/100, 
                                                                               ci_lb = ci_lb/100, 
@@ -173,9 +172,8 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
     term == "super_biomecold_tall" ~ "Cold Limited\nTall Vegetation",
     term == "super_biomenot_cold_short" ~ "Not Cold Limited\nShort Vegetation",
     term == "super_biomenot_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
-    term == "protection_cat_broadStrict" ~ "Strict", 
-    term == "protection_cat_broadMixed" ~ "Mixed", 
-    term == "protection_cat_broadUnprotected" ~ "Unprotected", 
+    term == "protection_cat_broadstrictly_protected" ~ "Strictly\nProtected", 
+    term == "protection_cat_broadcontrol" ~ "Control", 
     term == "area_km2_log" ~ "PA Area",
     term == "pa_age_log" ~ "PA Age"),
     sig_pn = case_when(
@@ -217,7 +215,7 @@ p_est_evi_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.pas = element_blank(),
+        #panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -241,7 +239,7 @@ p_est_evi_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.pas = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -274,7 +272,7 @@ p_est_burned_area_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.pas = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -299,7 +297,7 @@ p_est_burned_area_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.pas = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -333,7 +331,7 @@ p_est_greenup_b <- dt_est %>%
   labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
-        panel.pas = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -357,7 +355,7 @@ p_est_greenup_c <- dt_est %>%
   labs(title = "c)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
-        panel.pas = element_blank(),
+        # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
@@ -407,7 +405,7 @@ ggsave(plot = p_corr, "builds/plots/pas_variable_correlations.png", dpi = 600, h
 ############################     TREND DISTRIBUTION     ##############################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-library(gpasges)
+library(ggridges)
 
 dt_ridges <- shapes %>% 
   as.data.table() %>%
@@ -419,9 +417,8 @@ dt_ridges <- shapes %>%
          greenup_coef = ifelse(greenup_coef > q_975_greenup, NA, greenup_coef),
          greenup_coef = ifelse(greenup_coef < q_025_greenup, NA, greenup_coef), 
          protection_status = case_when(
-           protection_cat_broad == "Strict" ~ "Strict",
-           protection_cat_broad == "Unprotected" ~ "Unprotected",
-           protection_cat_broad == "Mixed" ~ "Mixed"), 
+           protection_cat_broad == "strictly_protected" ~ "Strictly\nProtected",
+           protection_cat_broad == "control" ~ "Control"),
          biome_clean = case_when(
            super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
            super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",

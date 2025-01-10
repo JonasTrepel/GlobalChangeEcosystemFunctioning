@@ -905,3 +905,103 @@ sig_maps_climate <- grid.arrange(p_mat_shapes_sig, p_max_temp_shapes_sig,
 
 ggsave(plot = sig_maps_climate, "builds/plots/grid_sig_climate_map_shapes.png", dpi = 600, width = 10, height = 4.5) 
 
+### P VALUE vs MAGNITUDE --------------
+
+dt_p <- shapes %>% 
+  left_join(climate_trends) %>% 
+  mutate(abs_mean_evi_coef = abs_mean_evi_coef/100, 
+         abs_burned_area_coef = abs_burned_area_coef*100, 
+         abs_mat_coef = abs(mat_coef), 
+         abs_map_coef = abs(map_coef), 
+         abs_max_temp_coef = abs(max_temp_coef))
+
+
+# Evi Trend 
+evi_cor <- cor.test(dt_p$abs_mean_evi_coef, dt_p$mean_evi_p_value, method = "s")
+evi_e <- round(as.numeric(evi_cor$estimate), 2)
+evi_p <- round(as.numeric(evi_cor$p.value), 4)
+evi_label <- paste0("Rho = ", evi_e, "; p = ", evi_p)
+
+evi_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = mean_evi_p_value, x = abs_mean_evi_coef), alpha = 0.5) +
+  annotate("text", x = 1, y = 0.75, label = evi_label) +
+  labs(x = "Abs. EVI Estimate", y = "P-Value") +
+  theme_classic()
+evi_cor_p
+
+# Burned Area Trend 
+burned_area_cor <- cor.test(dt_p$abs_burned_area_coef, dt_p$burned_area_p_value, method = "s")
+burned_area_e <- round(as.numeric(burned_area_cor$estimate), 2)
+burned_area_p <- round(as.numeric(burned_area_cor$p.value), 4)
+burned_area_label <- paste0("Rho = ", burned_area_e, "; p = ", burned_area_p)
+
+burned_area_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = burned_area_p_value, x = abs_burned_area_coef), alpha = 0.5) +
+  annotate("text", x = 3, y = 0.75, label = burned_area_label) +
+  labs(x = "Abs. Burned Area Estimate", y = "P-Value") +
+  theme_classic()
+burned_area_cor_p
+
+
+# Greenup Trend 
+greenup_cor <- cor.test(dt_p$abs_greenup_coef, dt_p$greenup_p_value, method = "s")
+greenup_e <- round(as.numeric(greenup_cor$estimate), 2)
+greenup_p <- round(as.numeric(greenup_cor$p.value), 4)
+greenup_label <- paste0("Rho = ", greenup_e, "; p = ", greenup_p)
+
+greenup_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = greenup_p_value, x = abs_greenup_coef), alpha = 0.5) +
+  annotate("text", x = 6, y = 0.75, label = greenup_label) +
+  labs(x = "Abs. Veg-Greenup Estimate", y = "P-Value") +
+  theme_classic()
+greenup_cor_p
+
+
+# MAT Trend 
+mat_cor <- cor.test(dt_p$abs_mat_coef, dt_p$mat_p_value, method = "s")
+mat_e <- round(as.numeric(mat_cor$estimate), 2)
+mat_p <- round(as.numeric(mat_cor$p.value), 4)
+mat_label <- paste0("Rho = ", mat_e, "; p = ", mat_p)
+
+mat_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = mat_p_value, x = abs_mat_coef), alpha = 0.5) +
+  annotate("text", x = 0.06, y = 0.75, label = mat_label) +
+  labs(x = "Abs. MAT Estimate", y = "P-Value") +
+  theme_classic()
+mat_cor_p
+
+#Max Temp 
+max_temp_cor <- cor.test(dt_p$abs_max_temp_coef, dt_p$max_temp_p_value, method = "s")
+max_temp_e <- round(as.numeric(max_temp_cor$estimate), 2)
+max_temp_p <- round(as.numeric(max_temp_cor$p.value), 4)
+max_temp_label <- paste0("Rho = ", max_temp_e, "; p = ", max_temp_p)
+
+max_temp_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = max_temp_p_value, x = abs_max_temp_coef), alpha = 0.5) +
+  annotate("text", x = 0.1, y = 0.75, label = max_temp_label) +
+  labs(x = "Abs. Max Temp. Estimate", y = "P-Value") +
+  theme_classic()
+max_temp_cor_p
+
+#MAP
+map_cor <- cor.test(dt_p$abs_map_coef, dt_p$map_p_value, method = "s")
+map_e <- round(as.numeric(map_cor$estimate), 2)
+map_p <- round(as.numeric(map_cor$p.value), 4)
+map_label <- paste0("Rho = ", map_e, "; p = ", map_p)
+
+map_cor_p <- dt_p %>% 
+  ggplot() +
+  geom_point(aes(y = map_p_value, x = abs_map_coef), alpha = 0.5) +
+  annotate("text", x = 40, y = 0.75, label = map_label) +
+  labs(x = "Abs. MAP Estimate", y = "P-Value") +
+  theme_classic()
+map_cor_p
+
+p_cor_p <- grid.arrange(evi_cor_p, burned_area_cor_p, greenup_cor_p, 
+                        mat_cor_p, max_temp_cor_p, map_cor_p, ncol = 3)
+ggsave(plot = p_cor_p, "builds/plots/grid_trends_vs_p.png", dpi = 600, height = 8, width = 12)
