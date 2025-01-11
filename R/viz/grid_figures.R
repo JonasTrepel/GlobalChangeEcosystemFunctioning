@@ -34,29 +34,7 @@ shapes <- raw_shapes %>%
   left_join(burned_area_trend) %>% 
   left_join(greenup_trend) %>% 
   mutate(mean_evi_coef = mean_evi_coef /100, 
-         burned_area_coef = burned_area_coef*100) %>%  # to convert to %/year
-  mutate(
-    productivity = case_when(
-      grepl("L", functional_biome) ~ "low", 
-      grepl("M", functional_biome) ~ "medium", 
-      grepl("H", functional_biome) ~ "high"
-    ), 
-    ndvi_min = case_when(
-      grepl("C", functional_biome) ~ "cold", 
-      grepl("D", functional_biome) ~ "dry", 
-      grepl("B", functional_biome) ~ "cold_and_dry", 
-      grepl("N", functional_biome) ~ "non_seasonal"
-    ),
-    super_biome = case_when(
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ),
-    protection_cat_broad = case_when(
-      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
-      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
-      iucn_cat == "unprotected" ~ "Unprotected"))
+         burned_area_coef = burned_area_coef*100)
 
 
 sum(is.na(shapes$mean_evi_coef))

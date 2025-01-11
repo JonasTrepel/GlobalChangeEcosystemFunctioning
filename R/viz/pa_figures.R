@@ -549,14 +549,17 @@ ggsave(plot = p_biome_shapes, "builds/plots/pas_biome_maps_shapes.png", dpi = 60
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   PROTECTION MAP   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+scico(palette = "bamako", n = 10)
+#[1] "#003A46" "#0E433F" "#1F4E34" "#355E26" "#527014" "#728202" "#988C02" "#BEA82E" "#E1C76D" "#FFE5AC"
 
 p_pa_shapes <- ggplot() +
   geom_sf(data = world, fill = "white", color = "grey75") +
   geom_sf(data = shapes %>% 
+            mutate(protection_cat_broad = ifelse(protection_cat_broad == "control", "Control", "Protected")) %>% 
             filter(!is.na(mean_evi_coef)),
           aes(color = protection_cat_broad, fill = protection_cat_broad), alpha = 1) +
-  scale_color_scico_d(palette = "bamako") +
-  scale_fill_scico_d(palette = "bamako") +
+  scale_color_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
+  scale_fill_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
   theme_void() +
   labs(color = "Protection\nStatus", fill = "Protection\nStatus") +
   theme(axis.title = element_blank())

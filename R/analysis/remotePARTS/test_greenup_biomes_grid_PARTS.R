@@ -13,15 +13,6 @@ dt_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trend
 
 dt_raw <- dt_raw %>% 
   mutate(
-    protection_cat_broad = case_when(
-      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
-      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
-      iucn_cat == "unprotected" ~ "Unprotected"), 
-    super_biome = case_when(
-      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
-      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
     pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
     nitrogen_depo = scale(nitrogen_depo),
     mat_coef = scale(mat_coef),
@@ -36,9 +27,9 @@ dt_raw <- dt_raw %>%
     group_by(olson_biome) %>% 
     mutate(n_per_olson_biome = n()) %>% 
     ungroup()  %>% 
-  filter(n_per_olson_biome > 1000 &
+  filter(n_per_olson_biome > 1500 &
            !is.na(climatic_region) &
-           n_per_functional_biome > 1000 & 
+           n_per_functional_biome > 1500 & 
            !climatic_region == "" & !olson_biome == "")
   
 
@@ -94,7 +85,7 @@ corfit <- fitCor(resids = residuals(ar_greenup), coords = coords_greenup, covar_
 ############ test hypotheses ############ 
 
 #partition the data 
-set.seed(161)
+set.seed(1312)
 pm <- sample_partitions(npix = nrow(dt_greenup), partsize = 1500, npart = NA)
 dim(pm)
 
@@ -114,6 +105,8 @@ gls_h1 <- fitGLS_partition(greenup_coef ~ 1,
 gls_h1 # yes. Est: -0.05098253; SE: 0.1024441; pval.t: 0.6187328
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
+
+dt_greenup <- dt_greenup %>% mutate(olson_biome = gsub(" ", "_", olson_biome))
 
 # Olson Biomes ---------------------------------
 set.seed(161)
@@ -240,7 +233,6 @@ p_climatic_region <- dt_est_climatic_region %>%
   theme(legend.position = "none", 
         plot.title = element_text(size = 12))
 p_climatic_region
-
 
 p_gr_b <- gridExtra::grid.arrange(p_biome, p_functional_biome, p_super_biome, p_climatic_region,
                                   widths = c(2, 0.9, 1, 1))
