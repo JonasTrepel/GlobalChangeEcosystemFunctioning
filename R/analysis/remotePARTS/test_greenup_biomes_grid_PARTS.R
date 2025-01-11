@@ -8,10 +8,10 @@ library(data.table)
 library(remotePARTS)
 
 
-dt_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trends.csv") %>% 
+dt_raw_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trends.csv") %>% 
   as.data.frame()
 
-dt_raw <- dt_raw %>% 
+dt_raw <- dt_raw_raw %>% 
   mutate(
     pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
     nitrogen_depo = scale(nitrogen_depo),
@@ -27,11 +27,18 @@ dt_raw <- dt_raw %>%
     group_by(olson_biome) %>% 
     mutate(n_per_olson_biome = n()) %>% 
     ungroup()  %>% 
-  filter(n_per_olson_biome > 1500 &
+  filter(n_per_olson_biome > 1000 &
            !is.na(climatic_region) &
-           n_per_functional_biome > 1500 & 
-           !climatic_region == "" & !olson_biome == "")
-  
+           n_per_functional_biome > 1000 & 
+           !climatic_region == "" & !olson_biome == "") %>% 
+  #group_by(olson_biome) %>% 
+  #slice_sample(n = 1000) %>%
+  ungroup()
+
+table(dt_raw$functional_biome)
+table(dt_raw$olson_biome)
+table(dt_raw$climatic_region)
+table(dt_raw$super_biome)
 
 dt <- dt_raw
 #######################################
@@ -115,9 +122,9 @@ gls_biome <- fitGLS_partition(greenup_coef ~ 0 +
                               covar.pars = list(range = range_opt_greenup),
                               data = dt_greenup,
                               nugget = NA,
-                              ncores = 25,
+                              ncores = 6,
                               progressbar = TRUE, 
-                              parallel = TRUE, 
+                              parallel = FALSE, 
                               coord.names = c("lon", "lat"))
 gls_biome 
 

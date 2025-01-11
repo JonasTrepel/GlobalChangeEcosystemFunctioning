@@ -413,10 +413,10 @@ dt_corr_full <- dt_corr %>% dplyr::select(-super_biome)
 
 library(ggcorrplot)
 corr <- round(cor(dt_corr_full), 1)
-p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
+p_corr_full <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
                      lab = TRUE)
-p_corr
-ggsave(plot = p_corr, "builds/plots/grid_variable_correlations.png", dpi = 600, height = 8, width = 8)
+p_corr_full
+#ggsave(plot = p_corr_full, "builds/plots/grid_variable_correlations.png", dpi = 600, height = 8, width = 8)
 
 
 #### Biome specific correlations ---
@@ -464,15 +464,25 @@ p_corr_not_cold_tall <- ggcorrplot(corr_not_cold_tall, hc.order = TRUE, type = "
                                 lab = TRUE)
 p_corr_not_cold_tall
 
-dt_biome_corr <- gridExtra::grid.arrange(
+p_biome_corr <- gridExtra::grid.arrange(
   p_corr_cold_short + labs(title = "Cold limited, short vegetation"),
   p_corr_cold_tall + labs(title = "Cold limited, tall vegetation"),
   p_corr_not_cold_short + labs(title = "Not cold limited, short vegetation"),
   p_corr_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
 )
 
+#ggsave(plot = p_biome_corr, "builds/plots/grid_variable_correlations_biome_spec.png", dpi = 600, height = 12, width = 12)
 
-ggsave(plot = dt_biome_corr, "builds/plots/grid_variable_correlations_biome_spec.png", dpi = 600, height = 12, width = 12)
+p_corr <- gridExtra::grid.arrange(
+  p_corr_full + labs(title = "Full Dataset"),
+  p_corr_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+ggsave(plot = p_corr, "builds/plots/grid_variable_correlations_all.png", dpi = 600, height = 13, width = 11)
+
 
 ### correlations in strictly protected areas 
 dt_corr_pa <- shapes %>% 
@@ -500,10 +510,10 @@ dt_corr_pa_full <- dt_corr_pa %>% dplyr::select(-super_biome)
 
 library(ggcorrplot)
 corr_pa <- round(cor(dt_corr_pa_full), 1)
-p_corr_pa <- ggcorrplot(corr_pa, hc.order = TRUE, type = "lower",
+p_corr_pa_full <- ggcorrplot(corr_pa, hc.order = TRUE, type = "lower",
                      lab = TRUE)
-p_corr_pa
-ggsave(plot = p_corr_pa, "builds/plots/grid_variable_correlations_strict_pas.png", dpi = 600, height = 8, width = 8)
+p_corr_pa_full
+#ggsave(plot = p_corr_pa_full, "builds/plots/grid_variable_correlations_strict_pas.png", dpi = 600, height = 8, width = 8)
 
 
 #### Biome specific correlations ---
@@ -559,7 +569,19 @@ dt_biome_corr_pa <- gridExtra::grid.arrange(
 )
 
 
-ggsave(plot = dt_biome_corr_pa, "builds/plots/grid_variable_correlations_biome_spec_strict_pas.png", dpi = 600, height = 12, width = 12)
+#ggsave(plot = dt_biome_corr_pa, "builds/plots/grid_variable_correlations_biome_spec_strict_pas.png", dpi = 600, height = 12, width = 12)
+
+p_corr_pa <- gridExtra::grid.arrange(
+  p_corr_pa_full + labs(title = "Full Dataset"),
+  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+ggsave(plot = p_corr_pa, "builds/plots/grid_variable_correlations_strict_pas_all.png", dpi = 600, height = 13, width = 11)
+
+
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
