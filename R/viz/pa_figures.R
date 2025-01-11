@@ -202,13 +202,15 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
 
 fwrite(dt_est %>% 
          dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
+         filter(!grepl("//.1", model)) %>% 
          mutate(p_value = round(p_value, 4), 
                 estimate = round(estimate, 3), 
                 ci_lb = round(ci_lb, 3),
-                ci_ub = round(ci_ub, 3)) %>% 
+                ci_ub = round(ci_ub, 3), 
+                dataset = "PAs and Controls") %>% 
          dplyr::select(Response = response, Model = model,
                        Variable = clean_term, Estimate = estimate,
-                       `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value), 
+                       `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value, dataset), 
        "builds/model_estimates/combined_clean_estimates_pas.csv")
 
 # Evi estimates -----
