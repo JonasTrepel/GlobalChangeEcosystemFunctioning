@@ -44,7 +44,7 @@ sum(is.na(shapes$mean_evi_coef))
 grid_pa_area_total <- as.numeric(sum(shapes[shapes$protection_cat_broad == "Strict", ]$grid_area_km2, na.rm = T))
 pa_area_total <- 1921064
 
-(fract <- round(grid_pa_area_total/pa_area_total, 2))
+(fract <- round(grid_pa_area_total/pa_area_total, 2)) #0.7
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -193,8 +193,8 @@ fwrite(dt_est %>%
                 ci_ub = round(ci_ub, 3)) %>% 
          dplyr::select(Response = response, Model = model,
                        Variable = clean_term, Estimate = estimate,
-                       p = p_value, `lower CI` = ci_lb, `upper CI` = ci_ub), 
-       "builds/model_estimates/combinde_clean_estimates.csv")
+                       `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value), 
+       "builds/model_estimates/combined_clean_estimates_grid.csv")
 
 # Evi estimates -----
 scico(palette = "bam", n = 10)

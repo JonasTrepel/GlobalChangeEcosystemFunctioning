@@ -27,9 +27,9 @@ dt_raw <- dt_raw_raw %>%
     group_by(olson_biome) %>% 
     mutate(n_per_olson_biome = n()) %>% 
     ungroup()  %>% 
-  filter(n_per_olson_biome > 1000 &
+  filter(n_per_olson_biome > 2500 &
            !is.na(climatic_region) &
-           n_per_functional_biome > 1000 & 
+           n_per_functional_biome > 2500 & 
            !climatic_region == "" & !olson_biome == "") %>% 
   #group_by(olson_biome) %>% 
   #slice_sample(n = 1000) %>%
@@ -122,7 +122,7 @@ gls_biome <- fitGLS_partition(greenup_coef ~ 0 +
                               covar.pars = list(range = range_opt_greenup),
                               data = dt_greenup,
                               nugget = NA,
-                              ncores = 6,
+                              ncores = 25,
                               progressbar = TRUE, 
                               parallel = FALSE, 
                               coord.names = c("lon", "lat"))

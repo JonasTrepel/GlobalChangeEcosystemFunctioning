@@ -1,0 +1,154 @@
+Response,Model,Variable,Estimate,lower CI,upper CI,p
+evi,H1,Intercept,0.054,0.045,0.063,0
+evi,H2,Intercept,0.047,0.039,0.055,0
+evi,H2,Nitrogen Deposition,0.027,0.023,0.032,0
+evi,H2,MAT Trend,0.006,-0.002,0.014,0.1189
+evi,H2,Max Temp Trend,-0.004,-0.009,0.002,0.1705
+evi,H2,MAP Trend,0,-0.004,0.004,0.984
+evi,H2,Human Modification,-0.001,-0.004,0.002,0.6703
+evi,H3,"Cold Limited
+Short Vegetation",0.046,0.029,0.062,0
+evi,H3,"Cold Limited
+Tall Vegetation",0.059,0.044,0.074,0
+evi,H3,"Not Cold Limited
+Short Vegetation",0.046,0.035,0.056,0
+evi,H3,"Not Cold Limited
+Tall Vegetation",0.064,0.054,0.074,0
+evi,H4,Mixed,0.05,0.04,0.06,0
+evi,H4,Strict,0.056,0.046,0.067,0
+evi,H4,Unprotected,0.055,0.046,0.064,0
+evi,H4.1,Mixed,0.087,0.079,0.095,0
+evi,H4.1,Strict,0.089,0.081,0.097,0
+evi,H4.1,Unprotected,0.094,0.087,0.101,0
+evi,H5,Intercept,0.049,0.034,0.064,0
+evi,H5,PA Area,-0.002,-0.011,0.008,0.752
+evi,H5,PA Age,0.002,-0.004,0.007,0.5277
+evi,H5.1,Intercept,0.088,0.078,0.099,0
+evi,H5.1,PA Area,-0.004,-0.011,0.003,0.2587
+evi,H5.1,PA Age,0,-0.004,0.005,0.8527
+evi,cold_tall,Intercept,0.046,0.026,0.067,0
+evi,cold_tall,Nitrogen Deposition,0.025,0.009,0.04,0.0019
+evi,cold_tall,MAT Trend,0.01,-0.011,0.032,0.3529
+evi,cold_tall,Max Temp Trend,-0.007,-0.018,0.003,0.1717
+evi,cold_tall,MAP Trend,0.006,-0.017,0.029,0.5947
+evi,cold_tall,Human Modification,-0.003,-0.006,0.001,0.1469
+evi,cold_short,Intercept,0.042,0.017,0.067,0.001
+evi,cold_short,Nitrogen Deposition,0.032,0.003,0.062,0.0329
+evi,cold_short,MAT Trend,0.018,-0.001,0.038,0.0672
+evi,cold_short,Max Temp Trend,-0.003,-0.012,0.005,0.4578
+evi,cold_short,MAP Trend,0.013,-0.011,0.037,0.2727
+evi,cold_short,Human Modification,-0.006,-0.011,0,0.0382
+evi,not_cold_tall,Intercept,0.049,0.04,0.058,0
+evi,not_cold_tall,Nitrogen Deposition,0.026,0.022,0.031,0
+evi,not_cold_tall,MAT Trend,-0.004,-0.013,0.004,0.3102
+evi,not_cold_tall,Max Temp Trend,0.001,-0.006,0.008,0.7754
+evi,not_cold_tall,MAP Trend,-0.001,-0.005,0.003,0.7503
+evi,not_cold_tall,Human Modification,0.001,-0.002,0.005,0.5222
+evi,not_cold_short,Intercept,0.05,0.036,0.065,0
+evi,not_cold_short,Nitrogen Deposition,0.019,0.014,0.025,0
+evi,not_cold_short,MAT Trend,0.008,-0.001,0.017,0.0651
+evi,not_cold_short,Max Temp Trend,-0.006,-0.011,-0.001,0.0179
+evi,not_cold_short,MAP Trend,-0.004,-0.009,0.001,0.1006
+evi,not_cold_short,Human Modification,0.001,-0.001,0.004,0.373
+burned_area,H1,Intercept,-0.039,-0.046,-0.033,0
+burned_area,H2,Intercept,-0.038,-0.044,-0.031,0
+burned_area,H2,Nitrogen Deposition,0.01,0.004,0.016,9e-04
+burned_area,H2,MAT Trend,0.032,0.024,0.04,0
+burned_area,H2,Max Temp Trend,-0.008,-0.015,-0.001,0.0325
+burned_area,H2,MAP Trend,0.021,0.014,0.027,0
+burned_area,H2,Human Modification,-0.01,-0.015,-0.005,3e-04
+burned_area,H3,"Cold Limited
+Short Vegetation",-0.021,-0.035,-0.007,0.0038
+burned_area,H3,"Cold Limited
+Tall Vegetation",0.012,-0.001,0.024,0.0758
+burned_area,H3,"Not Cold Limited
+Short Vegetation",-0.079,-0.09,-0.068,0
+burned_area,H3,"Not Cold Limited
+Tall Vegetation",-0.048,-0.06,-0.036,0
+burned_area,H4,Mixed,-0.058,-0.071,-0.045,0
+burned_area,H4,Strict,-0.037,-0.056,-0.018,2e-04
+burned_area,H4,Unprotected,-0.034,-0.041,-0.028,0
+burned_area,H4.1,Mixed,0.153,0.139,0.166,0
+burned_area,H4.1,Strict,0.187,0.167,0.206,0
+burned_area,H4.1,Unprotected,0.112,0.106,0.119,0
+burned_area,H5,Intercept,-0.038,-0.064,-0.011,0.0052
+burned_area,H5,PA Area,-0.003,-0.028,0.021,0.7947
+burned_area,H5,PA Age,-0.013,-0.036,0.011,0.2961
+burned_area,H5.1,Intercept,0.188,0.163,0.213,0
+burned_area,H5.1,PA Area,0.006,-0.017,0.029,0.6338
+burned_area,H5.1,PA Age,0.027,0.005,0.049,0.0175
+burned_area,cold_tall,Intercept,0.018,0.007,0.029,0.001
+burned_area,cold_tall,Nitrogen Deposition,0.003,-0.006,0.011,0.5324
+burned_area,cold_tall,MAT Trend,-0.014,-0.028,-0.001,0.0395
+burned_area,cold_tall,Max Temp Trend,0.001,-0.008,0.01,0.8589
+burned_area,cold_tall,MAP Trend,0.016,-0.004,0.037,0.1188
+burned_area,cold_tall,Human Modification,-0.016,-0.022,-0.009,0
+burned_area,cold_short,Intercept,-0.009,-0.02,0.001,0.0721
+burned_area,cold_short,Nitrogen Deposition,0.01,0,0.02,0.0544
+burned_area,cold_short,MAT Trend,-0.025,-0.038,-0.013,1e-04
+burned_area,cold_short,Max Temp Trend,0.008,0.001,0.016,0.0316
+burned_area,cold_short,MAP Trend,0.012,-0.013,0.038,0.344
+burned_area,cold_short,Human Modification,-0.025,-0.033,-0.017,0
+burned_area,not_cold_tall,Intercept,-0.064,-0.078,-0.05,0
+burned_area,not_cold_tall,Nitrogen Deposition,0.006,-0.001,0.012,0.0866
+burned_area,not_cold_tall,MAT Trend,-0.003,-0.015,0.01,0.6604
+burned_area,not_cold_tall,Max Temp Trend,-0.019,-0.028,-0.01,0
+burned_area,not_cold_tall,MAP Trend,0.019,0.012,0.025,0
+burned_area,not_cold_tall,Human Modification,-0.007,-0.015,0,0.0587
+burned_area,not_cold_short,Intercept,-0.06,-0.081,-0.039,0
+burned_area,not_cold_short,Nitrogen Deposition,-0.004,-0.022,0.013,0.6146
+burned_area,not_cold_short,MAT Trend,0.088,0.054,0.122,0
+burned_area,not_cold_short,Max Temp Trend,-0.018,-0.043,0.007,0.1498
+burned_area,not_cold_short,MAP Trend,0.015,-0.003,0.033,0.0963
+burned_area,not_cold_short,Human Modification,0.006,-0.007,0.019,0.343
+greenup,H1,Intercept,-0.005,-0.101,0.092,0.927
+greenup,H2,Intercept,0.008,-0.09,0.105,0.8754
+greenup,H2,Nitrogen Deposition,-0.045,-0.094,0.003,0.0673
+greenup,H2,MAT Trend,-0.024,-0.101,0.054,0.5508
+greenup,H2,Max Temp Trend,-0.001,-0.04,0.039,0.9635
+greenup,H2,MAP Trend,-0.037,-0.1,0.025,0.2429
+greenup,H2,Human Modification,-0.02,-0.047,0.007,0.14
+greenup,H3,"Cold Limited
+Short Vegetation",0.118,-0.005,0.24,0.0609
+greenup,H3,"Cold Limited
+Tall Vegetation",-0.057,-0.184,0.07,0.382
+greenup,H3,"Not Cold Limited
+Short Vegetation",-0.046,-0.169,0.078,0.4686
+greenup,H3,"Not Cold Limited
+Tall Vegetation",-0.049,-0.181,0.083,0.4696
+greenup,H4,Mixed,0.005,-0.099,0.109,0.9272
+greenup,H4,Strict,0.023,-0.084,0.13,0.675
+greenup,H4,Unprotected,-0.011,-0.107,0.086,0.8252
+greenup,H4.1,Mixed,0.512,0.422,0.601,0
+greenup,H4.1,Strict,0.488,0.396,0.58,0
+greenup,H4.1,Unprotected,0.53,0.447,0.613,0
+greenup,H5,Intercept,0.042,-0.089,0.173,0.5295
+greenup,H5,PA Area,0.045,-0.015,0.106,0.1421
+greenup,H5,PA Age,-0.013,-0.06,0.034,0.5833
+greenup,H5.1,Intercept,0.458,0.355,0.56,0
+greenup,H5.1,PA Area,0.022,-0.027,0.072,0.3725
+greenup,H5.1,PA Age,0.003,-0.035,0.041,0.888
+greenup,cold_tall,Intercept,0.047,-0.12,0.213,0.5848
+greenup,cold_tall,Nitrogen Deposition,-0.09,-0.159,-0.021,0.0101
+greenup,cold_tall,MAT Trend,-0.169,-0.26,-0.078,3e-04
+greenup,cold_tall,Max Temp Trend,0.039,-0.007,0.085,0.0963
+greenup,cold_tall,MAP Trend,-0.081,-0.207,0.044,0.2052
+greenup,cold_tall,Human Modification,0.006,-0.014,0.025,0.5871
+greenup,cold_short,Intercept,0.119,-0.007,0.246,0.064
+greenup,cold_short,Nitrogen Deposition,-0.017,-0.083,0.049,0.6168
+greenup,cold_short,MAT Trend,-0.017,-0.104,0.069,0.6924
+greenup,cold_short,Max Temp Trend,0.008,-0.027,0.043,0.6707
+greenup,cold_short,MAP Trend,-0.163,-0.332,0.005,0.0575
+greenup,cold_short,Human Modification,0.006,-0.029,0.041,0.7291
+greenup,not_cold_tall,Intercept,-0.049,-0.192,0.093,0.4976
+greenup,not_cold_tall,Nitrogen Deposition,-0.016,-0.068,0.036,0.5477
+greenup,not_cold_tall,MAT Trend,-0.104,-0.229,0.021,0.1028
+greenup,not_cold_tall,Max Temp Trend,0.003,-0.078,0.083,0.9504
+greenup,not_cold_tall,MAP Trend,-0.011,-0.065,0.043,0.6818
+greenup,not_cold_tall,Human Modification,-0.069,-0.102,-0.036,0
+greenup,not_cold_short,Intercept,0.011,-0.112,0.134,0.8588
+greenup,not_cold_short,Nitrogen Deposition,-0.091,-0.153,-0.028,0.0043
+greenup,not_cold_short,MAT Trend,0.127,-0.032,0.286,0.1164
+greenup,not_cold_short,Max Temp Trend,-0.094,-0.192,0.005,0.0631
+greenup,not_cold_short,MAP Trend,-0.028,-0.104,0.049,0.4805
+greenup,not_cold_short,Human Modification,-0.01,-0.044,0.025,0.5889
