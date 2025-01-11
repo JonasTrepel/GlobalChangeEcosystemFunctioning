@@ -106,8 +106,6 @@ gls_h1 # yes. Est: -0.05098253; SE: 0.1024441; pval.t: 0.6187328
 
 dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 
-dt_greenup <- dt_greenup %>% mutate(olson_biome = gsub(" ", "_", olson_biome))
-
 # Olson Biomes ---------------------------------
 set.seed(161)
 gls_biome <- fitGLS_partition(greenup_coef ~ 0 +

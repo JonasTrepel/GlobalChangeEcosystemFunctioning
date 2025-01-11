@@ -27,6 +27,7 @@ world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
 
 
 raw_shapes <- read_sf("data/spatialData/grid_sample.gpkg")
+raw_shapes$grid_area_km2 <- st_area(raw_shapes)/1000000
 
 shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
@@ -37,7 +38,14 @@ shapes <- raw_shapes %>%
          burned_area_coef = burned_area_coef*100)
 
 
+
 sum(is.na(shapes$mean_evi_coef))
+
+grid_pa_area_total <- as.numeric(sum(shapes[shapes$protection_cat_broad == "Strict", ]$grid_area_km2, na.rm = T))
+pa_area_total <- 1921064
+
+(fract <- round(grid_pa_area_total/pa_area_total, 2))
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ##################################     MAPS    #######################################
@@ -390,7 +398,7 @@ dt_corr <- shapes %>%
   dplyr::select(
     mean_evi_coef, burned_area_coef, greenup_coef,
     mat_coef, map_coef, max_temp_coef, 
-    nitrogen_depo, human_modification) %>% 
+    nitrogen_depo, human_modification, super_biome) %>% 
   filter(complete.cases(.)) %>% 
   rename(`EVI Trend` = mean_evi_coef, 
          `Burned Area Trend` = burned_area_coef, 
@@ -401,13 +409,157 @@ dt_corr <- shapes %>%
          `Nitrogen Deposition` = nitrogen_depo, 
          `Human Modification` = human_modification)
 
+dt_corr_full <- dt_corr %>% dplyr::select(-super_biome)
+
 library(ggcorrplot)
-corr <- round(cor(dt_corr), 1)
+corr <- round(cor(dt_corr_full), 1)
 p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
                      lab = TRUE)
 p_corr
 ggsave(plot = p_corr, "builds/plots/grid_variable_correlations.png", dpi = 600, height = 8, width = 8)
 
+
+#### Biome specific correlations ---
+## cold_short
+dt_corr_cold_short <- dt_corr %>%
+  filter(super_biome == "cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_cold_short <- round(cor(dt_corr_cold_short), 1)
+p_corr_cold_short <- ggcorrplot(corr_cold_short, hc.order = TRUE, type = "lower",
+                     lab = TRUE)
+p_corr_cold_short
+
+## cold_tall
+dt_corr_cold_tall <- dt_corr %>%
+  filter(super_biome == "cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_cold_tall <- round(cor(dt_corr_cold_tall), 1)
+p_corr_cold_tall <- ggcorrplot(corr_cold_tall, hc.order = TRUE, type = "lower",
+                                lab = TRUE)
+p_corr_cold_tall
+
+## not_cold_short
+dt_corr_not_cold_short <- dt_corr %>%
+  filter(super_biome == "not_cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_not_cold_short <- round(cor(dt_corr_not_cold_short), 1)
+p_corr_not_cold_short <- ggcorrplot(corr_not_cold_short, hc.order = TRUE, type = "lower",
+                                lab = TRUE)
+p_corr_not_cold_short
+
+## not_cold_tall
+dt_corr_not_cold_tall <- dt_corr %>%
+  filter(super_biome == "not_cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_not_cold_tall <- round(cor(dt_corr_not_cold_tall), 1)
+p_corr_not_cold_tall <- ggcorrplot(corr_not_cold_tall, hc.order = TRUE, type = "lower",
+                                lab = TRUE)
+p_corr_not_cold_tall
+
+dt_biome_corr <- gridExtra::grid.arrange(
+  p_corr_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+
+ggsave(plot = dt_biome_corr, "builds/plots/grid_variable_correlations_biome_spec.png", dpi = 600, height = 12, width = 12)
+
+### correlations in strictly protected areas 
+dt_corr_pa <- shapes %>% 
+  left_join(climate_trends) %>% 
+  mutate(pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA)) %>%
+  rename(pa_area = area_km2) %>% 
+  as.data.table() %>% 
+  dplyr::select(
+    mean_evi_coef, burned_area_coef, greenup_coef,
+    mat_coef, map_coef, max_temp_coef, 
+    nitrogen_depo, human_modification, super_biome, pa_age, pa_area) %>% 
+  filter(complete.cases(.)) %>% 
+  rename(`EVI Trend` = mean_evi_coef, 
+         `Burned Area Trend` = burned_area_coef, 
+         `Greenup Trend` = greenup_coef, 
+         `MAT Trend` = mat_coef,
+         `MAP Trend` = map_coef, 
+         `Max Temp Trend` = max_temp_coef, 
+         `Nitrogen Deposition` = nitrogen_depo, 
+         `Human Modification` = human_modification, 
+         `PA Age` = pa_age, 
+         `PA Area` = pa_area)
+
+dt_corr_pa_full <- dt_corr_pa %>% dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa <- round(cor(dt_corr_pa_full), 1)
+p_corr_pa <- ggcorrplot(corr_pa, hc.order = TRUE, type = "lower",
+                     lab = TRUE)
+p_corr_pa
+ggsave(plot = p_corr_pa, "builds/plots/grid_variable_correlations_strict_pas.png", dpi = 600, height = 8, width = 8)
+
+
+#### Biome specific correlations ---
+## cold_short
+dt_corr_pa_cold_short <- dt_corr_pa %>%
+  filter(super_biome == "cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_cold_short <- round(cor(dt_corr_pa_cold_short), 1)
+p_corr_pa_cold_short <- ggcorrplot(corr_pa_cold_short, hc.order = TRUE, type = "lower",
+                                lab = TRUE)
+p_corr_pa_cold_short
+
+## cold_tall
+dt_corr_pa_cold_tall <- dt_corr_pa %>%
+  filter(super_biome == "cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_cold_tall <- round(cor(dt_corr_pa_cold_tall), 1)
+p_corr_pa_cold_tall <- ggcorrplot(corr_pa_cold_tall, hc.order = TRUE, type = "lower",
+                               lab = TRUE)
+p_corr_pa_cold_tall
+
+## not_cold_short
+dt_corr_pa_not_cold_short <- dt_corr_pa %>%
+  filter(super_biome == "not_cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_not_cold_short <- round(cor(dt_corr_pa_not_cold_short), 1)
+p_corr_pa_not_cold_short <- ggcorrplot(corr_pa_not_cold_short, hc.order = TRUE, type = "lower",
+                                    lab = TRUE)
+p_corr_pa_not_cold_short
+
+## not_cold_tall
+dt_corr_pa_not_cold_tall <- dt_corr_pa %>%
+  filter(super_biome == "not_cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_not_cold_tall <- round(cor(dt_corr_pa_not_cold_tall), 1)
+p_corr_pa_not_cold_tall <- ggcorrplot(corr_pa_not_cold_tall, hc.order = TRUE, type = "lower",
+                                   lab = TRUE)
+p_corr_pa_not_cold_tall
+
+dt_biome_corr_pa <- gridExtra::grid.arrange(
+  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+
+ggsave(plot = dt_biome_corr_pa, "builds/plots/grid_variable_correlations_biome_spec_strict_pas.png", dpi = 600, height = 12, width = 12)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -419,6 +571,9 @@ library(ggridges)
 dt_ridges <- shapes %>% 
   as.data.table() %>%
   mutate(geom = NULL, 
+         pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
+         area_km2_log = scale(log(area_km2 + 0.0001)),
+         pa_age_log = ifelse(!pa_age == 0, scale(log(pa_age + 0.0001)), NA),
          mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
          mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef), 
          burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, NA, burned_area_coef),
@@ -446,6 +601,8 @@ p_evi_prot <- ggplot() +
   theme_bw() +
   labs(y = "", x = "EVI Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_evi_prot
@@ -460,6 +617,8 @@ p_evi_biome <- ggplot() +
   theme_bw() +
   labs(y = "", x = "EVI Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_evi_biome
@@ -478,6 +637,8 @@ p_burned_area_prot <- ggplot() +
   theme_bw() +
   labs(y = "", x = "Burned Area Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_burned_area_prot
@@ -492,6 +653,8 @@ p_burned_area_biome <- ggplot() +
   theme_bw() +
   labs(y = "", x = "Burned Area Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_burned_area_biome
@@ -509,6 +672,8 @@ p_greenup_prot <- ggplot() +
   theme_bw() +
   labs(y = "", x = "Vegetation Green-Up Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_greenup_prot
@@ -523,6 +688,8 @@ p_greenup_biome <- ggplot() +
   theme_bw() +
   labs(y = "", x = "Vegetation Green-Up Trend") + 
   theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         axis.text.y = element_text(size = 12))
 
 p_greenup_biome
@@ -532,6 +699,37 @@ p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol 
 p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
 ggsave(plot = p_ridges, "builds/plots/grid_ridges.png", dpi = 600, height = 6, width = 12)
 
+
+p_pa_age <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges,
+                               aes(x = pa_age_log, y = biome_clean, fill = ..x..), alpha = 0.7) +
+  #scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  #scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  theme_bw() +
+  labs(y = "", x = "PA Age (log)", title = "a)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_age
+
+p_pa_area <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges,
+                               aes(x = area_km2_log, y = biome_clean, fill = ..x..), alpha = 0.7) +
+  #scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  #scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  theme_bw() +
+  labs(y = "", x = "PA Area (log)", title = "b)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_area
+
+p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
+ggsave(plot = p_pa_area_trend, "builds/plots/pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     BIOME MAP     ####################################
