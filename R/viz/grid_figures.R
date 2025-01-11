@@ -184,6 +184,18 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
     )
   )
 
+
+fwrite(dt_est %>% 
+         dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
+         mutate(p_value = round(p_value, 4), 
+                estimate = round(estimate, 3), 
+                ci_lb = round(ci_lb, 3),
+                ci_ub = round(ci_ub, 3)) %>% 
+         dplyr::select(Response = response, Model = model,
+                       Variable = clean_term, Estimate = estimate,
+                       p = p_value, `lower CI` = ci_lb, `upper CI` = ci_ub), 
+       "builds/model_estimates/combinde_clean_estimates.csv")
+
 # Evi estimates -----
 scico(palette = "bam", n = 10)
 #"#65014B" "#9E3C85" "#C86FB1" "#E4ADD6" "#F4E3EF" "#EFF3E5" "#C0D9A1" "#7BA755" "#457B2A" "#0C4C00"
