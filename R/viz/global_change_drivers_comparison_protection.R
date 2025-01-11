@@ -9,7 +9,6 @@ evi_trends <- fread("data/processedData/dataFragments/pa_evi_trends.csv")
 burned_area_trends <- fread("data/processedData/dataFragments/pa_burned_area_trends.csv")
 greenup_trends <- fread("data/processedData/dataFragments/pa_greenup_trends.csv")
 
-
 dt <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
   group_by(functional_biome) %>% 
   mutate(n_per_functional_biome = n()) %>% 
