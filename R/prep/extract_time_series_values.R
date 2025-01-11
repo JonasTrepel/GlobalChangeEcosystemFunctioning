@@ -7,8 +7,8 @@ library(data.table)
 library(tidyverse)
 
 #read vectors 
-#param = "grid"
-param = "pas"
+param = "grid"
+#param = "pas"
 
 if(param == "grid"){
   vect <- st_read("data/spatialData/grid_sample.gpkg") 
@@ -101,7 +101,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(25)
+clust <- makeCluster(56)
 registerDoSNOW(clust)
 
 ## progress bar 

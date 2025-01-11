@@ -9,50 +9,40 @@ library(remotePARTS)
 
 
 dt_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trends.csv") %>% 
-  group_by(FunctionalBiome) %>% 
-  mutate(n_per_functional_biome = n()) %>% 
-  ungroup() %>% 
-  group_by(Biome) %>% 
-  mutate(n_per_biome = n()) %>% 
-  ungroup() %>%  
-  as.data.frame() %>% 
-  # filter(n_per_functional_biome > 1000) %>% 
-  rename(functional_biome = FunctionalBiomeShort) %>% 
+  as.data.frame()
+
+dt_raw <- dt_raw %>% 
   mutate(
-    PaAge = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
-    productivity = case_when(
-      grepl("L", functional_biome) ~ "low", 
-      grepl("M", functional_biome) ~ "medium", 
-      grepl("H", functional_biome) ~ "high"
-    ), 
-    ndvi_min = case_when(
-      grepl("C", functional_biome) ~ "cold", 
-      grepl("D", functional_biome) ~ "dry", 
-      grepl("B", functional_biome) ~ "cold_and_dry", 
-      grepl("N", functional_biome) ~ "non_seasonal"
-    ), 
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
+      iucn_cat == "unprotected" ~ "Unprotected"), 
     super_biome = case_when(
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ),
-    nitrogen_depo = scale(NitrogenDepo),
+      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
+      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
+    pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
+    nitrogen_depo = scale(nitrogen_depo),
     mat_coef = scale(mat_coef),
     max_temp_coef = scale(max_temp_coef),
     map_coef = scale(map_coef),
-    human_modification = scale(HumanModification), 
+    human_modification = scale(human_modification), 
     area_km2_log = scale(log(area_km2 + 0.0001)),
-    pa_age_log = scale(log(PaAge + 0.0001)))  %>% 
-  filter(n_per_biome > 1000 &
-           !is.na(ClimaticRegion) &
+    pa_age_log = ifelse(!pa_age == 0, scale(log(pa_age + 0.0001)), NA)) %>% 
+    group_by(functional_biome) %>% 
+    mutate(n_per_functional_biome = n()) %>% 
+    ungroup() %>% 
+    group_by(olson_biome) %>% 
+    mutate(n_per_olson_biome = n()) %>% 
+    ungroup()  %>% 
+  filter(n_per_olson_biome > 1000 &
+           !is.na(climatic_region) &
            n_per_functional_biome > 1000 & 
-           !ClimaticRegion == "") %>% 
-  rename(biome = Biome, 
-         climatic_region = ClimaticRegion) 
+           !climatic_region == "" & !olson_biome == "")
+  
 
 dt <- dt_raw
-table(dt$climatic_region)
 #######################################
 
 ####### calculate greenup trend #######
@@ -61,17 +51,23 @@ greenup_cols <- grep("greenup_", names(dt), value = T)
 
 #subset to complete cases
 dt_greenup <- dt %>%
-  dplyr::select(all_of(greenup_cols),  X, Y, unique_id, productivity, ndvi_min,
+  dplyr::select(all_of(greenup_cols),  lon, lat, unique_id,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification,
-                super_biome, climatic_region, biome, functional_biome,
+                super_biome, climatic_region, olson_biome, functional_biome,
                 protection_cat_broad) %>% 
   filter(complete.cases(.))
+
+table(dt_greenup$functional_biome)
+table(dt_greenup$olson_biome)
+table(dt_greenup$climatic_region)
+table(dt_greenup$super_biome)
+
 
 #get y matrix
 y_greenup <- as.matrix(dt_greenup[, greenup_cols])
 
 #get coordinate matrix 
-coords_greenup <- as.matrix(dt_greenup[, c("X", "Y")])
+coords_greenup <- as.matrix(dt_greenup[, c("lon", "lat")])
 
 #fit autoregression, accounting for temporal autocorrelation 
 ar_greenup <- fitAR_map(Y = y_greenup, coords = coords_greenup)
@@ -82,7 +78,7 @@ dt_greenup$abs_greenup_coef <- abs(ar_greenup$coefficients[, "t"])
 dt_greenup$greenup_p_value <- ar_greenup$pvals[, 2]
 
 #fwrite(dt_greenup %>% dplyr::select(
-#  unique_id, X, Y, og_layer, greenup_coef, abs_greenup_coef, greenup_p_value), "data/processedData/dataFragments/pa_greenup_trends.csv")
+#  unique_id, lon, lat, og_layer, greenup_coef, abs_greenup_coef, greenup_p_value), "data/processedData/dataFragments/pa_greenup_trends.csv")
 
 # get distance matrix 
 #d_greenup <- distm_scaled(coords_greenup)
@@ -113,7 +109,7 @@ gls_h1 <- fitGLS_partition(greenup_coef ~ 1,
                            ncores = 25,
                            progressbar = TRUE, 
                            parallel = T, 
-                           coord.names = c("X", "Y")
+                           coord.names = c("lon", "lat")
 )
 gls_h1 # yes. Est: -0.05098253; SE: 0.1024441; pval.t: 0.6187328
 
@@ -122,7 +118,7 @@ dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
 # Olson Biomes ---------------------------------
 set.seed(161)
 gls_biome <- fitGLS_partition(greenup_coef ~ 0 +
-                                biome,
+                                olson_biome,
                               partmat = pm,
                               covar_FUN = "covar_exp",
                               covar.pars = list(range = range_opt_greenup),
@@ -131,18 +127,19 @@ gls_biome <- fitGLS_partition(greenup_coef ~ 0 +
                               ncores = 25,
                               progressbar = TRUE, 
                               parallel = TRUE, 
-                              coord.names = c("X", "Y"))
+                              coord.names = c("lon", "lat"))
 gls_biome 
 
 dt_est_biome <- extract_gls_estimates(gls_biome, part = TRUE) %>%
-  mutate(term = gsub("biome", "", term))
+  mutate(term = gsub("olson_biome", "", term), 
+         term = gsub("_", " ", term))
 
 p_biome <- dt_est_biome %>% 
   ggplot() + 
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
   labs(title = "Greenup Change ~\nOlson Biomes", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -161,7 +158,7 @@ gls_functional_biome <- fitGLS_partition(greenup_coef ~ 0 +
                                          ncores = 25,
                                          progressbar = TRUE, 
                                          parallel = TRUE, 
-                                         coord.names = c("X", "Y"))
+                                         coord.names = c("lon", "lat"))
 gls_functional_biome 
 
 dt_est_functional_biome <- extract_gls_estimates(gls_functional_biome, part = TRUE) %>%
@@ -172,7 +169,7 @@ p_functional_biome <- dt_est_functional_biome %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
   labs(title = "Greenup Change ~\nFunctional Biome", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -191,18 +188,23 @@ gls_super_biome <- fitGLS_partition(greenup_coef ~ 0 +
                                     ncores = 25,
                                     progressbar = TRUE, 
                                     parallel = TRUE, 
-                                    coord.names = c("X", "Y"))
+                                    coord.names = c("lon", "lat"))
 gls_super_biome 
 
 dt_est_super_biome <- extract_gls_estimates(gls_super_biome, part = TRUE) %>%
-  mutate(term = gsub("super_biome", "", term))
+  mutate(term = gsub("super_biome", "", term), 
+         term = case_when(
+           term == "cold_short" ~ "Cold Limited\nShort Vegetation",
+           term == "cold_tall" ~ "Cold Limited\nTall Vegetation",
+           term == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
+           term == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"))
 
 p_super_biome <- dt_est_super_biome %>% 
   ggplot() + 
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
   labs(title = "Greenup Change ~\nSuper Biome", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 
@@ -221,7 +223,7 @@ gls_climatic_region <- fitGLS_partition(greenup_coef ~ 0 +
                                         ncores = 25,
                                         progressbar = TRUE, 
                                         parallel = TRUE, 
-                                        coord.names = c("X", "Y"))
+                                        coord.names = c("lon", "lat"))
 gls_climatic_region 
 
 dt_est_climatic_region <- extract_gls_estimates(gls_climatic_region, part = TRUE) %>%
@@ -232,7 +234,7 @@ p_climatic_region <- dt_est_climatic_region %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                   alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "darkturquoise", "non-significant" = "grey")) +
+  scale_color_manual(values = c("significant" = "darkcyan", "non-significant" = "grey")) +
   labs(title = "Greenup Change ~\nClimatic Region", subtitle = paste0("n = ", nrow(dt_greenup)), y = NULL, x = NULL) +
   theme_classic() +
   theme(legend.position = "none", 

@@ -12,15 +12,6 @@ dt_raw <- fread("data/processedData/dataFragments/grid_sample_with_climate_trend
 
 dt_raw <- dt_raw %>% 
   mutate(
-    protection_cat_broad = case_when(
-      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
-      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
-      iucn_cat == "unprotected" ~ "Unprotected"), 
-    super_biome = case_when(
-      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
-      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
     pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
     nitrogen_depo = scale(nitrogen_depo),
     mat_coef = scale(mat_coef),

@@ -13,10 +13,10 @@ dt_raw <- fread("data/processedData/data_with_response_timeseries/pas_and_contro
 dt_raw <- dt_raw %>% 
   mutate(
     super_biome = case_when(
-      grepl("C", functional_biome) & grepl("T", functional_biome) ~ "cold_tall", 
-      grepl("C", functional_biome) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"),
     pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
     nitrogen_depo = scale(nitrogen_depo),
     mat_coef = scale(mat_coef),
@@ -486,28 +486,27 @@ table(dt_raw[dt_raw$super_biome == "cold_short", ]$functional_biome)
 table(dt_raw[dt_raw$super_biome == "not_cold_tall", ]$functional_biome)
 table(dt_raw[dt_raw$super_biome == "not_cold_short", ]$functional_biome)
 
-
 nrow(dt[dt$super_biome == "cold_tall",])
-p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = "row_n", part_size = 1500,
-                         col_pattern = "burned_area_", dat = dt, part = FALSE, start = list(range = 0.1))
+p_cold_tall <- biome_gls(super_b = "cold_tall", fit_n = "row_n", part_size = 1000,
+                         col_pattern = "mean_evi_", dat = dt, part = TRUE, start = list(range = 0.1))
 dt_est_cold_tall <- p_cold_tall$data
 p_cold_tall
 
 nrow(dt[dt$super_biome == "cold_short",])
 p_cold_short <- biome_gls(super_b = "cold_short", fit_n = "row_n", part_size = 1500,
-                          col_pattern = "burned_area_", dat = dt, part = FALSE, start = list(range = 0.1))
+                          col_pattern = "mean_evi_", dat = dt, part = FALSE, start = list(range = 0.1))
 dt_est_cold_short <- p_cold_short$data
 p_cold_short
 
 nrow(dt[dt$super_biome == "not_cold_tall",])
 p_not_cold_tall <- biome_gls(super_b = "not_cold_tall", fit_n = "row_n", part_size = 1000,
-                             col_pattern = "burned_area_", dat = dt, part = TRUE, start = list(range = 0.1))
+                             col_pattern = "mean_evi_", dat = dt, part = FALSE, start = list(range = 0.01))
 dt_est_not_cold_tall <- p_not_cold_tall$data
 p_not_cold_tall
 
 nrow(dt[dt$super_biome == "not_cold_short",])
 p_not_cold_short <- biome_gls(super_b = "not_cold_short", fit_n = "row_n", part_size = 1500,
-                              col_pattern = "burned_area_", dat = dt, part = FALSE, start = list(range = 0.1))
+                              col_pattern = "mean_evi_", dat = dt, part = FALSE, start = list(range = 0.1))
 dt_est_not_cold_short <- p_not_cold_short$data
 p_not_cold_short
 

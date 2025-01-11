@@ -3,7 +3,7 @@ library(tidyverse)
 library(data.table)
 
 #param = "pas"
-param = "pas"
+param = "grid"
 
 if(param == "grid"){
   dt <- fread("data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv") %>% 
