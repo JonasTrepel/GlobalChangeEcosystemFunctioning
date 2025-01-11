@@ -202,7 +202,7 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
 
 fwrite(dt_est %>% 
          dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
-         filter(!grepl("//.1", model)) %>% 
+         filter(!model == "H4.1" & !model == "H5.1") %>% 
          mutate(p_value = round(p_value, 4), 
                 estimate = round(estimate, 3), 
                 ci_lb = round(ci_lb, 3),

@@ -17,15 +17,9 @@ Tall Vegetation",0.067,0.056,0.077,0,PAs and Controls
 evi,H4,Control,0.067,0.058,0.076,0,PAs and Controls
 evi,H4,"Strictly
 Protected",0.06,0.051,0.069,0,PAs and Controls
-evi,H4.1,Control,0.103,0.097,0.109,0,PAs and Controls
-evi,H4.1,"Strictly
-Protected",0.092,0.086,0.099,0,PAs and Controls
 evi,H5,Intercept,0.066,0.056,0.076,0,PAs and Controls
 evi,H5,PA Area,-0.004,-0.008,-0.001,0.0165,PAs and Controls
 evi,H5,PA Age,-0.005,-0.009,-0.002,0.0053,PAs and Controls
-evi,H5.1,Intercept,0.099,0.092,0.105,0,PAs and Controls
-evi,H5.1,PA Area,-0.008,-0.011,-0.005,0,PAs and Controls
-evi,H5.1,PA Age,-0.002,-0.005,0.001,0.1318,PAs and Controls
 evi,cold_tall,Intercept,0.047,0.029,0.065,0,PAs and Controls
 evi,cold_tall,Nitrogen Deposition,0.02,0.007,0.032,0.0017,PAs and Controls
 evi,cold_tall,MAT Trend,0.013,-0.004,0.03,0.1398,PAs and Controls
@@ -68,15 +62,9 @@ Tall Vegetation",-0.004,-0.014,0.005,0.3591,PAs and Controls
 burned_area,H4,Control,-0.002,-0.009,0.005,0.5654,PAs and Controls
 burned_area,H4,"Strictly
 Protected",-0.003,-0.01,0.004,0.3412,PAs and Controls
-burned_area,H4.1,Control,0.058,0.052,0.065,0,PAs and Controls
-burned_area,H4.1,"Strictly
-Protected",0.058,0.051,0.064,0,PAs and Controls
 burned_area,H5,Intercept,-0.003,-0.01,0.004,0.4317,PAs and Controls
 burned_area,H5,PA Area,-0.017,-0.023,-0.011,0,PAs and Controls
 burned_area,H5,PA Age,0,-0.007,0.006,0.9098,PAs and Controls
-burned_area,H5.1,Intercept,0.054,0.047,0.061,0,PAs and Controls
-burned_area,H5.1,PA Area,0.027,0.021,0.032,0,PAs and Controls
-burned_area,H5.1,PA Age,0.008,0.001,0.014,0.0206,PAs and Controls
 burned_area,cold_tall,Intercept,473.58,292.814,654.346,0,PAs and Controls
 burned_area,cold_tall,Nitrogen Deposition,195.999,73.616,318.383,0.0017,PAs and Controls
 burned_area,cold_tall,MAT Trend,128.73,-42.113,299.573,0.1398,PAs and Controls
@@ -119,15 +107,9 @@ Tall Vegetation",-0.15,-0.27,-0.03,0.0145,PAs and Controls
 greenup,H4,Control,-0.079,-0.156,-0.002,0.0433,PAs and Controls
 greenup,H4,"Strictly
 Protected",-0.062,-0.139,0.015,0.1124,PAs and Controls
-greenup,H4.1,Control,0.467,0.405,0.53,0,PAs and Controls
-greenup,H4.1,"Strictly
-Protected",0.463,0.4,0.525,0,PAs and Controls
 greenup,H5,Intercept,-0.082,-0.171,0.006,0.0668,PAs and Controls
 greenup,H5,PA Area,0.038,0.008,0.069,0.0127,PAs and Controls
 greenup,H5,PA Age,-0.004,-0.031,0.023,0.7798,PAs and Controls
-greenup,H5.1,Intercept,0.515,0.443,0.586,0,PAs and Controls
-greenup,H5.1,PA Area,-0.081,-0.105,-0.057,0,PAs and Controls
-greenup,H5.1,PA Age,0.018,-0.003,0.039,0.0921,PAs and Controls
 greenup,cold_tall,Intercept,4.773,2.956,6.591,0,PAs and Controls
 greenup,cold_tall,Nitrogen Deposition,1.913,0.687,3.14,0.0022,PAs and Controls
 greenup,cold_tall,MAT Trend,1.089,-0.637,2.816,0.2163,PAs and Controls

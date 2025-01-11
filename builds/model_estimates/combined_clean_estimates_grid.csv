@@ -17,15 +17,9 @@ Tall Vegetation",0.064,0.054,0.074,0,Grid
 evi,H4,Mixed,0.05,0.04,0.06,0,Grid
 evi,H4,Strict,0.056,0.046,0.067,0,Grid
 evi,H4,Unprotected,0.055,0.046,0.064,0,Grid
-evi,H4.1,Mixed,0.087,0.079,0.095,0,Grid
-evi,H4.1,Strict,0.089,0.081,0.097,0,Grid
-evi,H4.1,Unprotected,0.094,0.087,0.101,0,Grid
 evi,H5,Intercept,0.049,0.034,0.064,0,Grid
 evi,H5,PA Area,-0.002,-0.011,0.008,0.752,Grid
 evi,H5,PA Age,0.002,-0.004,0.007,0.5277,Grid
-evi,H5.1,Intercept,0.088,0.078,0.099,0,Grid
-evi,H5.1,PA Area,-0.004,-0.011,0.003,0.2587,Grid
-evi,H5.1,PA Age,0,-0.004,0.005,0.8527,Grid
 evi,cold_tall,Intercept,0.046,0.026,0.067,0,Grid
 evi,cold_tall,Nitrogen Deposition,0.025,0.009,0.04,0.0019,Grid
 evi,cold_tall,MAT Trend,0.01,-0.011,0.032,0.3529,Grid
@@ -68,15 +62,9 @@ Tall Vegetation",-0.048,-0.06,-0.036,0,Grid
 burned_area,H4,Mixed,-0.058,-0.071,-0.045,0,Grid
 burned_area,H4,Strict,-0.037,-0.056,-0.018,2e-04,Grid
 burned_area,H4,Unprotected,-0.034,-0.041,-0.028,0,Grid
-burned_area,H4.1,Mixed,0.153,0.139,0.166,0,Grid
-burned_area,H4.1,Strict,0.187,0.167,0.206,0,Grid
-burned_area,H4.1,Unprotected,0.112,0.106,0.119,0,Grid
 burned_area,H5,Intercept,-0.038,-0.064,-0.011,0.0052,Grid
 burned_area,H5,PA Area,-0.003,-0.028,0.021,0.7947,Grid
 burned_area,H5,PA Age,-0.013,-0.036,0.011,0.2961,Grid
-burned_area,H5.1,Intercept,0.188,0.163,0.213,0,Grid
-burned_area,H5.1,PA Area,0.006,-0.017,0.029,0.6338,Grid
-burned_area,H5.1,PA Age,0.027,0.005,0.049,0.0175,Grid
 burned_area,cold_tall,Intercept,0.018,0.007,0.029,0.001,Grid
 burned_area,cold_tall,Nitrogen Deposition,0.003,-0.006,0.011,0.5324,Grid
 burned_area,cold_tall,MAT Trend,-0.014,-0.028,-0.001,0.0395,Grid
@@ -119,15 +107,9 @@ Tall Vegetation",-0.049,-0.181,0.083,0.4696,Grid
 greenup,H4,Mixed,0.005,-0.099,0.109,0.9272,Grid
 greenup,H4,Strict,0.023,-0.084,0.13,0.675,Grid
 greenup,H4,Unprotected,-0.011,-0.107,0.086,0.8252,Grid
-greenup,H4.1,Mixed,0.512,0.422,0.601,0,Grid
-greenup,H4.1,Strict,0.488,0.396,0.58,0,Grid
-greenup,H4.1,Unprotected,0.53,0.447,0.613,0,Grid
 greenup,H5,Intercept,0.042,-0.089,0.173,0.5295,Grid
 greenup,H5,PA Area,0.045,-0.015,0.106,0.1421,Grid
 greenup,H5,PA Age,-0.013,-0.06,0.034,0.5833,Grid
-greenup,H5.1,Intercept,0.458,0.355,0.56,0,Grid
-greenup,H5.1,PA Area,0.022,-0.027,0.072,0.3725,Grid
-greenup,H5.1,PA Age,0.003,-0.035,0.041,0.888,Grid
 greenup,cold_tall,Intercept,0.047,-0.12,0.213,0.5848,Grid
 greenup,cold_tall,Nitrogen Deposition,-0.09,-0.159,-0.021,0.0101,Grid
 greenup,cold_tall,MAT Trend,-0.169,-0.26,-0.078,3e-04,Grid
