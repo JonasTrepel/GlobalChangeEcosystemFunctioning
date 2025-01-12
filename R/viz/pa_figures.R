@@ -547,12 +547,14 @@ ggsave(plot = p_ridges, "builds/plots/pas_ridges.png", dpi = 600, height = 6, wi
 
 #### area and size distribution 
 p_pa_age <- ggplot() +
-  geom_density_ridges(data = dt_ridges,
-                      aes(x = pa_age_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  geom_density_ridges(data = dt_ridges %>%
+                      filter(!pa_age == 0), 
+                      aes(x = pa_age, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
   scale_color_scico_d("batlowK") +
   scale_fill_scico_d("batlowK") +
+  scale_x_log10() +
   theme_bw() +
-  labs(y = "", x = "PA Age (log)", title = "a)") + 
+  labs(y = "", x = "PA Age", title = "a)") + 
   theme(legend.position = "none", 
         panel.grid = element_blank(),
         panel.border = element_blank(),
@@ -562,11 +564,12 @@ p_pa_age
 
 p_pa_area <- ggplot() +
   geom_density_ridges(data = dt_ridges,
-                      aes(x = area_km2_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+                      aes(x = area_km2, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
   scale_color_scico_d("batlowK") +
   scale_fill_scico_d("batlowK") +
+  scale_x_log10(labels = scales::label_comma()) +
   theme_bw() +
-  labs(y = "", x = "PA Area (log)", title = "b)") + 
+  labs(y = "", x = "PA Area", title = "b)") + 
   theme(legend.position = "none", 
         panel.grid = element_blank(),
         panel.border = element_blank(),
