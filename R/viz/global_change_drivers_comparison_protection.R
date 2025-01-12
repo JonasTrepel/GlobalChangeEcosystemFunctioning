@@ -3,6 +3,7 @@ library(data.table)
 library(remotePARTS)
 library(tidylog)
 library(scico)
+library(ggridges)
 #load trends 
 
 evi_trends <- fread("data/processedData/dataFragments/pa_evi_trends.csv")
@@ -60,14 +61,19 @@ p_comp <- dt %>%
       protection_cat_broad == "strictly_protected" ~ "Protected")) %>% 
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
-  geom_jitter(aes(x = clean_prot, y = global_change_value), alpha = 0.25, size = 0.5, color = "grey50") +
-  geom_boxplot(aes(x = clean_prot, y = global_change_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) +
+  geom_density_ridges(aes(y = clean_prot, x = global_change_value, color = clean_prot, fill = clean_prot), alpha = 0.75, size = 0.5) +
+ # geom_boxplot(aes(x = clean_prot, y = global_change_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) +
   facet_wrap(~clean_driver, scales = "free") +
+  scale_color_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
+  scale_fill_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
   labs(x = "", y = "Driver Value") +
-  theme_bw()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1), 
+        panel.grid = element_blank(),
+        legend.position = "none")
 p_comp
 
-ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600, height = 4, width = 7)
+ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600, height = 4.5, width = 7)
 
 #### calculate differences 
 
@@ -103,13 +109,49 @@ for(pa_id in unique(dt_pa$unique_id)){
   print(paste0(pa_id, " done"))
 }
 
+## plot. 
+
+q_025_evi <- as.numeric(quantile(dt_diff$evi_diff, c(.025), na.rm = T)) 
+q_975_evi <- as.numeric(quantile(dt_diff$evi_diff, c(.975), na.rm = T))
+q_025_greenup <- as.numeric(quantile(dt_diff$greenup_diff, c(.025), na.rm = T)) 
+q_975_greenup <- as.numeric(quantile(dt_diff$greenup_diff, c(.975), na.rm = T))
+q_025_burned_area <- as.numeric(quantile(dt_diff$burned_area_diff, c(.025), na.rm = T)) 
+q_975_burned_area <- as.numeric(quantile(dt_diff$burned_area_diff, c(.975), na.rm = T))
+q_025_human_modification <- as.numeric(quantile(dt_diff$human_modification_diff, c(.025), na.rm = T)) 
+q_975_human_modification <- as.numeric(quantile(dt_diff$human_modification_diff, c(.975), na.rm = T))
+q_025_nitrogen_depo <- as.numeric(quantile(dt_diff$nitrogen_depo_diff, c(.025), na.rm = T)) 
+q_975_nitrogen_depo <- as.numeric(quantile(dt_diff$nitrogen_depo_diff, c(.975), na.rm = T))
+q_025_mat <- as.numeric(quantile(dt_diff$mat_diff, c(.025), na.rm = T)) 
+q_975_mat <- as.numeric(quantile(dt_diff$mat_diff, c(.975), na.rm = T))
+q_025_map <- as.numeric(quantile(dt_diff$map_diff, c(.025), na.rm = T)) 
+q_975_map <- as.numeric(quantile(dt_diff$map_diff, c(.975), na.rm = T))
+q_025_max_temp <- as.numeric(quantile(dt_diff$max_temp_diff, c(.025), na.rm = T)) 
+q_975_max_temp <- as.numeric(quantile(dt_diff$max_temp_diff, c(.975), na.rm = T))
+
+
+
 p_diff <- dt_diff %>%
   mutate(clean_biome = case_when(
     super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
     super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
     super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
-    super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
-  )) %>% 
+    super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"),
+    evi_diff = ifelse(evi_diff > q_975_evi, NA, evi_diff),
+    evi_diff = ifelse(evi_diff < q_025_evi, NA, evi_diff),
+    burned_area_diff = ifelse(burned_area_diff > q_975_burned_area, NA, burned_area_diff),
+    burned_area_diff = ifelse(burned_area_diff < q_025_burned_area, NA, burned_area_diff),
+    greenup_diff = ifelse(greenup_diff > q_975_greenup, NA, greenup_diff),
+    greenup_diff = ifelse(greenup_diff < q_025_greenup, NA, greenup_diff),
+    human_modification_diff = ifelse(human_modification_diff > q_975_human_modification, NA, human_modification_diff),
+    human_modification_diff = ifelse(human_modification_diff < q_025_human_modification, NA, human_modification_diff),
+    nitrogen_depo_diff = ifelse(nitrogen_depo_diff > q_975_nitrogen_depo, NA, nitrogen_depo_diff),
+    nitrogen_depo_diff = ifelse(nitrogen_depo_diff < q_025_nitrogen_depo, NA, nitrogen_depo_diff),
+    mat_diff = ifelse(mat_diff > q_975_mat, NA, mat_diff),
+    mat_diff = ifelse(mat_diff < q_025_mat, NA, mat_diff),
+    map_diff = ifelse(map_diff > q_975_map, NA, map_diff),
+    map_diff = ifelse(map_diff < q_025_map, NA, map_diff),
+    max_temp_diff = ifelse(max_temp_diff > q_975_max_temp, NA, max_temp_diff),
+    max_temp_diff = ifelse(max_temp_diff < q_025_max_temp, NA, max_temp_diff)) %>% 
   pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff",
                         "human_modification_diff", "nitrogen_depo_diff", 
                         "mat_diff", "map_diff", "max_temp_diff"), 
@@ -125,18 +167,20 @@ p_diff <- dt_diff %>%
     diff_name == "map_diff" ~ "MAP\nTrend Diff."
   )) %>% 
   ggplot() +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
-  geom_jitter(aes(x = clean_biome, y = diff_value, color = clean_biome), alpha = 0.25, size = 0.5, width = 0.2) +
-  geom_boxplot(aes(x = clean_biome, y = diff_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) + 
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey25") +
+  geom_density_ridges(aes(y = clean_biome, x = diff_value, color = clean_biome, fill = clean_biome), alpha = 0.5, size = 0.5, width = 0.2) +
+  #geom_boxplot(aes(x = clean_biome, y = diff_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) + 
   scale_color_scico_d("batlowK") +
-  facet_wrap(~clean_diff, scales = "free", ncol = 4) +
-  theme_bw() +
+  scale_fill_scico_d("batlowK") +
+  facet_wrap(~clean_diff, scales = "free_x", ncol = 4) +
+  theme_minimal() +
   labs(x = "", y = "", subtitle = "positive values indicate variable in PA > variable in control") +
   theme(axis.text.x = element_text(angle = 70, hjust = 1), 
+        panel.grid = element_blank(),
         legend.position = "none")
 p_diff
 
-ggsave(plot = p_diff, "builds/plots/driver_diff_pas.png", dpi = 600)
+ggsave(plot = p_diff, "builds/plots/driver_diff_pas.png", dpi = 600, height = 6, width = 9)
 
 
 summary(lm(evi_diff ~ 1, data = dt_diff)); AIC(lm(evi_diff ~ 1, data = dt_diff))#66521.04
@@ -167,50 +211,71 @@ summary(lm(greenup_diff ~ scale(area_km2) + scale(pa_age), data = dt_diff)); AIC
 #best is PA logged
 
 
-dt_diff %>%
+p_diff_pa_age <- dt_diff %>%
   mutate(clean_biome = case_when(
     super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
     super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
     super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
     super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
   )) %>% 
-  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff"), 
+  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff",
+                        "human_modification_diff", "nitrogen_depo_diff", 
+                        "mat_diff", "map_diff", "max_temp_diff"), 
                names_to = "diff_name", values_to = "diff_value") %>% 
   mutate(clean_diff = case_when(
     diff_name == "evi_diff" ~ "EVI\nTrend Diff.", 
     diff_name == "greenup_diff" ~ "Greenup\nTrend Diff.", 
-    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff."
+    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff.",
+    diff_name == "human_modification_diff" ~ "Human Modification\nDiff.", 
+    diff_name == "nitrogen_depo_diff" ~ "Nitrogen Depo\n Diff.", 
+    diff_name == "mat_diff" ~ "MAT\nTrend Diff.",
+    diff_name == "max_temp_diff" ~ "Max Temp\nTrend Diff.", 
+    diff_name == "map_diff" ~ "MAP\nTrend Diff."
   )) %>% 
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
   geom_point(aes(x = pa_age, y = diff_value), alpha = 0.25, size = 0.5, color = "grey50", width = 0.2) +
   geom_smooth(aes(x = pa_age, y = diff_value), method = "lm") +
-  facet_wrap(~clean_diff, scales = "free") +
-  theme_bw() +
-  labs(x = "PA age (years)", y = "") +
+  facet_wrap(~clean_diff, scales = "free_y", ncol = 4) +
+  theme_minimal() +
+  scale_x_log10() +
+  labs(x = "PA age (years)\n(log-scale)", y = "", title = "a)") +
   theme(axis.text.x = element_text(angle = 0))  
+p_diff_pa_age
 
-dt_diff %>%
+p_diff_pa_area <- dt_diff %>%
   mutate(clean_biome = case_when(
     super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
     super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
     super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
     super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"
   )) %>% 
-  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff"), 
+  pivot_longer(cols = c("evi_diff", "greenup_diff", "burned_area_diff",
+                        "human_modification_diff", "nitrogen_depo_diff", 
+                        "mat_diff", "map_diff", "max_temp_diff"), 
                names_to = "diff_name", values_to = "diff_value") %>% 
   mutate(clean_diff = case_when(
     diff_name == "evi_diff" ~ "EVI\nTrend Diff.", 
     diff_name == "greenup_diff" ~ "Greenup\nTrend Diff.", 
-    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff."
+    diff_name == "burned_area_diff" ~ "Burned Area\nTrend Diff.",
+    diff_name == "human_modification_diff" ~ "Human Modification\nDiff.", 
+    diff_name == "nitrogen_depo_diff" ~ "Nitrogen Depo\n Diff.", 
+    diff_name == "mat_diff" ~ "MAT\nTrend Diff.",
+    diff_name == "max_temp_diff" ~ "Max Temp\nTrend Diff.", 
+    diff_name == "map_diff" ~ "MAP\nTrend Diff."
   )) %>% 
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
   geom_point(aes(x = area_km2, y = diff_value), alpha = 0.25, size = 0.5, color = "grey50", width = 0.2) +
   geom_smooth(aes(x = area_km2, y = diff_value), method = "lm") +
-  facet_wrap(~clean_diff, scales = "free") +
-  theme_bw() +
-  labs(x = "PA area (km^2)", y = "") +
+  facet_wrap(~clean_diff, scales = "free_y", ncol = 4) +
+  scale_x_log10() +
+  theme_minimal() +
+  labs(x = "PA area (km^2)\n(log-scale)", y = "", title = "b)") +
   #scale_x_log10() +
   theme(axis.text.x = element_text(angle = 0))  
+p_diff_pa_area
 
+
+p <- gridExtra::grid.arrange(p_diff_pa_age, p_diff_pa_area)
+ggsave(plot = p, "builds/plots/pas_diff_vs_area_and_age.png", dpi = 600, height = 10, width = 10)
