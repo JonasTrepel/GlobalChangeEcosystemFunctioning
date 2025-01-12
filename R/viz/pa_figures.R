@@ -427,6 +427,9 @@ library(ggridges)
 dt_ridges <- shapes %>% 
   as.data.table() %>%
   mutate(geom = NULL, 
+         pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
+         area_km2_log = scale(log(area_km2 + 0.0001)),
+         pa_age_log = ifelse(!pa_age == 0, scale(log(pa_age + 0.0001)), NA),
          mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
          mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef), 
          burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, NA, burned_area_coef),
@@ -434,13 +437,15 @@ dt_ridges <- shapes %>%
          greenup_coef = ifelse(greenup_coef > q_975_greenup, NA, greenup_coef),
          greenup_coef = ifelse(greenup_coef < q_025_greenup, NA, greenup_coef), 
          protection_status = case_when(
-           protection_cat_broad == "strictly_protected" ~ "Strictly\nProtected",
-           protection_cat_broad == "control" ~ "Control"),
+           protection_cat_broad == "Strict" ~ "Strict",
+           protection_cat_broad == "Unprotected" ~ "Unprotected",
+           protection_cat_broad == "Mixed" ~ "Mixed"), 
          biome_clean = case_when(
            super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
            super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
            super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
            super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"))
+
 
 #evi ridges
 p_evi_prot <- ggplot() +
@@ -539,6 +544,38 @@ p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol 
 p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
 ggsave(plot = p_ridges, "builds/plots/pas_ridges.png", dpi = 600, height = 6, width = 12)
 
+
+#### area and size distribution 
+p_pa_age <- ggplot() +
+  geom_density_ridges(data = dt_ridges,
+                      aes(x = pa_age_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
+  theme_bw() +
+  labs(y = "", x = "PA Age (log)", title = "a)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_age
+
+p_pa_area <- ggplot() +
+  geom_density_ridges(data = dt_ridges,
+                      aes(x = area_km2_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
+  theme_bw() +
+  labs(y = "", x = "PA Area (log)", title = "b)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_area
+
+p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
+ggsave(plot = p_pa_area_trend, "builds/plots/pas_pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     BIOME MAP     ####################################

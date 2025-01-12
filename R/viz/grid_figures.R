@@ -372,7 +372,9 @@ fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"),
 ggsave(plot = fig_greenup, "builds/plots/grid_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
 
 
-## Alternative layout #####
+## Alternative layouts #####
+
+#1
 fig_evi_alt <- grid.arrange(p_est_evi_b + labs(title = "a)"), 
                                 p_evi_shapes + labs(title = "b)"), 
                                 p_est_evi_c + labs(title = "c)"), 
@@ -398,6 +400,33 @@ fig_greenup_alt <- grid.arrange(p_est_greenup_b + labs(title = "a)"),
                             heights = c(0.8, 1.3, 1))
 
 ggsave(plot = fig_greenup_alt, "builds/plots/grid_greenup_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
+
+#2
+fig_evi_alt <- grid.arrange(p_est_evi_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                            p_evi_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                            p_est_evi_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                            heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_evi_alt, "builds/plots/grid_evi_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
+
+
+
+fig_burned_area_alt <- grid.arrange(p_est_burned_area_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                    p_burned_area_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                    p_est_burned_area_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                    heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_burned_area_alt, "builds/plots/grid_burned_area_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
+
+
+
+
+fig_greenup_alt <- grid.arrange(p_est_greenup_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                p_greenup_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                p_est_greenup_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
+                                heights = c(0.8, 1.3, 1))
+
+ggsave(plot = fig_greenup_alt, "builds/plots/grid_greenup_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -737,10 +766,10 @@ ggsave(plot = p_ridges, "builds/plots/grid_ridges.png", dpi = 600, height = 6, w
 
 
 p_pa_age <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges,
-                               aes(x = pa_age_log, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  #scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  #scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  geom_density_ridges(data = dt_ridges,
+                               aes(x = pa_age_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
   theme_bw() +
   labs(y = "", x = "PA Age (log)", title = "a)") + 
   theme(legend.position = "none", 
@@ -751,10 +780,10 @@ p_pa_age <- ggplot() +
 p_pa_age
 
 p_pa_area <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges,
-                               aes(x = area_km2_log, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  #scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  #scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  geom_density_ridges(data = dt_ridges,
+                               aes(x = area_km2_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
   theme_bw() +
   labs(y = "", x = "PA Area (log)", title = "b)") + 
   theme(legend.position = "none", 
@@ -765,7 +794,7 @@ p_pa_area <- ggplot() +
 p_pa_area
 
 p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
-ggsave(plot = p_pa_area_trend, "builds/plots/pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
+ggsave(plot = p_pa_area_trend, "builds/plots/grid_pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     BIOME MAP     ####################################
