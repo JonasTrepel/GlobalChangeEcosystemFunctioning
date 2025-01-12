@@ -189,9 +189,9 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
       model == "H2" ~ "H2: Trend ~\nGlobal Change", 
       model == "H3" ~ "H3: Trend ~\nBiome", 
       model == "H4" ~ "H4: Trend ~\nProtection", 
-      model == "H4.1" ~ "H4.1: Change ~\nProtection", 
+      model == "H4.1" ~ "H4.1: Abs. Change ~\nProtection", 
       model == "H5" ~ "H5: Trend ~\nPA Characteristics", 
-      model == "H5.1" ~ "H5.1: Change ~\nPA Characteristics", 
+      model == "H5.1" ~ "H5.1: Abs. Change ~\nPA Characteristics", 
       model == "cold_short" ~ "Cold Limited\nShort Vegetation",
       model == "cold_tall" ~ "Cold Limited\nTall Vegetation",
       model == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
@@ -386,6 +386,160 @@ fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"),
                             heights = c(1.3, 0.8, 1))
 ggsave(plot = fig_greenup, "builds/plots/pas_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
 
+### Pa protection estimtes --------
+# evi 
+p_pa_est_evi <- dt_est %>% 
+  filter(response == "evi" & grepl("H", model)) %>% 
+  filter(model == "H4" | model == "H5") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#457B2A"
+  )) +
+  labs(title = "a)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12))
+p_pa_est_evi
+
+p_pa_est_abs_evi <- dt_est %>% 
+  filter(response == "evi" & grepl("H", model)) %>% 
+  filter(model == "H4.1" | model == "H5.1") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#457B2A"
+  )) +
+  labs(title = "b)", y = NULL, x = "EVI Trend Estimate (absolute)", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12))
+
+p_pa_est_abs_evi
+
+# burned area
+p_pa_est_burned_area <- dt_est %>% 
+  filter(response == "burned_area" & grepl("H", model)) %>% 
+  filter(model == "H4" | model == "H5") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#023E7D",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#8B2706"
+  )) +
+  labs(title = "a)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12, color = "white"))
+p_pa_est_burned_area
+
+p_pa_est_abs_burned_area <- dt_est %>% 
+  filter(response == "burned_area" & grepl("H", model)) %>% 
+  filter(model == "H4.1" | model == "H5.1") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#023E7D",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#8B2706"
+  )) +
+  labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate (absolute)", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12, color = "white"))
+
+p_pa_est_abs_burned_area
+
+
+# greenup
+p_pa_est_greenup <- dt_est %>% 
+  filter(response == "greenup" & grepl("H", model)) %>% 
+  filter(model == "H4" | model == "H5") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#386695"
+  )) +
+  labs(title = "a)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12, color = "white"))
+p_pa_est_greenup
+
+p_pa_est_abs_greenup <- dt_est %>% 
+  filter(response == "greenup" & grepl("H", model)) %>% 
+  filter(model == "H4.1" | model == "H5.1") %>% 
+  ggplot() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
+                  alpha = 0.9, linewidth = 1.2) +
+  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
+                                "Non-Significant" = "grey60", 
+                                "Sig. Positive" = "#386695"
+  )) +
+  labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate (absolute)", color = "Significance") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        strip.text = element_text(face = "bold", size = 11.5),   
+        strip.background = element_rect(fill = "snow2", color = "snow2"),
+        panel.background = element_rect(fill = "snow", color = "snow"),
+        panel.border = element_blank(),
+        plot.title = element_text(size = 12, color = "white"))
+
+p_pa_est_abs_greenup
+
+empty_plot <- ggplot() +
+  theme_void()
+
+p_pa_a <- gridExtra::grid.arrange(p_pa_est_evi, p_pa_est_burned_area, p_pa_est_greenup)
+p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_pa_est_abs_greenup)
+
+p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
+ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 11, width = 10)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     CORRELATION     ##################################
@@ -554,7 +708,7 @@ p_pa_age <- ggplot() +
   scale_fill_scico_d("batlowK") +
   scale_x_log10() +
   theme_bw() +
-  labs(y = "", x = "PA Age", title = "a)") + 
+  labs(y = "", x = "PA Age (Years)", title = "a)") + 
   theme(legend.position = "none", 
         panel.grid = element_blank(),
         panel.border = element_blank(),
@@ -569,7 +723,7 @@ p_pa_area <- ggplot() +
   scale_fill_scico_d("batlowK") +
   scale_x_log10(labels = scales::label_comma()) +
   theme_bw() +
-  labs(y = "", x = "PA Area", title = "b)") + 
+  labs(y = "", x = "PA Area (km^2)", title = "b)") + 
   theme(legend.position = "none", 
         panel.grid = element_blank(),
         panel.border = element_blank(),
