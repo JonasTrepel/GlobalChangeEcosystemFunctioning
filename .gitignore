@@ -9,6 +9,7 @@ data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv
 data/processedData/dataFragments/grid_sample_with_climate_trends.csv
 data/processedData/cleanData/pa_and_control_grid_with_covs.csv
 data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv
+data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv
 C:/
 ##################
 # History files
