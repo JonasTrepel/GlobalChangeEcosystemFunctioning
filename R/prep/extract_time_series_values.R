@@ -157,7 +157,14 @@ vect_covs <- vect %>%
   as.data.table() %>% 
   mutate(x = NULL, 
          geom = NULL,
-         geometry = NULL)
+         geometry = NULL) %>% 
+  mutate(mean_burned_area = rowMeans(select(., contains("burned_area")), na.rm = TRUE), 
+         max_burned_area = apply(select(., contains("burned_area")), 1, max, na.rm = TRUE),
+         map_era = rowMeans(select(., contains("map_")), na.rm = TRUE), 
+         mat_era = rowMeans(select(., contains("mat_")), na.rm = TRUE), 
+         max_temp_era = apply(select(., contains("max_temp")), 1, max, na.rm = TRUE), 
+         mean_evi = rowMeans(select(., contains("mean_evi")), na.rm = TRUE), 
+         mean_greenup = rowMeans(select(., contains("greenup")), na.rm = TRUE))
 
 
 if(param == "grid"){

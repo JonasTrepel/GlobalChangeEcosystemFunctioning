@@ -27,24 +27,19 @@ world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
 
 
 raw_shapes <- read_sf("data/spatialData/grid_sample.gpkg")
-raw_shapes$grid_area_km2 <- st_area(raw_shapes)/1000000
 
 shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
   left_join(greenup_trend) %>% 
+  left_join(climate_trends) %>% 
   mutate(mean_evi_coef = mean_evi_coef /100, 
          burned_area_coef = burned_area_coef*100)
 
 
 
 sum(is.na(shapes$mean_evi_coef))
-
-grid_pa_area_total <- as.numeric(sum(shapes[shapes$protection_cat_broad == "Strict", ]$grid_area_km2, na.rm = T))
-pa_area_total <- 1921064
-
-(fract <- round(grid_pa_area_total/pa_area_total, 2)) #0.7
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -171,7 +166,7 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
     ),
     facet_label = case_when(
       model == "H1" ~ "H1: Trend ~\nIntercept", 
-      model == "H2" ~ "H2: Trend ~\nGlobal Change", 
+      model == "H2" ~ "Global dataset", 
       model == "H3" ~ "H3: Trend ~\nBiome", 
       model == "H4" ~ "H4: Trend ~\nProtection", 
       model == "H4.1" ~ "H4.1: Change ~\nProtection", 
@@ -182,8 +177,7 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
       model == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
       model == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
     )
-  )
-
+  ) 
 
 fwrite(dt_est %>% 
          dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
@@ -202,43 +196,32 @@ fwrite(dt_est %>%
 scico(palette = "bam", n = 10)
 #"#65014B" "#9E3C85" "#C86FB1" "#E4ADD6" "#F4E3EF" "#EFF3E5" "#C0D9A1" "#7BA755" "#457B2A" "#0C4C00"
 
-p_est_evi_b <- dt_est %>% 
-  filter(response == "evi" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
+p_est_evi <- dt_est %>%
+  mutate(clean_term = factor(clean_term, levels = c(
+    "Intercept", 
+    "MAP Trend", 
+    "Max Temp Trend", 
+    "MAT Trend", 
+    "Human Modification",
+    "Nitrogen Deposition"))) %>%
+  mutate(facet_label = factor(facet_label, levels = c(
+    "Global dataset",
+    "Cold Limited\nShort Vegetation",
+    "Cold Limited\nTall Vegetation",
+    "Not Cold Limited\nShort Vegetation",
+    "Not Cold Limited\nTall Vegetation"
+  ))) %>% 
+  filter(response == "evi" & model %in% c("H2", "cold_tall", "not_cold_tall", "cold_short", "not_cold_short")) %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free_x", ncol = 5) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
   )) +
   labs(title = "b)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "none", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_evi_b
-
-p_est_evi_c <- dt_est %>% 
-  filter(response == "evi" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#457B2A"
-  )) +
-  labs(title = "c)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
         # panel.grid = element_blank(),
@@ -248,25 +231,38 @@ p_est_evi_c <- dt_est %>%
         panel.border = element_blank(),
         plot.title = element_text(size = 12))
 
-p_est_evi_c
+p_est_evi
 
 fig_evi <- grid.arrange(p_evi_shapes + labs(title = "a)"), 
-                        p_est_evi_b, p_est_evi_c, 
-                        heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_evi, "builds/plots/grid_evi_figure.png", height = 10.5, width = 9.5, dpi = 600)
+                        p_est_evi,
+                        heights = c(1.3, 1))
+ggsave(plot = fig_evi, "builds/plots/grid_evi_figure.png", height = 8, width = 9.5, dpi = 600)
 
 # burned area estimates -----
 scico(palette = "vik", n = 10)
 #"#001260" "#023E7D" "#1D6E9C" "#71A7C4" "#C9DDE7" "#EACEBE" "#D29773" "#BD6432" "#8B2706" "#590007"
 
-p_est_burned_area_b <- dt_est %>% 
-  filter(response == "burned_area" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
+p_est_burned_area <- dt_est %>%
+  mutate(clean_term = factor(clean_term, levels = c(
+    "Intercept", 
+    "MAP Trend", 
+    "Max Temp Trend", 
+    "MAT Trend", 
+    "Human Modification",
+    "Nitrogen Deposition"))) %>%
+  mutate(facet_label = factor(facet_label, levels = c(
+    "Global dataset",
+    "Cold Limited\nShort Vegetation",
+    "Cold Limited\nTall Vegetation",
+    "Not Cold Limited\nShort Vegetation",
+    "Not Cold Limited\nTall Vegetation"
+  ))) %>% 
+  filter(response == "burned_area" & model %in% c("H2", "cold_tall", "not_cold_tall", "cold_short", "not_cold_short")) %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free_x", ncol = 5) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
@@ -282,50 +278,39 @@ p_est_burned_area_b <- dt_est %>%
         axis.text.x = element_text(angle = 22.5, hjust = 1),
         plot.title = element_text(size = 12))
 
-p_est_burned_area_b
-
-p_est_burned_area_c <- dt_est %>% 
-  filter(response == "burned_area" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#023E7D",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#8B2706"
-  )) +
-  labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "bottom", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        axis.text.x = element_text(angle = 22.5, hjust = 1),
-        plot.title = element_text(size = 12))
-
-p_est_burned_area_c
+p_est_burned_area
 
 fig_burned_area <- grid.arrange(p_burned_area_shapes + labs(title = "a)"), 
-                                p_est_burned_area_b, p_est_burned_area_c, 
-                                heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_burned_area, "builds/plots/grid_burned_area_figure.png", height = 10.5, width = 9.5, dpi = 600)
+                        p_est_burned_area,
+                        heights = c(1.3, 1))
+ggsave(plot = fig_burned_area, "builds/plots/grid_burned_area_figure.png", height = 8, width = 9.5, dpi = 600)
+
 
 # Greenup estimates -----
 scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9)
 #"#195715" "#3D7D3C" "#6C9C6B" "#A2C0A1" "#D8E5D9" "#D2DDE7" "#97AFC8" "#6388AD" "#386695" "#284074"
 
-p_est_greenup_b <- dt_est %>% 
-  filter(response == "greenup" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
+p_est_greenup <- dt_est %>%
+  mutate(clean_term = factor(clean_term, levels = c(
+    "Intercept", 
+    "MAP Trend", 
+    "Max Temp Trend", 
+    "MAT Trend", 
+    "Human Modification",
+    "Nitrogen Deposition"))) %>%
+  mutate(facet_label = factor(facet_label, levels = c(
+    "Global dataset",
+    "Cold Limited\nShort Vegetation",
+    "Cold Limited\nTall Vegetation",
+    "Not Cold Limited\nShort Vegetation",
+    "Not Cold Limited\nTall Vegetation"
+  ))) %>% 
+  filter(response == "greenup" & model %in% c("H2", "cold_tall", "not_cold_tall", "cold_short", "not_cold_short")) %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free_x", ncol = 5) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
@@ -338,95 +323,16 @@ p_est_greenup_b <- dt_est %>%
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow1", color = "snow1"),
         panel.border = element_blank(),
+       # axis.text.x = element_text(angle = 22.5, hjust = 1),
         plot.title = element_text(size = 12))
 
-p_est_greenup_b
+p_est_greenup
 
-p_est_greenup_c <- dt_est %>% 
-  filter(response == "greenup" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#386695"
-  )) +
-  labs(title = "c)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "bottom", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_greenup_c
 
 fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"), 
-                            p_est_greenup_b, p_est_greenup_c, 
-                            heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_greenup, "builds/plots/grid_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
-
-
-## Alternative layouts #####
-
-#1
-fig_evi_alt <- grid.arrange(p_est_evi_b + labs(title = "a)"), 
-                                p_evi_shapes + labs(title = "b)"), 
-                                p_est_evi_c + labs(title = "c)"), 
-                                heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_evi_alt, "builds/plots/grid_evi_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
-
-
-
-fig_burned_area_alt <- grid.arrange(p_est_burned_area_b + labs(title = "a)"), 
-                                p_burned_area_shapes + labs(title = "b)"), 
-                                p_est_burned_area_c + labs(title = "c)"), 
-                                heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_burned_area_alt, "builds/plots/grid_burned_area_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
-
-
-
-
-fig_greenup_alt <- grid.arrange(p_est_greenup_b + labs(title = "a)"), 
-                                p_greenup_shapes + labs(title = "b)"), 
-                                p_est_greenup_c + labs(title = "c)"), 
-                            heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_greenup_alt, "builds/plots/grid_greenup_figure_alt.png", height = 10.5, width = 9.5, dpi = 600)
-
-#2
-fig_evi_alt <- grid.arrange(p_est_evi_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                            p_evi_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                            p_est_evi_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                            heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_evi_alt, "builds/plots/grid_evi_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
-
-
-
-fig_burned_area_alt <- grid.arrange(p_est_burned_area_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                    p_burned_area_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                    p_est_burned_area_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                    heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_burned_area_alt, "builds/plots/grid_burned_area_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
-
-
-
-
-fig_greenup_alt <- grid.arrange(p_est_greenup_b + labs(title = "a)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                p_greenup_shapes + labs(title = "b)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                p_est_greenup_c + labs(title = "c)") + theme(panel.grid = element_blank(), panel.background = element_blank(), strip.background = element_blank()), 
-                                heights = c(0.8, 1.3, 1))
-
-ggsave(plot = fig_greenup_alt, "builds/plots/grid_greenup_figure_alt2.png", height = 10.5, width = 9.5, dpi = 600)
+                            p_est_greenup, 
+                            heights = c(1.3, 1))
+ggsave(plot = fig_greenup, "builds/plots/grid_greenup_figure.png", height = 8, width = 9.5, dpi = 600)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#

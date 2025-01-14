@@ -539,7 +539,7 @@ p_pa_a <- gridExtra::grid.arrange(p_pa_est_evi, p_pa_est_burned_area, p_pa_est_g
 p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_pa_est_abs_greenup)
 
 p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
-ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 11, width = 10)
+ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 9, width = 10)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     CORRELATION     ##################################

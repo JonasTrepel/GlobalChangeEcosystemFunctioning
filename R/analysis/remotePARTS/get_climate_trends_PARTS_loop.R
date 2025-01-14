@@ -87,14 +87,18 @@ dt_trend <- foreach(i = 1:nrow(trend_configs),
 stopCluster(clust)
 print(paste0("done! ", Sys.time()))
 
-
+ctk <- dt %>% dplyr::select(unique_id,
+                            mean_burned_area, max_burned_area, 
+                            map_era, mat_era, mat_era,
+                            mean_evi, mean_greenup)
 
 dt_res <- dt %>% 
   as.data.table() %>% 
   left_join(dt_trend) %>%
   dplyr::select(-all_of(grep("mat_", names(dt), value = T)),
                 -all_of(grep("max_temp_", names(dt), value = T)),
-                -all_of(grep("map_", names(dt), value = T))) 
+                -all_of(grep("map_", names(dt), value = T))) %>% 
+  left_join(ctk)
 
 
 summary(dt_res)

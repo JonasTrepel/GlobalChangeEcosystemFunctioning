@@ -1,31 +1,20 @@
 
-
-
-library(MuMIn)
-library(glmmTMB)
 library(terra)
 library(tidyverse)
 library(data.table)
 library(sf)
 library(tidylog)
-library(GGally)
-library(scales)
-library(rnaturalearth)
-library(gridExtra)
-library("qgam")
 library(sf)
-library(terra)
 
 
 ### define if we want to run it for control or PA 
 
-#param <- "pa"
-param <- "control"
+param <- "pa"
+#param <- "control"
 
 if(param == "pa"){
   pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
-}
-if(param == "control"){
+} else if(param == "control"){
   pas <- read_sf("data/spatialData/protectedAreas/controls_for_strict_pas.gpkg")
 }
 
@@ -94,10 +83,7 @@ colNames <- c(
   "elevation", ## Elevation
   "MAP", ## MAP
   "MAT", ## MAT
-  "MaxTemp", ## MaxTemp
-  "BurnedAreaMean", ## Burned Area
-  "EVI", ## EVI
-  
+
   #### Global Change ####
   "nitrogen_depo", ## Nitrogen depo
   "human_modification", #Human modification index
@@ -107,7 +93,6 @@ colNames <- c(
   "functional_biome_num", # functional biome 
   "olson_biome_num", # olson biome 
   "climatic_region_num" # climatic region 
-  
 )
 
 covPaths <- c(
@@ -115,26 +100,20 @@ covPaths <- c(
   "data/spatialData/otherCovariates/Elevation_Global_930m.tif", ## Elevation
   "data/spatialData/climateData/currentMeanMonthlyPrec20092019.tif", ## MAP
   "data/spatialData/climateData/currentMeanTemp20092019.tif", ##MAT
-  "data/spatialData/climateData/currentMaxTemp20092019.tif", ##Max Temp
-  "data/spatialData/otherCovariates/BurnedAreaMean20012023.tif", ## Burned Area
-  "data/spatialData/otherCovariates/EviMean20012023.tif", ## EVI
-  
+
   #### Global Change ####
-  #  "data/spatialData/trendData/MapTrend19502023Masked.tif", ## Prec slope masked
   "data/spatialData/otherCovariates/total_N_dep.tif",## Nitrogen depo
   "data/spatialData/otherCovariates/lulc-human-modification-terrestrial-systems_geographic.tif", #Human modification index
-  
   
   #### categorical ####
   "data/spatialData/otherCovariates/GlobalLandCovercopernicus2019.tif", #land cover
   "data/spatialData/otherCovariates/higginsFunctionalBiomes.tif", # functional biome 
   "data/spatialData/otherCovariates/wwf_olson_biome.tif", # olson biome 
   "data/spatialData/otherCovariates/KoppenGeigerClimaticRegions1km.tif"# climatic region 
-  
 )
 
 
-funcs <- c(rep("mean", 8), rep("mode", 4))
+funcs <- c(rep("mean", 5), rep("mode", 4))
 
 covs <- data.table(
   colName = colNames, 
@@ -151,7 +130,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(15)
+clust <- makeCluster(10)
 registerDoSNOW(clust)
 
 ## progress bar 
