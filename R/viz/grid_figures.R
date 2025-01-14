@@ -413,14 +413,6 @@ p_corr_not_cold_tall <- ggcorrplot(corr_not_cold_tall, hc.order = TRUE, type = "
                                 lab = TRUE)
 p_corr_not_cold_tall
 
-p_biome_corr <- gridExtra::grid.arrange(
-  p_corr_cold_short + labs(title = "Cold limited, short vegetation"),
-  p_corr_cold_tall + labs(title = "Cold limited, tall vegetation"),
-  p_corr_not_cold_short + labs(title = "Not cold limited, short vegetation"),
-  p_corr_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
-)
-
-#ggsave(plot = p_biome_corr, "builds/plots/grid_variable_correlations_biome_spec.png", dpi = 600, height = 12, width = 12)
 
 p_corr <- gridExtra::grid.arrange(
   p_corr_full + labs(title = "Full Dataset"),
@@ -431,105 +423,6 @@ p_corr <- gridExtra::grid.arrange(
 )
 
 ggsave(plot = p_corr, "builds/plots/grid_variable_correlations_all.png", dpi = 600, height = 13, width = 11)
-
-
-### correlations in strictly protected areas 
-dt_corr_pa <- shapes %>% 
-  left_join(climate_trends) %>% 
-  mutate(pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA)) %>%
-  rename(pa_area = area_km2) %>% 
-  as.data.table() %>% 
-  dplyr::select(
-    mean_evi_coef, burned_area_coef, greenup_coef,
-    mat_coef, map_coef, max_temp_coef, 
-    nitrogen_depo, human_modification, super_biome, pa_age, pa_area) %>% 
-  filter(complete.cases(.)) %>% 
-  rename(`EVI Trend` = mean_evi_coef, 
-         `Burned Area Trend` = burned_area_coef, 
-         `Greenup Trend` = greenup_coef, 
-         `MAT Trend` = mat_coef,
-         `MAP Trend` = map_coef, 
-         `Max Temp Trend` = max_temp_coef, 
-         `Nitrogen Deposition` = nitrogen_depo, 
-         `Human Modification` = human_modification, 
-         `PA Age` = pa_age, 
-         `PA Area` = pa_area)
-
-dt_corr_pa_full <- dt_corr_pa %>% dplyr::select(-super_biome)
-
-library(ggcorrplot)
-corr_pa <- round(cor(dt_corr_pa_full), 1)
-p_corr_pa_full <- ggcorrplot(corr_pa, hc.order = TRUE, type = "lower",
-                     lab = TRUE)
-p_corr_pa_full
-#ggsave(plot = p_corr_pa_full, "builds/plots/grid_variable_correlations_strict_pas.png", dpi = 600, height = 8, width = 8)
-
-
-#### Biome specific correlations ---
-## cold_short
-dt_corr_pa_cold_short <- dt_corr_pa %>%
-  filter(super_biome == "cold_short") %>%
-  dplyr::select(-super_biome)
-
-library(ggcorrplot)
-corr_pa_cold_short <- round(cor(dt_corr_pa_cold_short), 1)
-p_corr_pa_cold_short <- ggcorrplot(corr_pa_cold_short, hc.order = TRUE, type = "lower",
-                                lab = TRUE)
-p_corr_pa_cold_short
-
-## cold_tall
-dt_corr_pa_cold_tall <- dt_corr_pa %>%
-  filter(super_biome == "cold_tall") %>%
-  dplyr::select(-super_biome)
-
-library(ggcorrplot)
-corr_pa_cold_tall <- round(cor(dt_corr_pa_cold_tall), 1)
-p_corr_pa_cold_tall <- ggcorrplot(corr_pa_cold_tall, hc.order = TRUE, type = "lower",
-                               lab = TRUE)
-p_corr_pa_cold_tall
-
-## not_cold_short
-dt_corr_pa_not_cold_short <- dt_corr_pa %>%
-  filter(super_biome == "not_cold_short") %>%
-  dplyr::select(-super_biome)
-
-library(ggcorrplot)
-corr_pa_not_cold_short <- round(cor(dt_corr_pa_not_cold_short), 1)
-p_corr_pa_not_cold_short <- ggcorrplot(corr_pa_not_cold_short, hc.order = TRUE, type = "lower",
-                                    lab = TRUE)
-p_corr_pa_not_cold_short
-
-## not_cold_tall
-dt_corr_pa_not_cold_tall <- dt_corr_pa %>%
-  filter(super_biome == "not_cold_tall") %>%
-  dplyr::select(-super_biome)
-
-library(ggcorrplot)
-corr_pa_not_cold_tall <- round(cor(dt_corr_pa_not_cold_tall), 1)
-p_corr_pa_not_cold_tall <- ggcorrplot(corr_pa_not_cold_tall, hc.order = TRUE, type = "lower",
-                                   lab = TRUE)
-p_corr_pa_not_cold_tall
-
-dt_biome_corr_pa <- gridExtra::grid.arrange(
-  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
-  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
-  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
-  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
-)
-
-
-#ggsave(plot = dt_biome_corr_pa, "builds/plots/grid_variable_correlations_biome_spec_strict_pas.png", dpi = 600, height = 12, width = 12)
-
-p_corr_pa <- gridExtra::grid.arrange(
-  p_corr_pa_full + labs(title = "Full Dataset"),
-  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
-  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
-  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
-  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
-)
-
-ggsave(plot = p_corr_pa, "builds/plots/grid_variable_correlations_strict_pas_all.png", dpi = 600, height = 13, width = 11)
-
 
 
 
@@ -562,21 +455,6 @@ dt_ridges <- shapes %>%
            super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"))
 
 #evi ridges
-p_evi_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(mean_evi_coef)),
-                               aes(x = mean_evi_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "bam", midpoint = 0) +
-  scale_fill_scico(palette = "bam", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "EVI Trend") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_evi_prot
 
 p_evi_biome <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
@@ -594,26 +472,6 @@ p_evi_biome <- ggplot() +
 
 p_evi_biome
 
-p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_biome, ncol = 1)
-
-
-# burned area ridges
-p_burned_area_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(burned_area_coef)),
-                               aes(x = burned_area_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "vik", midpoint = 0) +
-  scale_fill_scico(palette = "vik", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Burned Area Trend") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_burned_area_prot
-
 p_burned_area_biome <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
                                  filter(!is.na(burned_area_coef)),
@@ -630,24 +488,7 @@ p_burned_area_biome <- ggplot() +
 
 p_burned_area_biome
 
-p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_biome, ncol = 1)
 
-## greenup ridges 
-p_greenup_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(greenup_coef)),
-                               aes(x = greenup_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Vegetation Green-Up Trend") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_greenup_prot
 
 p_greenup_biome <- ggplot() +
   geom_density_ridges_gradient(data = dt_ridges %>%
@@ -665,42 +506,9 @@ p_greenup_biome <- ggplot() +
 
 p_greenup_biome
 
-p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol = 1)
 
-p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
-ggsave(plot = p_ridges, "builds/plots/grid_ridges.png", dpi = 600, height = 6, width = 12)
-
-
-p_pa_age <- ggplot() +
-  geom_density_ridges(data = dt_ridges,
-                               aes(x = pa_age_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
-  scale_color_scico_d("batlowK") +
-  scale_fill_scico_d("batlowK") +
-  theme_bw() +
-  labs(y = "", x = "PA Age (log)", title = "a)") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_pa_age
-
-p_pa_area <- ggplot() +
-  geom_density_ridges(data = dt_ridges,
-                               aes(x = area_km2_log, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
-  scale_color_scico_d("batlowK") +
-  scale_fill_scico_d("batlowK") +
-  theme_bw() +
-  labs(y = "", x = "PA Area (log)", title = "b)") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_pa_area
-
-p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
-ggsave(plot = p_pa_area_trend, "builds/plots/grid_pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
+p_ridges <- gridExtra::grid.arrange(p_evi_biome, p_burned_area_biome, p_greenup_biome, ncol = 3)
+ggsave(plot = p_ridges, "builds/plots/grid_ridges.png", dpi = 600, height = 3, width = 12)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     BIOME MAP     ####################################
@@ -865,41 +673,6 @@ gc_maps <- grid.arrange(p_n_depo_shapes, p_human_modification_shapes,
                          p_map_shapes, ncol = 2)
 
 ggsave(plot = gc_maps, "builds/plots/grid_global_change_map_shapes.png", dpi = 600)
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-#################################     QUANTILES     ##################################
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-dt_env_raw <- shapes %>% 
-  left_join(climate_trends) 
-
-
-
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$mat_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.045576069  0.004695984  0.012743080  0.022046219  0.029451839  0.040541147  0.079413342
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$max_temp_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.081249289 -0.004047223  0.008281520  0.017152691  0.025692758  0.041528039  0.219463404 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$map_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-50.77784118  -4.59155461  -0.07938528   0.47506487   1.21686432   4.28346692  43.26811849 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$nitrogen_depo, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#        0%         5%        25%        50%        75%        95%       100% 
-#   8.93624   38.26200  108.45508  215.97137  446.29657 1136.52124 6848.16553 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$human_modification, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#0.000000e+00 1.911390e-06 5.226702e-03 5.079506e-02 1.635810e-01 4.231209e-01 9.732789e-01 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$mean_evi_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-163.8214168  -14.7408541   -0.7717181    4.5138879   13.1196674   29.2534735  180.7633833 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$burned_area_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#          0%           5%          25%          50%          75%          95%         100% 
-#-0.049467534 -0.004512144  0.000000000  0.000000000  0.000000000  0.002043215  0.048151842 
-quantile(dt_env_raw[!is.na(dt_env_raw$mean_evi_coef),]$greenup_coef, c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1), na.rm = T)
-#           0%            5%           25%           50%           75%           95%          100%
-#-11.590909090  -0.922264706  -0.246465032  -0.009843419   0.238165137   1.726039631  11.247583560 
-
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #########################     SIG. GLOBAL CHANGE MAPS     ############################

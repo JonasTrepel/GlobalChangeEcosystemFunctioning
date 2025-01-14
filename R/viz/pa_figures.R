@@ -571,6 +571,106 @@ p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
 p_corr
 ggsave(plot = p_corr, "builds/plots/pas_variable_correlations.png", dpi = 600, height = 8, width = 8)
 
+### correlations in strictly protected areas 
+dt_corr_pa <- shapes %>% 
+  left_join(climate_trends) %>% 
+  mutate(pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA)) %>%
+  rename(pa_area = area_km2) %>% 
+  as.data.table() %>% 
+  dplyr::select(
+    mean_evi_coef, burned_area_coef, greenup_coef,
+    mat_coef, map_coef, max_temp_coef, 
+    nitrogen_depo, human_modification, super_biome, pa_age, pa_area) %>% 
+  filter(complete.cases(.)) %>% 
+  rename(`EVI Trend` = mean_evi_coef, 
+         `Burned Area Trend` = burned_area_coef, 
+         `Greenup Trend` = greenup_coef, 
+         `MAT Trend` = mat_coef,
+         `MAP Trend` = map_coef, 
+         `Max Temp Trend` = max_temp_coef, 
+         `Nitrogen Deposition` = nitrogen_depo, 
+         `Human Modification` = human_modification, 
+         `PA Age` = pa_age, 
+         `PA Area` = pa_area)
+
+dt_corr_pa_full <- dt_corr_pa %>% dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa <- round(cor(dt_corr_pa_full), 1)
+p_corr_pa_full <- ggcorrplot(corr_pa, hc.order = TRUE, type = "lower",
+                             lab = TRUE)
+p_corr_pa_full
+#ggsave(plot = p_corr_pa_full, "builds/plots/grid_variable_correlations_strict_pas.png", dpi = 600, height = 8, width = 8)
+
+
+#### Biome specific correlations ---
+## cold_short
+dt_corr_pa_cold_short <- dt_corr_pa %>%
+  filter(super_biome == "cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_cold_short <- round(cor(dt_corr_pa_cold_short), 1)
+p_corr_pa_cold_short <- ggcorrplot(corr_pa_cold_short, hc.order = TRUE, type = "lower",
+                                   lab = TRUE)
+p_corr_pa_cold_short
+
+## cold_tall
+dt_corr_pa_cold_tall <- dt_corr_pa %>%
+  filter(super_biome == "cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_cold_tall <- round(cor(dt_corr_pa_cold_tall), 1)
+p_corr_pa_cold_tall <- ggcorrplot(corr_pa_cold_tall, hc.order = TRUE, type = "lower",
+                                  lab = TRUE)
+p_corr_pa_cold_tall
+
+## not_cold_short
+dt_corr_pa_not_cold_short <- dt_corr_pa %>%
+  filter(super_biome == "not_cold_short") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_not_cold_short <- round(cor(dt_corr_pa_not_cold_short), 1)
+p_corr_pa_not_cold_short <- ggcorrplot(corr_pa_not_cold_short, hc.order = TRUE, type = "lower",
+                                       lab = TRUE)
+p_corr_pa_not_cold_short
+
+## not_cold_tall
+dt_corr_pa_not_cold_tall <- dt_corr_pa %>%
+  filter(super_biome == "not_cold_tall") %>%
+  dplyr::select(-super_biome)
+
+library(ggcorrplot)
+corr_pa_not_cold_tall <- round(cor(dt_corr_pa_not_cold_tall), 1)
+p_corr_pa_not_cold_tall <- ggcorrplot(corr_pa_not_cold_tall, hc.order = TRUE, type = "lower",
+                                      lab = TRUE)
+p_corr_pa_not_cold_tall
+
+dt_biome_corr_pa <- gridExtra::grid.arrange(
+  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+
+#ggsave(plot = dt_biome_corr_pa, "builds/plots/grid_variable_correlations_biome_spec_strict_pas.png", dpi = 600, height = 12, width = 12)
+
+p_corr_pa <- gridExtra::grid.arrange(
+  p_corr_pa_full + labs(title = "Full Dataset"),
+  p_corr_pa_cold_short + labs(title = "Cold limited, short vegetation"),
+  p_corr_pa_cold_tall + labs(title = "Cold limited, tall vegetation"),
+  p_corr_pa_not_cold_short + labs(title = "Not cold limited, short vegetation"),
+  p_corr_pa_not_cold_tall + labs(title = "Not cold limited, tall vegetation")
+)
+
+ggsave(plot = p_corr_pa, "builds/plots/pas_variable_correlations_strict_pas_all.png", dpi = 600, height = 13, width = 11)
+
+
+
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     TREND DISTRIBUTION     ##############################

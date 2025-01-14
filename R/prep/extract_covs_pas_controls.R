@@ -9,13 +9,16 @@ library(sf)
 
 ### define if we want to run it for control or PA 
 
-param <- "pa"
+param <- "pa_grid"
+#param <- "pa"
 #param <- "control"
 
 if(param == "pa"){
   pas <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg")
 } else if(param == "control"){
   pas <- read_sf("data/spatialData/protectedAreas/controls_for_strict_pas.gpkg")
+} else if(param == "pa_grid") {
+  pas <- read_sf("data/spatialData/protectedAreas/pa_and_control_grid_1km.gpkg")
 }
 
 # get legends -----------
@@ -200,8 +203,8 @@ pa.shapes <- dt_pas_covs %>% left_join(pas) %>% st_as_sf
 
 if(param == "pa"){
   fwrite(dt_pas_covs, "data/processedData/cleanData/pas_with_covs.csv")
-}
-if(param == "control"){
+} else if(param == "control"){
   fwrite(dt_pas_covs, "data/processedData/cleanData/controls_with_covs.csv")
+} else if(param == "pa_grid") {
+  fwrite(dt_pas_covs, "data/processedData/cleanData/pa_and_control_grid_with_covs.csv")
 }
-
