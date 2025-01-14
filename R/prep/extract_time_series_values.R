@@ -7,13 +7,13 @@ library(data.table)
 library(tidyverse)
 
 #read vectors 
-param = "grid"
-#param = "pas"
+#param = "grid"
+param = "pas"
 
 if(param == "grid"){
   vect <- st_read("data/spatialData/grid_sample.gpkg") 
 }else if(param == "pas"){
-  vect <- st_read("data/spatialData/pas_and_controls.gpkg")
+  vect <- st_read("data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg")
 }
 
 

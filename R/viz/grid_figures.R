@@ -63,7 +63,8 @@ p_evi_shapes <- ggplot() +
   scale_fill_scico(palette = "bam", midpoint = 0) +
   labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
   theme_void() +
-  theme(legend.position = "right", 
+  theme(legend.position = "bottom",
+        #legend.position.inside = c(0.1, 0.1),
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
         legend.text = element_text(angle = 0))
@@ -86,9 +87,9 @@ p_burned_area_shapes <- ggplot() +
           aes(color = burned_area_coef, fill = burned_area_coef)) +
   scale_color_scico(palette = "vik", midpoint = 0) +
   scale_fill_scico(palette = "vik", midpoint = 0) +
-  labs(color = "Burned\nArea\nTrend", fill = "Burned\nArea\nTrend") +
+  labs(color = "Burned Area Trend", fill = "Burned Area Trend") +
   theme_void() +
-  theme(legend.position = "right", 
+  theme(legend.position = "bottom", 
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
         legend.text = element_text(angle = 0))
@@ -111,9 +112,9 @@ p_greenup_shapes <- ggplot() +
           aes(color = greenup_coef, fill = greenup_coef)) +
   scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
   scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  labs(color = "Vegetation\nGreen-Up\nTrend", fill = "Vegetation\nGreen-Up\nTrend") +
+  labs(color = "Vegetation Green-Up Trend", fill = "Vegetation Green-Up Trend") +
   theme_void() +
-  theme(legend.position = "right", 
+  theme(legend.position = "bottom", 
         # legend.key.width = unit(1, "cm"),
         # legend.key.height = unit(0.4, "cm"), 
         legend.text = element_text(angle = 0))
@@ -235,7 +236,7 @@ p_est_evi
 
 fig_evi <- grid.arrange(p_evi_shapes + labs(title = "a)"), 
                         p_est_evi,
-                        heights = c(1.3, 1))
+                        heights = c(1.6, 1))
 ggsave(plot = fig_evi, "builds/plots/grid_evi_figure.png", height = 8, width = 9.5, dpi = 600)
 
 # burned area estimates -----
@@ -282,7 +283,7 @@ p_est_burned_area
 
 fig_burned_area <- grid.arrange(p_burned_area_shapes + labs(title = "a)"), 
                         p_est_burned_area,
-                        heights = c(1.3, 1))
+                        heights = c(1.6, 1))
 ggsave(plot = fig_burned_area, "builds/plots/grid_burned_area_figure.png", height = 8, width = 9.5, dpi = 600)
 
 
@@ -331,7 +332,7 @@ p_est_greenup
 
 fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"), 
                             p_est_greenup, 
-                            heights = c(1.3, 1))
+                            heights = c(1.6, 1))
 ggsave(plot = fig_greenup, "builds/plots/grid_greenup_figure.png", height = 8, width = 9.5, dpi = 600)
 
 
@@ -528,10 +529,12 @@ p_biome_shapes <- ggplot() +
   scale_fill_scico_d(palette = "batlowK") +
   theme_void() +
   labs(color = "Biome", fill = "Biome") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(), 
+        legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 1), fill = guide_legend(nrow = 1))
 p_biome_shapes
 
-ggsave(plot = p_biome_shapes, "builds/plots/grid_biome_maps_shapes.png", dpi = 600)
+ggsave(plot = p_biome_shapes, "builds/plots/grid_biome_maps_shapes.png", dpi = 600, height = 8, width = 10)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   PROTECTION MAP   ##################################

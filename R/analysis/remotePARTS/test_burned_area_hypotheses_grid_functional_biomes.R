@@ -174,7 +174,7 @@ biome_gls <- function(f_biome = NA, col_pattern = NA, start = list(range = 0.1),
                                   covar.pars = list(range = range_opt_biome),
                                   data = dt_biome,
                                   nugget = NA,
-                                  ncores = 25,
+                                  ncores = 20,
                                   progressbar = TRUE, 
                                   parallel = TRUE, 
                                   coord.names = c("lon", "lat"))

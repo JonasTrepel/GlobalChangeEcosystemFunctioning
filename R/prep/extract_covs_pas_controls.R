@@ -18,8 +18,12 @@ if(param == "pa"){
 } else if(param == "control"){
   pas <- read_sf("data/spatialData/protectedAreas/controls_for_strict_pas.gpkg")
 } else if(param == "pa_grid") {
-  pas <- read_sf("data/spatialData/protectedAreas/pa_and_control_grid_1km.gpkg")
-}
+  pas <- read_sf("data/spatialData/protectedAreas/pa_and_control_grid_1km.gpkg") %>% 
+    rename(unique_pa_id = unique_id) %>% 
+    group_by(unique_pa_id) %>% 
+    mutate(unique_id = paste0(unique_pa_id, "_grid", 1:n()))%>% 
+    ungroup()
+}   
 
 # get legends -----------
 
@@ -174,7 +178,7 @@ dtCovs <- foreach(i = 1:nrow(covs),
                     setnames(extr, func, covs[i, ]$colName)
                     
                     extraDTFin <- all_polys %>%
-                      left_join(extr) %>%
+                      left_join(extr %>% unique()) %>%
                       as.data.table() %>%
                       mutate(geom = NULL, x = NULL, geometry = NULL) %>% 
                       unique()
@@ -207,4 +211,8 @@ if(param == "pa"){
   fwrite(dt_pas_covs, "data/processedData/cleanData/controls_with_covs.csv")
 } else if(param == "pa_grid") {
   fwrite(dt_pas_covs, "data/processedData/cleanData/pa_and_control_grid_with_covs.csv")
+  
+  pas_with_covs <- pas %>% left_join(dt_pas_covs)
+  
+  write_sf(pas_with_covs, "data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg") 
 }

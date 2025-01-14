@@ -175,7 +175,7 @@ biome_gls <- function(o_biome = NA, col_pattern = NA, start = list(range = 0.1),
                                   covar.pars = list(range = range_opt_biome),
                                   data = dt_biome,
                                   nugget = NA,
-                                  ncores = 25,
+                                  ncores = 20,
                                   progressbar = TRUE, 
                                   parallel = TRUE, 
                                   coord.names = c("lon", "lat"))
@@ -258,12 +258,15 @@ p_est <- dt_plot %>%
     "Max Temp Trend", 
     "MAT Trend", 
     "Human Modification",
-    "Nitrogen Deposition"))) %>% 
+    "Nitrogen Deposition")),
+    olson_biome = gsub("&", "&\n", olson_biome), 
+    olson_biome = gsub(",", ",\n", olson_biome),
+    olson_biome = gsub("Moist", "Moist\n", olson_biome)) %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~functional_biome, scales = "free", ncol = 3) +
+  facet_wrap(~olson_biome, scales = "free", ncol = 3) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
