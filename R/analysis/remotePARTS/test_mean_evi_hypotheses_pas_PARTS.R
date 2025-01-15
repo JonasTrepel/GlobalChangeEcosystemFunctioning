@@ -39,10 +39,11 @@ mean_evi_cols <- grep("mean_evi_", names(dt), value = T)
 
 #subset to complete cases
 dt_mean_evi <- dt %>%
-  dplyr::select(all_of(mean_evi_cols), functional_biome, lon, lat, unique_id, 
+  dplyr::select(all_of(mean_evi_cols), functional_biome, lon, lat, unique_id, lon_pa, lat_pa,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, super_biome,
                 protection_cat_broad) %>% 
-  filter(complete.cases(.))
+  filter(complete.cases(.)) %>% 
+  distinct(lon, lat, .keep_all = T)
 
 table(dt_mean_evi$protection_cat_broad)
 table(dt_mean_evi$super_biome)
@@ -70,113 +71,58 @@ fwrite(dt_mean_evi %>% dplyr::select(
 
 ### estimate optimal r parameter (range of spatial autocorrelation)
 corfit <- fitCor(resids = residuals(ar_mean_evi), coords = coords_mean_evi, covar_FUN = "covar_exp", 
-                 start = list(range = 0.1), fit.n = nrow(dt_mean_evi))
+                 start = list(range = 0.1), fit.n = 15000)
 (range_opt_mean_evi = corfit$spcor)
 
-#use r to calculate optimal v parameter 
-#v_opt_mean_evi <- covar_exp(d_mean_evi, range_opt_mean_evi)
+
+##### by protected area 
+
+get_mode <- function(x, na.rm = FALSE) {
+  if(na.rm){
+    x = x[!is.na(x)]
+  }
+  
+  ux <- unique(x)
+  return(ux[which.max(tabulate(match(x, ux)))])
+}
+
+dt_sum <- dt_mean_evi %>%
+  group_by(unique_pa_id) %>% 
+  summarize(mat_coef = mean(mat_coef, na.rm = T),
+            map_coef = mean(map_coef, na.rm = T),
+            max_temp_coef = mean(max_temp_coef, na.rm = T),
+            human_modification = mean(human_modification, na.rm = T),
+            nitrogen_depo = mean(nitrogen_depo, na.rm = T),
+            protection_cat_broad = unique(protection_cat_broad), 
+            lon_pa = unique(lon_pa), 
+            lat_pa = unique(lat_pa), 
+            mean_evi_coef = mean(mean_evi_coef, na.rm = T),
+            abs_mean_evi_coef = mean(abs_mean_evi_coef, na.rm = T)) 
+  
+
+
 
 ############ test hypotheses ############ 
 
 #partition the data 
 set.seed(161)
-pm <- sample_partitions(npix = nrow(dt_mean_evi), partsize = 1500, npart = NA)
+pm <- sample_partitions(npix = nrow(dt_sum), partsize = 1500, npart = NA)
 dim(pm)
 
-## Hypothesis 1: Ecosystem functioning is overall changing --------------------
-set.seed(161)
-gls_h1 <- fitGLS_partition(mean_evi_coef ~ 1,
-                           partmat = pm,
-                           covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_mean_evi),
-                           data = dt_mean_evi,
-                           nugget = NA,
-                           ncores = 10,
-                           progressbar = TRUE, 
-                           parallel = T, 
-                           coord.names = c("lon", "lat")
-)
-gls_h1 # yes. Est: 5.563445 ; SE: 0.4952674 ; pval.t: 2.871102e-29
-
-dt_est_h1 <- extract_gls_estimates(gls_h1, part = TRUE)
-
-## Hypothesis 2: Change depends on climate change, N deposition, human modification -------------
-
-set.seed(161)
-gls_h2 <- fitGLS_partition(mean_evi_coef ~ 1 +
-                             nitrogen_depo +
-                             mat_coef + 
-                             max_temp_coef + 
-                             map_coef + 
-                             human_modification,
-                           partmat = pm,
-                           covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_mean_evi),
-                           data = dt_mean_evi,
-                           nugget = NA,
-                           ncores = 10,
-                           progressbar = TRUE, 
-                           parallel = TRUE, 
-                           coord.names = c("lon", "lat"))
-gls_h2 
-
-dt_est_h2 <- extract_gls_estimates(gls_h2, part = TRUE)
-
-p_h2 <- dt_est_h2 %>% 
-  ggplot() + 
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
-                  alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
-  labs(title = "H2: mean_evi change ~\nglobal change", subtitle = paste0("n = ", nrow(dt_mean_evi)), y = NULL, x = NULL) +
-  theme_classic() +
-  theme(legend.position = "none", 
-        plot.title = element_text(size = 12))
-p_h2
-
-## Hypothesis 3 - different trends in different superbiomes  ----------------------
-set.seed(161)
-gls_h3 <- fitGLS_partition(mean_evi_coef ~ 0 +
-                             super_biome,
-                           partmat = pm,
-                           covar_FUN = "covar_exp",
-                           covar.pars = list(range = range_opt_mean_evi),
-                           data = dt_mean_evi,
-                           nugget = NA,
-                           ncores = 10,
-                           progressbar = TRUE, 
-                           parallel = TRUE, 
-                           coord.names = c("lon", "lat"))
-gls_h3 # 
-
-
-dt_est_h3 <- extract_gls_estimates(gls_h3, part = TRUE)
-
-p_h3 <- dt_est_h3 %>% 
-  ggplot() + 
-  # geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
-                  alpha = 0.9, linewidth = 1.2) +
-  scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
-  labs(title = "H3: mean_evi change ~\nsuper biome", subtitle = paste0("n = ", nrow(dt_mean_evi)), y = NULL, x = NULL) +
-  theme_classic() +
-  theme(legend.position = "none", 
-        plot.title = element_text(size = 12))
-p_h3
 
 ## Hypothesis 4 - different absolute trend in and outside of PAs ----------------------
 set.seed(161)
 gls_h4 <- fitGLS_partition(mean_evi_coef ~ 0 +
-                             protection_cat_broad,
+                           protection_cat_broad,
                            partmat = pm,
                            covar_FUN = "covar_exp",
                            covar.pars = list(range = range_opt_mean_evi),
-                           data = dt_mean_evi,
+                           data = dt_sum,
                            nugget = NA,
                            ncores = 10,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("lon", "lat"))
+                           coord.names = c("lon_pa", "lat_pa"))
 gls_h4 # 
 
 
@@ -197,16 +143,16 @@ p_h4
 ## Hypothesis 4.1 - different absolute trend in and outside of PAs ------------------
 set.seed(161)
 gls_h4.1 <- fitGLS_partition(abs_mean_evi_coef ~ 0 +
-                               protection_cat_broad,
+                              protection_cat_broad,
                              partmat = pm,
                              covar_FUN = "covar_exp",
                              covar.pars = list(range = range_opt_mean_evi),
-                             data = dt_mean_evi,
+                             data = dt_sum,
                              nugget = NA,
                              ncores = 10,
                              progressbar = TRUE, 
                              parallel = TRUE, 
-                             coord.names = c("lon", "lat"))
+                             coord.names = c("lon_pa", "lat_pa"))
 gls_h4.1 # 
 
 
@@ -232,7 +178,7 @@ mean_evi_cols <- grep("mean_evi_", names(dt), value = T)
 
 #subset to complete cases
 dt_pa <- dt %>% filter(protection_cat_broad == "strictly_protected") %>%
-  dplyr::select(all_of(mean_evi_cols),functional_biome, lon, lat, unique_id, 
+  dplyr::select(all_of(mean_evi_cols),functional_biome, lon, lat, unique_id, lon_pa, lat_pa,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, super_biome,
                 protection_cat_broad, area_km2_log, pa_age_log) %>% 
   filter(complete.cases(.))
@@ -251,20 +197,32 @@ dt_pa$mean_evi_coef <- ar_pa$coefficients[, "t"]
 dt_pa$abs_mean_evi_coef <- abs(ar_pa$coefficients[, "t"])
 dt_pa$mean_evi_p_value <- ar_pa$pvals[, 2]
 
-# get distance matrix 
-#d_pa <- distm_scaled(coords_pa)
-
 ### estimate optimal r parameter (range of spatial autocorrelation)
 corfit_pa <- fitCor(resids = residuals(ar_pa), coords = coords_pa, covar_FUN = "covar_exp", 
                     start = list(range = 0.1), fit.n = nrow(dt_pa))
 (range_opt_pa = corfit_pa$spcor)
 
-#use r to calculate optimal v parameter 
-#v_opt_pa <- covar_exp(d_pa, range_opt_pa)
+#summarize PA 
+
+dt_pa_sum <- dt_mean_evi %>%
+  group_by(unique_pa_id) %>% 
+  summarize(mat_coef = mean(mat_coef, na.rm = T),
+            map_coef = mean(map_coef, na.rm = T),
+            max_temp_coef = mean(max_temp_coef, na.rm = T),
+            area_km2_log = mean(area_km2_log, na.rm = T),
+            pa_age_log = mean(pa_age_log, na.rm = T),
+            human_modification = mean(human_modification, na.rm = T),
+            nitrogen_depo = mean(nitrogen_depo, na.rm = T),
+            protection_cat_broad = unique(protection_cat_broad), 
+            lon_pa = unique(lon_pa), 
+            lat_pa = unique(lat_pa), 
+            mean_evi_coef = mean(mean_evi_coef, na.rm = T),
+            abs_mean_evi_coef = mean(abs_mean_evi_coef, na.rm = T)) 
+
 
 #partition the data 
 
-pm_pa <- sample_partitions(npix = nrow(dt_pa), partsize = 1000, npart = NA)
+pm_pa <- sample_partitions(npix = nrow(dt_pa_sum), partsize = 1000, npart = NA)
 dim(pm_pa)
 
 # change --- 
@@ -274,12 +232,12 @@ gls_h5 <- fitGLS_partition(mean_evi_coef ~ 1 +
                            partmat = pm_pa,
                            covar_FUN = "covar_exp",
                            covar.pars = list(range = range_opt_mean_evi),
-                           data = dt_pa,
+                           data = dt_pa_sum,
                            nugget = NA,
                            ncores = 10,
                            progressbar = TRUE, 
                            parallel = TRUE, 
-                           coord.names = c("lon", "lat"))
+                           coord.names = c("lon_pa", "lat_pa"))
 gls_h5 
 
 dt_est_h5 <- extract_gls_estimates(gls_h5, part = TRUE)
@@ -303,12 +261,12 @@ gls_h5.1 <- fitGLS_partition(abs_mean_evi_coef ~ 1 +
                              partmat = pm_pa,
                              covar_FUN = "covar_exp",
                              covar.pars = list(range = range_opt_mean_evi),
-                             data = dt_pa,
+                             data = dt_pa_sum,
                              nugget = NA,
                              ncores = 10,
                              progressbar = TRUE, 
                              parallel = TRUE, 
-                             coord.names = c("lon", "lat"))
+                             coord.names = c("lon_pa", "lat_pa"))
 gls_h5.1 
 
 dt_est_h5.1 <- extract_gls_estimates(gls_h5.1, part = TRUE)

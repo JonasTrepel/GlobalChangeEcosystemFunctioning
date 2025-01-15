@@ -216,3 +216,8 @@ if(param == "pa"){
   
   write_sf(pas_with_covs, "data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg") 
 }
+
+coords <- pas %>% as.data.table() %>% mutate(geom = NULL) %>% dplyr::select(lon, lat, unique_id)
+dt_pas_covs <- fread("data/processedData/cleanData/pa_and_control_grid_with_covs.csv") %>% 
+  left_join(coords)
+

@@ -7,8 +7,8 @@ library(data.table)
 library(tidyverse)
 
 #read vectors 
-#param = "grid"
-param = "pas"
+param = "grid"
+#param = "pas"
 
 if(param == "grid"){
   vect <- st_read("data/spatialData/grid_sample.gpkg") 
@@ -87,13 +87,25 @@ mean_evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series
          colname =  gsub("envi_mean_500m", "mean_evi", filename))
 
 
+n_depo_zhu_files <- data.table(filepath = list.files("data/rawData/raw_time_series/zhu_2025_nitrogen_depo/Global_N_deposition_grid_dataset_2008_2020/",
+                                                   pattern = "mean_totN_", 
+                                                   full.names = TRUE), 
+                             filename = list.files("data/rawData/raw_time_series/zhu_2025_nitrogen_depo/Global_N_deposition_grid_dataset_2008_2020/",
+                                                   pattern = "mean_totN_", 
+                                                   full.names = FALSE)) %>% 
+  mutate(filename = gsub(".tif", "", filename),
+         filename = gsub("_hm", "", filename),
+         colname =  gsub("mean_totN", "n_depo_zhu", filename))
+
+
 covs <- rbind(mat_files, 
               max_temp_files, 
               map_files,
               evi_files,
               burned_area_files,
               sos_files, 
-              mean_evi_files)
+              mean_evi_files, 
+              n_depo_zhu_files)
 
 ############### create cluster ####################
 library(doSNOW)
@@ -164,7 +176,8 @@ vect_covs <- vect %>%
          mat_era = rowMeans(select(., contains("mat_")), na.rm = TRUE), 
          max_temp_era = apply(select(., contains("max_temp")), 1, max, na.rm = TRUE), 
          mean_evi = rowMeans(select(., contains("mean_evi")), na.rm = TRUE), 
-         mean_greenup = rowMeans(select(., contains("greenup")), na.rm = TRUE))
+         mean_greenup = rowMeans(select(., contains("greenup")), na.rm = TRUE), 
+         mean_n_depo_zhu = rowMeans(select(., contains("n_depo_zhu")), na.rm = TRUE)) 
 
 
 if(param == "grid"){

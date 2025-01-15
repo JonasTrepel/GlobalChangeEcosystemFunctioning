@@ -93,5 +93,16 @@ stopCluster(clust)
 
 n_distinct(pa_grid$unique_id)
 
+pa_grid <- st_transform(pa_grid, crs = 4326)
+sf_use_s2(FALSE)
+coords <- st_coordinates(st_centroid(pa_grid))
+
+pa_grid$lon <- coords[, 1]
+pa_grid$lat <- coords[, 2]
+
+
+pa_grid <- st_transform(pa_grid, crs = be_crs)
+
+
 write_sf(pa_grid, "data/spatialData/protectedAreas/pa_and_control_grid_1km.gpkg")
 

@@ -192,7 +192,7 @@ biome_gls <- function(o_biome = NA, col_pattern = NA, start = list(range = 0.1),
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_pointrange(aes(y = term, x = estimate, xmin = ci_lb, xmax = ci_ub, color = sig),
                     alpha = 0.9, linewidth = 1.2) +
-    scale_color_manual(values = c("significant" = "olivedrab", "non-significant" = "grey")) +
+    scale_color_manual(values = c("significant" = "firebrick", "non-significant" = "grey")) +
     labs(title = paste0(label), subtitle = paste0("n = ", nrow(dt_biome)), y = NULL, x = NULL) +
     theme_classic() +
     theme(legend.position = "none", 
