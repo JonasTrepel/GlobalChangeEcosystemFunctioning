@@ -6,43 +6,48 @@ library(scico)
 library(ggridges)
 #load trends 
 
-evi_trends <- fread("data/processedData/dataFragments/pa_evi_trends.csv")
-burned_area_trends <- fread("data/processedData/dataFragments/pa_burned_area_trends.csv")
-greenup_trends <- fread("data/processedData/dataFragments/pa_greenup_trends.csv")
 
-dt <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
-  group_by(functional_biome) %>% 
-  mutate(n_per_functional_biome = n()) %>% 
-  ungroup() %>% 
-  as.data.frame() %>% 
-  mutate(
-    productivity = case_when(
-      grepl("L", functional_biome) ~ "low", 
-      grepl("M", functional_biome) ~ "medium", 
-      grepl("H", functional_biome) ~ "high"
-    ), 
-    ndvi_min = case_when(
-      grepl("C", functional_biome) ~ "cold", 
-      grepl("D", functional_biome) ~ "dry", 
-      grepl("B", functional_biome) ~ "cold_and_dry", 
-      grepl("N", functional_biome) ~ "non_seasonal"
-    ), 
-    super_biome = case_when(
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ),
-    nitrogen_depo = nitrogen_depo,
-    mat_coef = mat_coef,
-    max_temp_coef = max_temp_coef,
-    map_coef = map_coef,
-    human_modification = human_modification, 
-    area_km2_log = log(area_km2 + 0.0001),
-    pa_age_log = log(pa_age + 0.0001)) %>%
-  left_join(evi_trends) %>% 
-  left_join(burned_area_trends) %>% 
-  left_join(greenup_trends)
+evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(mean_mean_evi_coef = median(mean_mean_evi_coef), 
+            abs_mean_mean_evi_coef = median(abs_mean_mean_evi_coef))
+burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(burned_area_coef = median(burned_area_coef), 
+            abs_burned_area_coef = median(abs_burned_area_coef))
+
+greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(greenup_coef = median(greenup_coef), 
+            abs_greenup_coef = median(abs_greenup_coef))
+
+climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") 
+
+#### include super biome!
+dt_sum <- climate_trends %>%
+  group_by(unique_pa_id) %>% 
+  summarize(mat_coef = mean(mat_coef, na.rm = T),
+            map_coef = mean(map_coef, na.rm = T),
+            max_temp_coef = mean(max_temp_coef, na.rm = T),
+            human_modification = mean(human_modification, na.rm = T),
+            nitrogen_depo = mean(nitrogen_depo, na.rm = T),
+            protection_cat_broad = unique(protection_cat_broad), 
+            lon_pa = unique(lon_pa), 
+            lat_pa = unique(lat_pa)) %>% 
+  left_join(evi_trend) %>% 
+  left_join(burned_area_trend) %>% 
+  left_join(greenup_trend) %>% 
+  mutate(mean_mean_evi_coef = mean_mean_evi_coef /100, 
+         burned_area_coef = burned_area_coef*100) %>% 
+  rename(unique_id = unique_pa_id)
+
+
+dt <- dt_sum %>% mutate(
+  control_for = gsub("_control", "", unique_id)
+)
 
 dt$protection_cat_broad
 
@@ -86,7 +91,7 @@ for(pa_id in unique(dt_pa$unique_id)){
   
   tmp_diff <- data.table()
   
-  tmp_diff$evi_diff <- dt[dt$unique_id %in% pa_id, ]$evi_coef - dt[dt$control_for %in% pa_id, ]$evi_coef
+  tmp_diff$evi_diff <- dt[dt$unique_id %in% pa_id, ]$mean_evi_coef - dt[dt$control_for %in% pa_id, ]$mean_evi_coef
   tmp_diff$burned_area_diff <- dt[dt$unique_id %in% pa_id, ]$burned_area_coef - dt[dt$control_for %in% pa_id, ]$burned_area_coef
   tmp_diff$greenup_diff <- dt[dt$unique_id %in% pa_id, ]$greenup_coef - dt[dt$control_for %in% pa_id, ]$greenup_coef
   tmp_diff$human_modification_diff <- dt[dt$unique_id %in% pa_id, ]$human_modification - dt[dt$control_for %in% pa_id, ]$human_modification

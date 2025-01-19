@@ -142,3 +142,4 @@ if(param == "grid"){
   fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
 }
 
+#cor.test(dt_res$mean_n_dep_zhu, dt_res$nitrogen_depo, na.rm = T)

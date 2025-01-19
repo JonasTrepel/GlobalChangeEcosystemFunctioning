@@ -10,12 +10,45 @@ library(gridExtra)
 library(tidylog)
 library(RColorBrewer)
 
-evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv") 
-burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv")
-greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv")
+evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(mean_evi_coef = median(mean_evi_coef), 
+         abs_mean_evi_coef = median(abs_mean_evi_coef))
+burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(burned_area_coef = median(burned_area_coef), 
+            abs_burned_area_coef = median(abs_burned_area_coef))
 
-climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
-  dplyr::select(unique_id, mat_coef, map_coef, max_temp_coef, mat_p_value, map_p_value, max_temp_p_value)
+greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv") %>% 
+  mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
+  group_by(unique_pa_id) %>% 
+  summarize(greenup_coef = median(greenup_coef), 
+            abs_greenup_coef = median(abs_greenup_coef))
+
+climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") 
+
+
+dt_sum <- climate_trends %>%
+  group_by(unique_pa_id) %>% 
+  summarize(mat_coef = mean(mat_coef, na.rm = T),
+            map_coef = mean(map_coef, na.rm = T),
+            max_temp_coef = mean(max_temp_coef, na.rm = T),
+            human_modification = mean(human_modification, na.rm = T),
+            nitrogen_depo = mean(nitrogen_depo, na.rm = T),
+            protection_cat_broad = unique(protection_cat_broad), 
+            lon_pa = unique(lon_pa), 
+            lat_pa = unique(lat_pa)) %>% 
+  left_join(evi_trend) %>% 
+  left_join(burned_area_trend) %>% 
+  left_join(greenup_trend) %>% 
+  mutate(mean_evi_coef = mean_evi_coef /100, 
+         burned_area_coef = burned_area_coef*100) %>% 
+  rename(unique_id = unique_pa_id)
+  
+
+
 
 sf_use_s2(FALSE)
 world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
@@ -30,121 +63,38 @@ raw_shapes <- read_sf("data/spatialData/pas_and_controls.gpkg")
 
 shapes <- raw_shapes %>%
   st_transform(crs = 'ESRI:54030') %>% 
-  left_join(evi_trend) %>% 
-  left_join(burned_area_trend) %>% 
-  left_join(greenup_trend) %>% 
-  mutate(mean_evi_coef = mean_evi_coef /100, 
-         burned_area_coef = burned_area_coef*100) %>%  # to convert to %/year
+  filter(unique_id %in% c(unique(dt_sum$unique_id))) %>% 
   mutate(
-    productivity = case_when(
-      grepl("L", functional_biome) ~ "low", 
-      grepl("M", functional_biome) ~ "medium", 
-      grepl("H", functional_biome) ~ "high"
-    ), 
-    ndvi_min = case_when(
-      grepl("C", functional_biome) ~ "cold", 
-      grepl("D", functional_biome) ~ "dry", 
-      grepl("B", functional_biome) ~ "cold_and_dry", 
-      grepl("N", functional_biome) ~ "non_seasonal"
-    ),
-    super_biome = case_when(
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
-      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
-      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
-    ),
     protection_cat_broad = case_when(
       iucn_cat %in% c("Ia", "Ib", "II") ~ "strictly_protected", 
-      is.na(iucn_cat) ~ "control"))
+      is.na(iucn_cat) ~ "control")) %>% 
+  left_join(dt_sum)
 
 
 sum(is.na(shapes$mean_evi_coef))
 
 sum(shapes[shapes$protection_cat_broad == "strictly_protected", ]$area_km2, na.rm = T)
 
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-##################################     MAPS    #######################################
+################################   PROTECTION MAP   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+scico(palette = "bamako", n = 10)
+#[1] "#003A46" "#0E433F" "#1F4E34" "#355E26" "#527014" "#728202" "#988C02" "#BEA82E" "#E1C76D" "#FFE5AC"
 
-## evi maps -------------
-quantile(shapes$mean_evi_coef, c(.025, .975), na.rm = T)
-
-q_025_evi <- as.numeric(quantile(shapes$mean_evi_coef, c(.025), na.rm = T))
-q_975_evi <- as.numeric(quantile(shapes$mean_evi_coef, c(.975), na.rm = T))
-
-p_evi_shapes <- ggplot() +
+p_pa_shapes <- ggplot() +
   geom_sf(data = world, fill = "white", color = "grey75") +
-  geom_sf(data = shapes %>%
-            filter(!is.na(mean_evi_coef)) %>% 
-            mutate(mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, q_975_evi, mean_evi_coef),
-                   mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, q_025_evi, mean_evi_coef)),
-          aes(color = mean_evi_coef, fill = mean_evi_coef)) +
-  scale_color_scico(palette = "bam", midpoint = 0) +
-  scale_fill_scico(palette = "bam", midpoint = 0) +
-  labs(color = "EVI\nTrend", fill = "EVI\nTrend") +
+  geom_sf(data = shapes %>% 
+            mutate(protection_cat_broad = ifelse(protection_cat_broad == "control", "Control", "Protected")),
+          aes(color = protection_cat_broad, fill = protection_cat_broad), alpha = 1) +
+  scale_color_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
+  scale_fill_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
   theme_void() +
-  theme(legend.position = "right", 
-        # legend.key.width = unit(1, "cm"),
-        # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 0))
-p_evi_shapes
+  labs(color = "Protection\nStatus", fill = "Protection\nStatus") +
+  theme(axis.title = element_blank(), 
+        legend.position = "bottom")
+p_pa_shapes
 
-ggsave(plot = p_evi_shapes, "builds/plots/evi_pas_shapes_map.png", dpi = 600)
-
-## burned area maps-------
-quantile(shapes$burned_area_coef, c(.025, .975), na.rm = T)
-
-q_025_burned_area <- as.numeric(quantile(shapes$burned_area_coef, c(.025), na.rm = T))
-q_975_burned_area <- as.numeric(quantile(shapes$burned_area_coef, c(.975), na.rm = T))
-
-p_burned_area_shapes <- ggplot() +
-  geom_sf(data = world, fill = "white", color = "grey75") +
-  geom_sf(data = shapes %>%
-            filter(!is.na(burned_area_coef)) %>% 
-            mutate(burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, q_975_burned_area, burned_area_coef),
-                   burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, q_025_burned_area, burned_area_coef)),
-          aes(color = burned_area_coef, fill = burned_area_coef)) +
-  scale_color_scico(palette = "vik", midpoint = 0) +
-  scale_fill_scico(palette = "vik", midpoint = 0) +
-  labs(color = "Burned\nArea\nTrend", fill = "Burned\nArea\nTrend") +
-  theme_void() +
-  theme(legend.position = "right", 
-        # legend.key.width = unit(1, "cm"),
-        # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 0))
-p_burned_area_shapes
-
-ggsave(plot = p_burned_area_shapes, "builds/plots/burned_area_pas_shapes_map.png", dpi = 600)
-
-## greenup maps ---------------------
-quantile(shapes$greenup_coef, c(.025, .975), na.rm = T)
-
-q_025_greenup <- as.numeric(quantile(shapes$greenup_coef, c(.025), na.rm = T))
-q_975_greenup <- as.numeric(quantile(shapes$greenup_coef, c(.975), na.rm = T))
-
-p_greenup_shapes <- ggplot() +
-  geom_sf(data = world, fill = "white", color = "grey75") +
-  geom_sf(data = shapes %>%
-            filter(!is.na(greenup_coef)) %>% 
-            mutate(greenup_coef = ifelse(greenup_coef > q_975_greenup, q_975_greenup, greenup_coef),
-                   greenup_coef = ifelse(greenup_coef < q_025_greenup, q_025_greenup, greenup_coef)),
-          aes(color = greenup_coef, fill = greenup_coef)) +
-  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  labs(color = "Vegetation\nGreen-Up\nTrend", fill = "Vegetation\nGreen-Up\nTrend") +
-  theme_void() +
-  theme(legend.position = "right", 
-        # legend.key.width = unit(1, "cm"),
-        # legend.key.height = unit(0.4, "cm"), 
-        legend.text = element_text(angle = 0))
-p_greenup_shapes
-
-ggsave(plot = p_greenup_shapes, "builds/plots/greenup_pas_shapes_map.png", dpi = 600)
-
-p_all_trends_map_shapes <- gridExtra::grid.arrange(p_evi_shapes, p_burned_area_shapes, p_greenup_shapes, ncol = 1)
-ggsave(plot = p_all_trends_map_shapes, "builds/plots/pas_all_trends_map_shapes.png", dpi = 600, height = 10, width = 8)
-
+ggsave(plot = p_pa_shapes, "builds/plots/pas_protection_map_shapes.png", dpi = 600)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################     ESTIMATES     ###################################
@@ -166,15 +116,6 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
   as.data.table() %>%
   mutate(clean_term = case_when(
     grepl("Intercept", term) ~ "Intercept", 
-    grepl("nitrogen_depo", term) ~ "Nitrogen Deposition",
-    grepl("mat_coef", term) ~ "MAT Trend", 
-    grepl("map_coef", term) ~ "MAP Trend",
-    grepl("max_temp_coef", term) ~ "Max Temp Trend",
-    grepl("human_modification", term) ~ "Human Modification",
-    term == "super_biomecold_short" ~ "Cold Limited\nShort Vegetation",
-    term == "super_biomecold_tall" ~ "Cold Limited\nTall Vegetation",
-    term == "super_biomenot_cold_short" ~ "Not Cold Limited\nShort Vegetation",
-    term == "super_biomenot_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
     term == "protection_cat_broadstrictly_protected" ~ "Strictly\nProtected", 
     term == "protection_cat_broadcontrol" ~ "Control", 
     term == "area_km2_log" ~ "PA Area",
@@ -185,217 +126,32 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
       p_value >= 0.05 ~ "Non-Significant"
     ),
     facet_label = case_when(
-      model == "H1" ~ "H1: Trend ~\nIntercept", 
-      model == "H2" ~ "H2: Trend ~\nGlobal Change", 
-      model == "H3" ~ "H3: Trend ~\nBiome", 
-      model == "H4" ~ "H4: Trend ~\nProtection", 
-      model == "H4.1" ~ "H4.1: Abs. Change ~\nProtection", 
-      model == "H5" ~ "H5: Trend ~\nPA Characteristics", 
-      model == "H5.1" ~ "H5.1: Abs. Change ~\nPA Characteristics", 
-      model == "cold_short" ~ "Cold Limited\nShort Vegetation",
-      model == "cold_tall" ~ "Cold Limited\nTall Vegetation",
-      model == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
-      model == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation",
+      model == "H4" ~ "Trend ~\nProtection",  #PA mean
+      model == "H4.1" ~ "Abs. Trend ~\nProtection", #PA mean 
+      model == "H5" ~ "Trend ~\nPA Characteristics",  #PA mean
+      model == "H5.1" ~ "Abs. Trend ~\nPA Characteristics",  #PA mean
+      model == "H6" ~ "Trend ~\nPA Characteristics", #PA median
+      model == "H6.1" ~ "Abs. Trend ~\nPA Characteristics", #PA median 
+      model == "H7" ~ "Trend ~\nProtection", #PA median 
+      model == "H7.1" ~ "Abs. Trend ~\nProtection" #PA median
     )
   )
 
-
-fwrite(dt_est %>% 
-         dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
-         filter(!model == "H4.1" & !model == "H5.1") %>% 
-         mutate(p_value = round(p_value, 4), 
-                estimate = round(estimate, 3), 
-                ci_lb = round(ci_lb, 3),
-                ci_ub = round(ci_ub, 3), 
-                dataset = "PAs and Controls") %>% 
-         dplyr::select(Response = response, Model = model,
-                       Variable = clean_term, Estimate = estimate,
-                       `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value, dataset), 
-       "builds/model_estimates/combined_clean_estimates_pas.csv")
-
-# Evi estimates -----
-scico(palette = "bam", n = 10)
-#"#65014B" "#9E3C85" "#C86FB1" "#E4ADD6" "#F4E3EF" "#EFF3E5" "#C0D9A1" "#7BA755" "#457B2A" "#0C4C00"
-
-p_est_evi_b <- dt_est %>% 
-  filter(response == "evi" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#457B2A"
-  )) +
-  labs(title = "b)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "none", 
-        #panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_evi_b
-
-p_est_evi_c <- dt_est %>% 
-  filter(response == "evi" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#457B2A"
-  )) +
-  labs(title = "c)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "bottom", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_evi_c
-
-fig_evi <- grid.arrange(p_evi_shapes + labs(title = "a)"), 
-                        p_est_evi_b, p_est_evi_c, 
-                        heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_evi, "builds/plots/pas_evi_figure.png", height = 10.5, width = 9.5, dpi = 600)
-
-# burned area estimates -----
-scico(palette = "vik", n = 10)
-#"#001260" "#023E7D" "#1D6E9C" "#71A7C4" "#C9DDE7" "#EACEBE" "#D29773" "#BD6432" "#8B2706" "#590007"
-
-p_est_burned_area_b <- dt_est %>% 
-  filter(response == "burned_area" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#023E7D",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#8B2706"
-  )) +
-  labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "none", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        axis.text.x = element_text(angle = 22.5, hjust = 1),
-        plot.title = element_text(size = 12))
-
-p_est_burned_area_b
-
-p_est_burned_area_c <- dt_est %>% 
-  filter(response == "burned_area" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#023E7D",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#8B2706"
-  )) +
-  labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "bottom", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        axis.text.x = element_text(angle = 22.5, hjust = 1),
-        plot.title = element_text(size = 12))
-
-p_est_burned_area_c
-
-fig_burned_area <- grid.arrange(p_burned_area_shapes + labs(title = "a)"), 
-                                p_est_burned_area_b, p_est_burned_area_c, 
-                                heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_burned_area, "builds/plots/pas_burned_area_figure.png", height = 10.5, width = 9.5, dpi = 600)
-
-# Greenup estimates -----
-scico(palette = "cork", n = 10, direction = -1, begin = 0.1, end = 0.9)
-#"#195715" "#3D7D3C" "#6C9C6B" "#A2C0A1" "#D8E5D9" "#D2DDE7" "#97AFC8" "#6388AD" "#386695" "#284074"
-
-p_est_greenup_b <- dt_est %>% 
-  filter(response == "greenup" & grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#386695"
-  )) +
-  labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "none", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_greenup_b
-
-p_est_greenup_c <- dt_est %>% 
-  filter(response == "greenup" & !grepl("H", model)) %>% 
-  filter(!model == "H4.1" & !model == "H5.1" & !model == "H1") %>% 
-  ggplot() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
-                  alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free_x", ncol = 4) +
-  scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
-                                "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#386695"
-  )) +
-  labs(title = "c)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
-  theme_minimal() +
-  theme(legend.position = "bottom", 
-        # panel.grid = element_blank(),
-        strip.text = element_text(face = "bold", size = 11.5),   
-        strip.background = element_rect(fill = "snow2", color = "snow2"),
-        panel.background = element_rect(fill = "snow1", color = "snow1"),
-        panel.border = element_blank(),
-        plot.title = element_text(size = 12))
-
-p_est_greenup_c
-
-fig_greenup <- grid.arrange(p_greenup_shapes + labs(title = "a)"), 
-                            p_est_greenup_b, p_est_greenup_c, 
-                            heights = c(1.3, 0.8, 1))
-ggsave(plot = fig_greenup, "builds/plots/pas_greenup_figure.png", height = 10.5, width = 9.5, dpi = 600)
+#H4 - mean protection 
+#H5- mean prot characteristics  
+#H6: median protection 
+#H7: median prot characteristics 
 
 ### Pa protection estimtes --------
 # evi 
 p_pa_est_evi <- dt_est %>% 
   filter(response == "evi" & grepl("H", model)) %>% 
-  filter(model == "H4" | model == "H5") %>% 
+  filter(model == "H4" | model == "H6") %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
@@ -413,12 +169,12 @@ p_pa_est_evi
 
 p_pa_est_abs_evi <- dt_est %>% 
   filter(response == "evi" & grepl("H", model)) %>% 
-  filter(model == "H4.1" | model == "H5.1") %>% 
+  filter(model == "H4.1" | model == "H6.1") %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
@@ -438,17 +194,17 @@ p_pa_est_abs_evi
 # burned area
 p_pa_est_burned_area <- dt_est %>% 
   filter(response == "burned_area" & grepl("H", model)) %>% 
-  filter(model == "H4" | model == "H5") %>% 
+  filter(model == "H4" | model == "H6") %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
   )) +
-  labs(title = "a)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
+  labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -456,22 +212,22 @@ p_pa_est_burned_area <- dt_est %>%
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow", color = "snow"),
         panel.border = element_blank(),
-        plot.title = element_text(size = 12, color = "white"))
+        plot.title = element_text(size = 12, color = "black"))
 p_pa_est_burned_area
 
 p_pa_est_abs_burned_area <- dt_est %>% 
   filter(response == "burned_area" & grepl("H", model)) %>% 
-  filter(model == "H4.1" | model == "H5.1") %>% 
+  filter(model == "H4.1" | model == "H6.1") %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
   )) +
-  labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate (absolute)", color = "Significance") +
+  labs(title = "d)", y = NULL, x = "Burned Area Trend Estimate (absolute)", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -479,7 +235,7 @@ p_pa_est_abs_burned_area <- dt_est %>%
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow", color = "snow"),
         panel.border = element_blank(),
-        plot.title = element_text(size = 12, color = "white"))
+        plot.title = element_text(size = 12, color = "black"))
 
 p_pa_est_abs_burned_area
 
@@ -487,17 +243,17 @@ p_pa_est_abs_burned_area
 # greenup
 p_pa_est_greenup <- dt_est %>% 
   filter(response == "greenup" & grepl("H", model)) %>% 
-  filter(model == "H4" | model == "H5") %>% 
+  filter(model == "H4" | model == "H6") %>% 
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
   )) +
-  labs(title = "a)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
+  labs(title = "e)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -505,7 +261,7 @@ p_pa_est_greenup <- dt_est %>%
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow", color = "snow"),
         panel.border = element_blank(),
-        plot.title = element_text(size = 12, color = "white"))
+        plot.title = element_text(size = 12, color = "black"))
 p_pa_est_greenup
 
 p_pa_est_abs_greenup <- dt_est %>% 
@@ -515,12 +271,12 @@ p_pa_est_abs_greenup <- dt_est %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 4) +
+  facet_wrap(~facet_label, scales = "free", ncol = 12) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
   )) +
-  labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate (absolute)", color = "Significance") +
+  labs(title = "f)", y = NULL, x = "Vegetation Green-Up Trend Estimate (absolute)", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -528,7 +284,7 @@ p_pa_est_abs_greenup <- dt_est %>%
         strip.background = element_rect(fill = "snow2", color = "snow2"),
         panel.background = element_rect(fill = "snow", color = "snow"),
         panel.border = element_blank(),
-        plot.title = element_text(size = 12, color = "white"))
+        plot.title = element_text(size = 12, color = "black"))
 
 p_pa_est_abs_greenup
 
@@ -539,7 +295,159 @@ p_pa_a <- gridExtra::grid.arrange(p_pa_est_evi, p_pa_est_burned_area, p_pa_est_g
 p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_pa_est_abs_greenup)
 
 p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
-ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 9, width = 10)
+ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 6, width = 9)
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+############################     TREND DISTRIBUTION     ##############################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+library(ggridges)
+
+dt_ridges <- dt_sum %>% 
+  as.data.table() %>%
+  mutate(
+         mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
+         mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef), 
+         burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, NA, burned_area_coef),
+         burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, NA, burned_area_coef), 
+         greenup_coef = ifelse(greenup_coef > q_975_greenup, NA, greenup_coef),
+         greenup_coef = ifelse(greenup_coef < q_025_greenup, NA, greenup_coef))
+
+
+#evi ridges
+p_evi_prot <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(mean_evi_coef)),
+                               aes(x = mean_evi_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "bam", midpoint = 0) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "EVI Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_evi_prot
+
+p_evi_biome <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(mean_evi_coef)),
+                               aes(x = mean_evi_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "bam", midpoint = 0) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "EVI Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_evi_biome
+
+p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_biome, ncol = 12)
+
+
+# burned area ridges
+p_burned_area_prot <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(burned_area_coef)),
+                               aes(x = burned_area_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "vik", midpoint = 0) +
+  scale_fill_scico(palette = "vik", midpoint = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "Burned Area Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_burned_area_prot
+
+p_burned_area_biome <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(burned_area_coef)),
+                               aes(x = burned_area_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "vik", midpoint = 0) +
+  scale_fill_scico(palette = "vik", midpoint = 0) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "Burned Area Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_burned_area_biome
+
+p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_biome, ncol = 12)
+
+## greenup ridges 
+p_greenup_prot <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(greenup_coef)),
+                               aes(x = greenup_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "Vegetation Green-Up Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_greenup_prot
+
+p_greenup_biome <- ggplot() +
+  geom_density_ridges_gradient(data = dt_ridges %>%
+                                 filter(!is.na(greenup_coef)),
+                               aes(x = greenup_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
+  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(y = "", x = "Vegetation Green-Up Trend") + 
+  theme(legend.position = "none", 
+        axis.text.y = element_text(size = 12))
+
+p_greenup_biome
+
+p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol = 12)
+
+p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
+ggsave(plot = p_ridges, "builds/plots/pas_ridges.png", dpi = 600, height = 6, width = 12)
+
+
+#### area and size distribution 
+p_pa_age <- ggplot() +
+  geom_density_ridges(data = dt_ridges %>%
+                        filter(!pa_age == 0), 
+                      aes(x = pa_age, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
+  scale_x_log10() +
+  theme_bw() +
+  labs(y = "", x = "PA Age (Years)", title = "a)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_age
+
+p_pa_area <- ggplot() +
+  geom_density_ridges(data = dt_ridges,
+                      aes(x = area_km2, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
+  scale_color_scico_d("batlowK") +
+  scale_fill_scico_d("batlowK") +
+  scale_x_log10(labels = scales::label_comma()) +
+  theme_bw() +
+  labs(y = "", x = "PA Area (km^2)", title = "b)") + 
+  theme(legend.position = "none", 
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        axis.text.y = element_text(size = 12))
+
+p_pa_area
+
+p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
+ggsave(plot = p_pa_area_trend, "builds/plots/pas_pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     CORRELATION     ##################################
@@ -671,168 +579,6 @@ ggsave(plot = p_corr_pa, "builds/plots/pas_variable_correlations_strict_pas_all.
 
 
 
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-############################     TREND DISTRIBUTION     ##############################
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-library(ggridges)
-
-dt_ridges <- shapes %>% 
-  as.data.table() %>%
-  mutate(geom = NULL, 
-         pa_age = ifelse(STATUS_YR > 1800, 2023-STATUS_YR, NA), 
-         area_km2_log = scale(log(area_km2 + 0.0001)),
-         pa_age_log = ifelse(!pa_age == 0, scale(log(pa_age + 0.0001)), NA),
-         mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
-         mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef), 
-         burned_area_coef = ifelse(burned_area_coef > q_975_burned_area, NA, burned_area_coef),
-         burned_area_coef = ifelse(burned_area_coef < q_025_burned_area, NA, burned_area_coef), 
-         greenup_coef = ifelse(greenup_coef > q_975_greenup, NA, greenup_coef),
-         greenup_coef = ifelse(greenup_coef < q_025_greenup, NA, greenup_coef), 
-         protection_status = case_when(
-           protection_cat_broad == "Strict" ~ "Strict",
-           protection_cat_broad == "Unprotected" ~ "Unprotected",
-           protection_cat_broad == "Mixed" ~ "Mixed"), 
-         biome_clean = case_when(
-           super_biome == "cold_short" ~ "Cold Limited\nShort Vegetation",
-           super_biome == "cold_tall" ~ "Cold Limited\nTall Vegetation",
-           super_biome == "not_cold_short" ~ "Not Cold Limited\nShort Vegetation",
-           super_biome == "not_cold_tall" ~ "Not Cold Limited\nTall Vegetation"))
-
-
-#evi ridges
-p_evi_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(mean_evi_coef)),
-                               aes(x = mean_evi_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "bam", midpoint = 0) +
-  scale_fill_scico(palette = "bam", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "EVI Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_evi_prot
-
-p_evi_biome <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(mean_evi_coef)),
-                               aes(x = mean_evi_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "bam", midpoint = 0) +
-  scale_fill_scico(palette = "bam", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "EVI Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_evi_biome
-
-p_evi_dens <- gridExtra::grid.arrange(p_evi_prot, p_evi_biome, ncol = 1)
-
-
-# burned area ridges
-p_burned_area_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(burned_area_coef)),
-                               aes(x = burned_area_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "vik", midpoint = 0) +
-  scale_fill_scico(palette = "vik", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Burned Area Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_burned_area_prot
-
-p_burned_area_biome <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(burned_area_coef)),
-                               aes(x = burned_area_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "vik", midpoint = 0) +
-  scale_fill_scico(palette = "vik", midpoint = 0) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Burned Area Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_burned_area_biome
-
-p_burned_area_dens <- gridExtra::grid.arrange(p_burned_area_prot, p_burned_area_biome, ncol = 1)
-
-## greenup ridges 
-p_greenup_prot <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(greenup_coef)),
-                               aes(x = greenup_coef, y = protection_status, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Vegetation Green-Up Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_greenup_prot
-
-p_greenup_biome <- ggplot() +
-  geom_density_ridges_gradient(data = dt_ridges %>%
-                                 filter(!is.na(greenup_coef)),
-                               aes(x = greenup_coef, y = biome_clean, fill = ..x..), alpha = 0.7) +
-  scale_color_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  scale_fill_scico(palette = "cork", midpoint = 0, direction = -1, begin = 0.1, end = 0.9) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(y = "", x = "Vegetation Green-Up Trend") + 
-  theme(legend.position = "none", 
-        axis.text.y = element_text(size = 12))
-
-p_greenup_biome
-
-p_greenup_dens <- gridExtra::grid.arrange(p_greenup_prot, p_greenup_biome, ncol = 1)
-
-p_ridges <- gridExtra::grid.arrange(p_evi_dens, p_burned_area_dens, p_greenup_dens, ncol = 3)
-ggsave(plot = p_ridges, "builds/plots/pas_ridges.png", dpi = 600, height = 6, width = 12)
-
-
-#### area and size distribution 
-p_pa_age <- ggplot() +
-  geom_density_ridges(data = dt_ridges %>%
-                      filter(!pa_age == 0), 
-                      aes(x = pa_age, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
-  scale_color_scico_d("batlowK") +
-  scale_fill_scico_d("batlowK") +
-  scale_x_log10() +
-  theme_bw() +
-  labs(y = "", x = "PA Age (Years)", title = "a)") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_pa_age
-
-p_pa_area <- ggplot() +
-  geom_density_ridges(data = dt_ridges,
-                      aes(x = area_km2, y = biome_clean, fill = biome_clean, color = biome_clean), alpha = 0.7) +
-  scale_color_scico_d("batlowK") +
-  scale_fill_scico_d("batlowK") +
-  scale_x_log10(labels = scales::label_comma()) +
-  theme_bw() +
-  labs(y = "", x = "PA Area (km^2)", title = "b)") + 
-  theme(legend.position = "none", 
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.text.y = element_text(size = 12))
-
-p_pa_area
-
-p_pa_area_trend <- grid.arrange(p_pa_age, p_pa_area, ncol = 2)
-ggsave(plot = p_pa_area_trend, "builds/plots/pas_pa_area_and_age_dist.png", dpi = 600, height = 4, width = 8)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ###############################     BIOME MAP     ####################################
