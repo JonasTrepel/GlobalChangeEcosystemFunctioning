@@ -64,6 +64,52 @@ grid_biome <- grid_sf %>%
 
 write_sf(grid_biome, "data/spatialData/grid_sample.gpkg")
 
+### USA subset 
+library(mapview)
+
+usa_all <- st_read("data/rawData/raw_time_series/usa_n_depo/usa_boundaries/us-state-boundaries.shp")
+mapview(usa_all)
+st_crs(usa_all)
+
+
+usa <- usa_all %>% 
+  filter(name %in% c(
+    "Alabama", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+    "Delaware", "Florida", "Georgia", "Idaho", "Illinois", "Indiana", "Iowa", 
+    "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", 
+    "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", 
+    "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", 
+    "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+    "West Virginia", "Wisconsin", "Wyoming"
+  )) %>% summarize() %>% st_transform(crs = st_crs(grid_sf))
+
+st_crs(grid_sf) == st_crs(usa)
+
+grid_usa <- grid_sf %>% 
+  left_join(dt_grid) %>% 
+  filter(fract_prot == 1 | fract_prot == 0) %>% 
+  filter(lengths(st_intersects(., usa)) > 0) %>% 
+  sample_n(100000) %>% 
+  mutate(
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "Strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "Mixed",
+      iucn_cat == "unprotected" ~ "Unprotected"), 
+    super_biome = case_when(
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
+    ))
+
+mapview::mapview(grid_usa)
+
+write_sf(grid_usa, "data/spatialData/grid_usa.gpkg")
+
+
+
 ### Protection cat subset (if wanted)
 set.seed(161)
 grid_sub_prot <- dt_grid %>% 

@@ -142,6 +142,30 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
 #H6: median protection 
 #H7: median prot characteristics 
 
+fwrite(dt_est %>% 
+         dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
+         #filter(model %in% c("H4.1", "H6.1"))  %>% 
+         mutate(p_value = round(p_value, 4), 
+                estimate = round(estimate, 3), 
+                ci_lb = round(ci_lb, 3),
+                ci_ub = round(ci_ub, 3), 
+                dataset = "PA", 
+                pa_aggregation_metric = case_when(
+                  model == "H4" ~ "Trend ~ Protection (PA mean)",  #PA mean
+                  model == "H4.1" ~ "Abs. Trend ~ Protection (PA mean)", #PA mean 
+                  model == "H5" ~ "Trend ~ PA Characteristics (PA mean)",  #PA mean
+                  model == "H5.1" ~ "Abs. Trend ~ PA Characteristics (PA mean)",  #PA mean
+                  model == "H6" ~ "Trend ~ PA Characteristics (PA median)", #PA median
+                  model == "H6.1" ~ "Abs. Trend ~ PA Characteristics (PA median)", #PA median 
+                  model == "H7" ~ "Trend ~ Protection (PA median)", #PA median 
+                  model == "H7.1" ~ "Abs. Trend ~ Protection (PA median)" #PA median
+                  )) %>% 
+         dplyr::select(Response = response, Model = model,
+                       Variable = clean_term, Estimate = estimate,
+                       `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value, dataset,
+                       `model description` = pa_aggregation_metric), 
+       "builds/model_estimates/combined_clean_estimates_pas.csv")
+
 ### Pa protection estimtes --------
 # evi 
 p_pa_est_evi <- dt_est %>% 
@@ -297,6 +321,40 @@ p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_
 p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
 ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 6, width = 9)
 
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+################################   CONTROL DISTANCE   ##################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+count_plot <- shapes %>%
+  filter(protection_cat_broad == "strictly_protected") %>% 
+  mutate(control_within_dist = factor(control_within_dist, 
+                                      levels = c("100k", "500k", "1000k", "over_1000k"),
+                                      labels = c("≤ 100 km", "≤ 500 km", "≤ 1000 km", "> 1000 km"))) %>%
+  ggplot(aes(x = control_within_dist)) +
+  geom_bar() +
+  labs(x = "Distance", y = "Count", title = "a ) Count of Distances") +
+  theme_minimal()
+count_plot
+
+freq_plot <- shapes %>%
+  filter(protection_cat_broad == "strictly_protected") %>% 
+  mutate(control_within_dist = factor(control_within_dist, 
+                                      levels = c("100k", "500k", "1000k", "over_1000k"),
+                                      labels = c("≤ 100 km", "≤ 500 km", "≤ 1000 km", "> 1000 km"))) %>%
+  ggplot(aes(x = control_within_dist)) +
+  geom_bar(aes(y = ..prop.., group = 1)) +
+  labs(x = "Distance", y = "Frequency", title = "b) Frequency of Distances") +
+  theme_minimal()
+freq_plot
+
+p_dist <- gridExtra::grid.arrange(count_plot, freq_plot, ncol = 2, widths = c(1, 1)) 
+ggsave(plot = p_dist, "builds/plots/pa_control_within_dist_ditribution.png", dpi = 600, height = 4.5, width = 9)
+
+ 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+################################ STOP HERE ##########################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     TREND DISTRIBUTION     ##############################
@@ -626,9 +684,7 @@ ggsave(plot = p_pa_shapes, "builds/plots/pas_protection_map_shapes.png", dpi = 6
 
 
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-################################ STOP HERE ##########################################
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ############################     GLOBAL CHANGE MAPS     ##############################

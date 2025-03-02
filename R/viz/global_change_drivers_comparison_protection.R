@@ -24,7 +24,28 @@ greenup_trend <- fread("data/processedData/dataFragments/pas_greenup_trends.csv"
   summarize(greenup_coef = median(greenup_coef), 
             abs_greenup_coef = median(abs_greenup_coef))
 
-climate_trends <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") 
+get_mode <- function(x, na.rm = FALSE) {
+  if(na.rm){
+    x = x[!is.na(x)]
+  }
+  
+  ux <- unique(x)
+  return(ux[which.max(tabulate(match(x, ux)))])
+}
+
+f_biome <- fread("data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv") %>% 
+  dplyr::select(unique_pa_id, functional_biome) %>%
+  group_by(unique_pa_id) %>% 
+  summarize(functional_biome = get_mode(functional_biome)) %>% 
+  rename(unique_id = unique_pa_id) %>% 
+  mutate(
+    super_biome = case_when(
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
+    )
+  )
 
 #### include super biome!
 dt_sum <- climate_trends %>%
@@ -42,12 +63,12 @@ dt_sum <- climate_trends %>%
   left_join(greenup_trend) %>% 
   mutate(mean_mean_evi_coef = mean_mean_evi_coef /100, 
          burned_area_coef = burned_area_coef*100) %>% 
-  rename(unique_id = unique_pa_id)
+  rename(unique_id = unique_pa_id) 
 
 
 dt <- dt_sum %>% mutate(
   control_for = gsub("_control", "", unique_id)
-)
+) %>% left_join(f_biome)
 
 dt$protection_cat_broad
 

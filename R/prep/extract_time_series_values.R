@@ -7,13 +7,16 @@ library(data.table)
 library(tidyverse)
 
 #read vectors 
-param = "grid"
+#param = "grid"
 #param = "pas"
+param = "usa"
 
 if(param == "grid"){
   vect <- st_read("data/spatialData/grid_sample.gpkg") 
 }else if(param == "pas"){
   vect <- st_read("data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg")
+} else if(param == "usa"){
+  vect <- st_read("data/spatialData/grid_usa.gpkg")
 }
 
 
@@ -97,6 +100,15 @@ n_depo_zhu_files <- data.table(filepath = list.files("data/rawData/raw_time_seri
          filename = gsub("_hm", "", filename),
          colname =  gsub("mean_totN", "n_depo_zhu", filename))
 
+n_depo_usa_files <- data.table(filepath = list.files("data/rawData/raw_time_series/usa_n_depo/",
+                                                     pattern = "n_tw", 
+                                                     full.names = TRUE), 
+                               filename = list.files("data/rawData/raw_time_series/usa_n_depo/",
+                                                     pattern = "n_tw", 
+                                                     full.names = FALSE)) %>% 
+  mutate(filename = gsub(".tif", "", filename),
+         colname =  gsub("n_tw-", "n_depo_usa_", filename))
+
 
 covs <- rbind(mat_files, 
               max_temp_files, 
@@ -106,6 +118,10 @@ covs <- rbind(mat_files,
               sos_files, 
               mean_evi_files, 
               n_depo_zhu_files)
+
+if(param == "usa"){
+  covs <- rbind(covs, n_depo_usa_files)
+}
 
 ############### create cluster ####################
 library(doSNOW)
@@ -184,5 +200,11 @@ if(param == "grid"){
   fwrite(vect_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv")
 }else if(param == "pas"){
   fwrite(vect_covs, "data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv")
+} else if(param == "usa"){
+  
+  vect_covs <- vect_covs %>% 
+    mutate(mean_n_depo_usa = rowMeans(select(., contains("n_depo_usa")), na.rm = TRUE))
+  
+  fwrite(vect_covs, "data/processedData/dataFragments/grid_usa_with_raw_timeseries.csv")
 }
 

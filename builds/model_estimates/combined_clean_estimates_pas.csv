@@ -1,136 +1,91 @@
-Response,Model,Variable,Estimate,lower CI,upper CI,p,dataset
-evi,H1,Intercept,0.064,0.055,0.072,0,PAs and Controls
-evi,H2,Intercept,0.062,0.053,0.07,0,PAs and Controls
-evi,H2,Nitrogen Deposition,0.012,0.007,0.018,0,PAs and Controls
-evi,H2,MAT Trend,0,-0.008,0.008,0.9652,PAs and Controls
-evi,H2,Max Temp Trend,0.001,-0.005,0.008,0.7182,PAs and Controls
-evi,H2,MAP Trend,0.005,0.001,0.01,0.0225,PAs and Controls
-evi,H2,Human Modification,0,-0.003,0.003,0.8872,PAs and Controls
-evi,H3,"Cold Limited
-Short Vegetation",0.065,0.05,0.08,0,PAs and Controls
-evi,H3,"Cold Limited
-Tall Vegetation",0.059,0.046,0.072,0,PAs and Controls
-evi,H3,"Not Cold Limited
-Short Vegetation",0.063,0.052,0.075,0,PAs and Controls
-evi,H3,"Not Cold Limited
-Tall Vegetation",0.067,0.056,0.077,0,PAs and Controls
-evi,H4,Control,0.067,0.058,0.076,0,PAs and Controls
+Response,Model,Variable,Estimate,lower CI,upper CI,p,dataset,model description
+evi,H4.0,Intercept,0.065,0.055,0.075,0,PA,
+evi,H4,Control,0.07,0.06,0.081,0,PA,Trend ~ Protection (PA mean)
 evi,H4,"Strictly
-Protected",0.06,0.051,0.069,0,PAs and Controls
-evi,H5,Intercept,0.066,0.056,0.076,0,PAs and Controls
-evi,H5,PA Area,-0.004,-0.008,-0.001,0.0165,PAs and Controls
-evi,H5,PA Age,-0.005,-0.009,-0.002,0.0053,PAs and Controls
-evi,cold_tall,Intercept,0.047,0.029,0.065,0,PAs and Controls
-evi,cold_tall,Nitrogen Deposition,0.02,0.007,0.032,0.0017,PAs and Controls
-evi,cold_tall,MAT Trend,0.013,-0.004,0.03,0.1398,PAs and Controls
-evi,cold_tall,Max Temp Trend,0,-0.011,0.011,0.9912,PAs and Controls
-evi,cold_tall,MAP Trend,0.007,-0.013,0.026,0.5081,PAs and Controls
-evi,cold_tall,Human Modification,-0.004,-0.008,0,0.056,PAs and Controls
-evi,cold_short,Intercept,0.05,0.037,0.064,0,PAs and Controls
-evi,cold_short,Nitrogen Deposition,0.005,-0.007,0.018,0.4113,PAs and Controls
-evi,cold_short,MAT Trend,0.013,0.002,0.025,0.0184,PAs and Controls
-evi,cold_short,Max Temp Trend,-0.004,-0.012,0.004,0.3558,PAs and Controls
-evi,cold_short,MAP Trend,0.002,-0.012,0.016,0.7772,PAs and Controls
-evi,cold_short,Human Modification,-0.003,-0.01,0.005,0.4824,PAs and Controls
-evi,not_cold_tall,Intercept,0.063,0.048,0.077,0,PAs and Controls
-evi,not_cold_tall,Nitrogen Deposition,0.011,0.005,0.017,3e-04,PAs and Controls
-evi,not_cold_tall,MAT Trend,-0.004,-0.017,0.008,0.4871,PAs and Controls
-evi,not_cold_tall,Max Temp Trend,-0.001,-0.01,0.008,0.8141,PAs and Controls
-evi,not_cold_tall,MAP Trend,0.001,-0.003,0.006,0.5366,PAs and Controls
-evi,not_cold_tall,Human Modification,0.003,-0.002,0.008,0.2221,PAs and Controls
-evi,not_cold_short,Intercept,0.057,0.043,0.072,0,PAs and Controls
-evi,not_cold_short,Nitrogen Deposition,0.015,0.006,0.025,0.0012,PAs and Controls
-evi,not_cold_short,MAT Trend,-0.008,-0.023,0.006,0.2473,PAs and Controls
-evi,not_cold_short,Max Temp Trend,0.013,0.002,0.023,0.0155,PAs and Controls
-evi,not_cold_short,MAP Trend,-0.001,-0.009,0.006,0.7166,PAs and Controls
-evi,not_cold_short,Human Modification,0,-0.005,0.004,0.8714,PAs and Controls
-burned_area,H1,Intercept,-0.003,-0.008,0.003,0.3617,PAs and Controls
-burned_area,H2,Intercept,-0.002,-0.008,0.003,0.4368,PAs and Controls
-burned_area,H2,Nitrogen Deposition,-0.001,-0.007,0.004,0.6259,PAs and Controls
-burned_area,H2,MAT Trend,0.006,-0.001,0.014,0.0997,PAs and Controls
-burned_area,H2,Max Temp Trend,0,-0.007,0.007,0.936,PAs and Controls
-burned_area,H2,MAP Trend,0.005,0,0.01,0.0426,PAs and Controls
-burned_area,H2,Human Modification,-0.008,-0.013,-0.003,0.0018,PAs and Controls
-burned_area,H3,"Cold Limited
-Short Vegetation",-0.011,-0.028,0.005,0.1795,PAs and Controls
-burned_area,H3,"Cold Limited
-Tall Vegetation",0.013,0.003,0.022,0.0091,PAs and Controls
-burned_area,H3,"Not Cold Limited
-Short Vegetation",-0.029,-0.04,-0.018,0,PAs and Controls
-burned_area,H3,"Not Cold Limited
-Tall Vegetation",-0.004,-0.014,0.005,0.3591,PAs and Controls
-burned_area,H4,Control,-0.002,-0.009,0.005,0.5654,PAs and Controls
+Protected",0.06,0.049,0.07,0,PA,Trend ~ Protection (PA mean)
+evi,H4.1,Control,0.12,0.113,0.128,0,PA,Abs. Trend ~ Protection (PA mean)
+evi,H4.1,"Strictly
+Protected",0.108,0.101,0.115,0,PA,Abs. Trend ~ Protection (PA mean)
+evi,H5.0,Intercept,0.063,0.054,0.072,0,PA,
+evi,H5,Intercept,0.054,0.043,0.065,0,PA,Trend ~ PA Characteristics (PA mean)
+evi,H5,PA Area,-0.005,-0.008,-0.002,0.0024,PA,Trend ~ PA Characteristics (PA mean)
+evi,H5,PA Age,-0.003,-0.007,0.001,0.1292,PA,Trend ~ PA Characteristics (PA mean)
+evi,H5.1,Intercept,0.106,0.099,0.114,0,PA,Abs. Trend ~ PA Characteristics (PA mean)
+evi,H5.1,PA Area,-0.002,-0.005,0,0.0565,PA,Abs. Trend ~ PA Characteristics (PA mean)
+evi,H5.1,PA Age,0,-0.002,0.003,0.7228,PA,Abs. Trend ~ PA Characteristics (PA mean)
+evi,H6.0,Intercept,0.063,0.054,0.071,0,PA,
+evi,H6,Intercept,0.053,0.042,0.063,0,PA,Trend ~ PA Characteristics (PA median)
+evi,H6,PA Area,-0.005,-0.009,-0.002,0.0012,PA,Trend ~ PA Characteristics (PA median)
+evi,H6,PA Age,-0.003,-0.006,0.001,0.1445,PA,Trend ~ PA Characteristics (PA median)
+evi,H6.1,Intercept,0.092,0.084,0.1,0,PA,Abs. Trend ~ PA Characteristics (PA median)
+evi,H6.1,PA Area,-0.006,-0.008,-0.003,0,PA,Abs. Trend ~ PA Characteristics (PA median)
+evi,H6.1,PA Age,0,-0.003,0.003,0.9872,PA,Abs. Trend ~ PA Characteristics (PA median)
+evi,H7.0,Intercept,0.064,0.054,0.074,0,PA,
+evi,H7,Control,0.069,0.059,0.079,0,PA,Trend ~ Protection (PA median)
+evi,H7,"Strictly
+Protected",0.059,0.049,0.07,0,PA,Trend ~ Protection (PA median)
+evi,H7.1,Control,0.111,0.104,0.118,0,PA,Abs. Trend ~ Protection (PA median)
+evi,H7.1,"Strictly
+Protected",0.1,0.093,0.108,0,PA,Abs. Trend ~ Protection (PA median)
+burned_area,H4.0,Intercept,-0.007,-0.014,0.001,0.098,PA,
+burned_area,H4,Control,-0.005,-0.014,0.005,0.3518,PA,Trend ~ Protection (PA mean)
 burned_area,H4,"Strictly
-Protected",-0.003,-0.01,0.004,0.3412,PAs and Controls
-burned_area,H5,Intercept,-0.003,-0.01,0.004,0.4317,PAs and Controls
-burned_area,H5,PA Area,-0.017,-0.023,-0.011,0,PAs and Controls
-burned_area,H5,PA Age,0,-0.007,0.006,0.9098,PAs and Controls
-burned_area,cold_tall,Intercept,473.58,292.814,654.346,0,PAs and Controls
-burned_area,cold_tall,Nitrogen Deposition,195.999,73.616,318.383,0.0017,PAs and Controls
-burned_area,cold_tall,MAT Trend,128.73,-42.113,299.573,0.1398,PAs and Controls
-burned_area,cold_tall,Max Temp Trend,-0.632,-112.925,111.661,0.9912,PAs and Controls
-burned_area,cold_tall,MAP Trend,65.602,-128.693,259.897,0.5081,PAs and Controls
-burned_area,cold_tall,Human Modification,-41.025,-83.09,1.04,0.056,PAs and Controls
-burned_area,cold_short,Intercept,501.451,366.885,636.017,0,PAs and Controls
-burned_area,cold_short,Nitrogen Deposition,52.595,-72.839,178.029,0.4113,PAs and Controls
-burned_area,cold_short,MAT Trend,134.426,22.86,245.993,0.0184,PAs and Controls
-burned_area,cold_short,Max Temp Trend,-39.306,-122.701,44.089,0.3558,PAs and Controls
-burned_area,cold_short,MAP Trend,20.627,-122.233,163.486,0.7772,PAs and Controls
-burned_area,cold_short,Human Modification,-26.267,-99.535,47.002,0.4824,PAs and Controls
-burned_area,not_cold_tall,Intercept,625.649,481.395,769.904,0,PAs and Controls
-burned_area,not_cold_tall,Nitrogen Deposition,111.064,51.086,171.041,3e-04,PAs and Controls
-burned_area,not_cold_tall,MAT Trend,-44.524,-170.079,81.03,0.4871,PAs and Controls
-burned_area,not_cold_tall,Max Temp Trend,-10.492,-97.957,76.973,0.8141,PAs and Controls
-burned_area,not_cold_tall,MAP Trend,14.301,-31.058,59.66,0.5366,PAs and Controls
-burned_area,not_cold_tall,Human Modification,29.814,-18.041,77.669,0.2221,PAs and Controls
-burned_area,not_cold_short,Intercept,573.727,427.453,720.001,0,PAs and Controls
-burned_area,not_cold_short,Nitrogen Deposition,153.737,60.563,246.911,0.0012,PAs and Controls
-burned_area,not_cold_short,MAT Trend,-83.566,-225.12,57.988,0.2473,PAs and Controls
-burned_area,not_cold_short,Max Temp Trend,126.22,24.056,228.383,0.0155,PAs and Controls
-burned_area,not_cold_short,MAP Trend,-14.717,-94.163,64.729,0.7166,PAs and Controls
-burned_area,not_cold_short,Human Modification,-3.652,-47.871,40.567,0.8714,PAs and Controls
-greenup,H1,Intercept,-0.071,-0.146,0.005,0.0667,PAs and Controls
-greenup,H2,Intercept,-0.081,-0.16,-0.003,0.0421,PAs and Controls
-greenup,H2,Nitrogen Deposition,-0.011,-0.067,0.046,0.711,PAs and Controls
-greenup,H2,MAT Trend,-0.015,-0.08,0.051,0.6637,PAs and Controls
-greenup,H2,Max Temp Trend,0.031,-0.022,0.084,0.2549,PAs and Controls
-greenup,H2,MAP Trend,-0.043,-0.099,0.012,0.1278,PAs and Controls
-greenup,H2,Human Modification,-0.044,-0.067,-0.021,2e-04,PAs and Controls
-greenup,H3,"Cold Limited
-Short Vegetation",-0.006,-0.116,0.104,0.9178,PAs and Controls
-greenup,H3,"Cold Limited
-Tall Vegetation",-0.069,-0.173,0.035,0.1952,PAs and Controls
-greenup,H3,"Not Cold Limited
-Short Vegetation",-0.058,-0.178,0.063,0.3467,PAs and Controls
-greenup,H3,"Not Cold Limited
-Tall Vegetation",-0.15,-0.27,-0.03,0.0145,PAs and Controls
-greenup,H4,Control,-0.079,-0.156,-0.002,0.0433,PAs and Controls
+Protected",-0.009,-0.019,0.001,0.0816,PA,Trend ~ Protection (PA mean)
+burned_area,H4.1,Control,0.093,0.083,0.103,0,PA,Abs. Trend ~ Protection (PA mean)
+burned_area,H4.1,"Strictly
+Protected",0.096,0.086,0.106,0,PA,Abs. Trend ~ Protection (PA mean)
+burned_area,H5.0,Intercept,-0.057,-0.077,-0.038,0,PA,
+burned_area,H5.0,PA Area,-0.019,-0.026,-0.011,0,PA,
+burned_area,H5.0,PA Age,-0.004,-0.013,0.005,0.4035,PA,
+burned_area,H5,Intercept,-0.057,-0.077,-0.038,0,PA,Trend ~ PA Characteristics (PA mean)
+burned_area,H5,PA Area,-0.019,-0.026,-0.011,0,PA,Trend ~ PA Characteristics (PA mean)
+burned_area,H5,PA Age,-0.004,-0.013,0.005,0.4035,PA,Trend ~ PA Characteristics (PA mean)
+burned_area,H5.1,Intercept,0.198,0.179,0.217,0,PA,Abs. Trend ~ PA Characteristics (PA mean)
+burned_area,H5.1,PA Area,0.039,0.032,0.046,0,PA,Abs. Trend ~ PA Characteristics (PA mean)
+burned_area,H5.1,PA Age,0.003,-0.006,0.011,0.5398,PA,Abs. Trend ~ PA Characteristics (PA mean)
+burned_area,H6.0,Intercept,-0.051,-0.071,-0.032,0,PA,
+burned_area,H6.0,PA Area,-0.017,-0.024,-0.01,0,PA,
+burned_area,H6.0,PA Age,-0.001,-0.01,0.007,0.7456,PA,
+burned_area,H6,Intercept,-0.051,-0.071,-0.032,0,PA,Trend ~ PA Characteristics (PA median)
+burned_area,H6,PA Area,-0.017,-0.024,-0.01,0,PA,Trend ~ PA Characteristics (PA median)
+burned_area,H6,PA Age,-0.001,-0.01,0.007,0.7456,PA,Trend ~ PA Characteristics (PA median)
+burned_area,H6.1,Intercept,0.144,0.125,0.163,0,PA,Abs. Trend ~ PA Characteristics (PA median)
+burned_area,H6.1,PA Area,0.023,0.016,0.03,0,PA,Abs. Trend ~ PA Characteristics (PA median)
+burned_area,H6.1,PA Age,0.002,-0.006,0.011,0.5706,PA,Abs. Trend ~ PA Characteristics (PA median)
+burned_area,H7.0,Control,-0.005,-0.015,0.004,0.2514,PA,
+burned_area,H7.0,"Strictly
+Protected",-0.007,-0.016,0.003,0.1585,PA,
+burned_area,H7,Control,-0.005,-0.015,0.004,0.2514,PA,Trend ~ Protection (PA median)
+burned_area,H7,"Strictly
+Protected",-0.007,-0.016,0.003,0.1585,PA,Trend ~ Protection (PA median)
+burned_area,H7.1,Control,0.075,0.066,0.084,0,PA,Abs. Trend ~ Protection (PA median)
+burned_area,H7.1,"Strictly
+Protected",0.08,0.071,0.089,0,PA,Abs. Trend ~ Protection (PA median)
+greenup,H4.0,Intercept,-0.025,-0.058,0.009,0.1515,PA,
+greenup,H4,Control,-0.04,-0.078,-0.001,0.0428,PA,Trend ~ Protection (PA mean)
 greenup,H4,"Strictly
-Protected",-0.062,-0.139,0.015,0.1124,PAs and Controls
-greenup,H5,Intercept,-0.082,-0.171,0.006,0.0668,PAs and Controls
-greenup,H5,PA Area,0.038,0.008,0.069,0.0127,PAs and Controls
-greenup,H5,PA Age,-0.004,-0.031,0.023,0.7798,PAs and Controls
-greenup,cold_tall,Intercept,4.773,2.956,6.591,0,PAs and Controls
-greenup,cold_tall,Nitrogen Deposition,1.913,0.687,3.14,0.0022,PAs and Controls
-greenup,cold_tall,MAT Trend,1.089,-0.637,2.816,0.2163,PAs and Controls
-greenup,cold_tall,Max Temp Trend,0.143,-0.994,1.28,0.8056,PAs and Controls
-greenup,cold_tall,MAP Trend,0.82,-1.115,2.755,0.4063,PAs and Controls
-greenup,cold_tall,Human Modification,-0.401,-0.827,0.025,0.0648,PAs and Controls
-greenup,cold_short,Intercept,5.015,3.669,6.36,0,PAs and Controls
-greenup,cold_short,Nitrogen Deposition,0.526,-0.728,1.78,0.4113,PAs and Controls
-greenup,cold_short,MAT Trend,1.344,0.229,2.46,0.0184,PAs and Controls
-greenup,cold_short,Max Temp Trend,-0.393,-1.227,0.441,0.3558,PAs and Controls
-greenup,cold_short,MAP Trend,0.206,-1.222,1.635,0.7772,PAs and Controls
-greenup,cold_short,Human Modification,-0.263,-0.995,0.47,0.4824,PAs and Controls
-greenup,not_cold_tall,Intercept,4.942,2.542,7.341,1e-04,PAs and Controls
-greenup,not_cold_tall,Nitrogen Deposition,2.103,1.034,3.173,1e-04,PAs and Controls
-greenup,not_cold_tall,MAT Trend,-0.737,-3.046,1.573,0.5321,PAs and Controls
-greenup,not_cold_tall,Max Temp Trend,-1.074,-2.592,0.443,0.1658,PAs and Controls
-greenup,not_cold_tall,MAP Trend,-0.323,-1.254,0.607,0.496,PAs and Controls
-greenup,not_cold_tall,Human Modification,0.5,-0.525,1.526,0.339,PAs and Controls
-greenup,not_cold_short,Intercept,5.744,3.598,7.891,0,PAs and Controls
-greenup,not_cold_short,Nitrogen Deposition,3.291,1.787,4.794,0,PAs and Controls
-greenup,not_cold_short,MAT Trend,-1.151,-3.126,0.823,0.2533,PAs and Controls
-greenup,not_cold_short,Max Temp Trend,1.848,0.393,3.302,0.0129,PAs and Controls
-greenup,not_cold_short,MAP Trend,-0.774,-1.956,0.409,0.1998,PAs and Controls
-greenup,not_cold_short,Human Modification,-0.25,-0.801,0.301,0.3739,PAs and Controls
+Protected",-0.009,-0.048,0.03,0.6675,PA,Trend ~ Protection (PA mean)
+greenup,H4.1,Control,0.614,0.581,0.647,0,PA,Abs. Trend ~ Protection (PA mean)
+greenup,H4.1,"Strictly
+Protected",0.562,0.528,0.595,0,PA,Abs. Trend ~ Protection (PA mean)
+greenup,H5.0,Intercept,-0.014,-0.051,0.024,0.4652,PA,
+greenup,H5,Intercept,0.054,-0.016,0.124,0.1313,PA,Trend ~ PA Characteristics (PA mean)
+greenup,H5,PA Area,0.03,0.004,0.055,0.0242,PA,Trend ~ PA Characteristics (PA mean)
+greenup,H5,PA Age,-0.016,-0.046,0.014,0.3034,PA,Trend ~ PA Characteristics (PA mean)
+greenup,H5.1,Intercept,0.604,0.545,0.663,0,PA,Abs. Trend ~ PA Characteristics (PA mean)
+greenup,H5.1,PA Area,0.022,0,0.043,0.0508,PA,Abs. Trend ~ PA Characteristics (PA mean)
+greenup,H5.1,PA Age,0.004,-0.022,0.029,0.7703,PA,Abs. Trend ~ PA Characteristics (PA mean)
+greenup,H6.0,Intercept,-0.037,-0.072,-0.002,0.0398,PA,
+greenup,H6,Intercept,0.009,-0.057,0.075,0.7894,PA,Trend ~ PA Characteristics (PA median)
+greenup,H6,PA Area,0.02,-0.005,0.044,0.1106,PA,Trend ~ PA Characteristics (PA median)
+greenup,H6,PA Age,-0.008,-0.037,0.021,0.5723,PA,Trend ~ PA Characteristics (PA median)
+greenup,H6.1,Intercept,0.412,0.356,0.468,0,PA,Abs. Trend ~ PA Characteristics (PA median)
+greenup,H6.1,PA Area,-0.017,-0.038,0.003,0.102,PA,Abs. Trend ~ PA Characteristics (PA median)
+greenup,H6.1,PA Age,-0.002,-0.026,0.023,0.9001,PA,Abs. Trend ~ PA Characteristics (PA median)
+greenup,H7.0,Intercept,-0.04,-0.076,-0.004,0.0288,PA,
+greenup,H7,Control,-0.049,-0.09,-0.008,0.0195,PA,Trend ~ Protection (PA median)
+greenup,H7,"Strictly
+Protected",-0.03,-0.072,0.012,0.1563,PA,Trend ~ Protection (PA median)
+greenup,H7.1,Control,0.495,0.46,0.53,0,PA,Abs. Trend ~ Protection (PA median)
+greenup,H7.1,"Strictly
+Protected",0.44,0.404,0.476,0,PA,Abs. Trend ~ Protection (PA median)
