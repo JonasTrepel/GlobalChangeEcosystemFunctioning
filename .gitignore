@@ -20,6 +20,7 @@ data/processedData/dataFragments/pas_greenup_trends.csv
 data/processedData/dataFragments/pas_mean_evi_trends.csv
 data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv
 C:/
+data/processedData/dataFragments/
 ##################
 # History files
 .Rhistory
