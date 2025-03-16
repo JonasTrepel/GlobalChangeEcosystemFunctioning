@@ -9,7 +9,8 @@ library(tidyverse)
 #read vectors 
 #param = "grid"
 #param = "pas"
-param = "usa"
+#param = "usa"
+param = "europe"
 
 if(param == "grid"){
   vect <- st_read("data/spatialData/grid_sample.gpkg") 
@@ -17,6 +18,8 @@ if(param == "grid"){
   vect <- st_read("data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg")
 } else if(param == "usa"){
   vect <- st_read("data/spatialData/grid_usa.gpkg")
+} else if(param == "europe"){
+  vect <- st_read("data/spatialData/grid_europe.gpkg")
 }
 
 
@@ -109,6 +112,15 @@ n_depo_usa_files <- data.table(filepath = list.files("data/rawData/raw_time_seri
   mutate(filename = gsub(".tif", "", filename),
          colname =  gsub("n_tw-", "n_depo_usa_", filename))
 
+n_depo_europe_files <- data.table(filepath = list.files("data/rawData/raw_time_series/europe_n_depo/",
+                                                     pattern = "europe_n_depo", 
+                                                     full.names = TRUE), 
+                               filename = list.files("data/rawData/raw_time_series/europe_n_depo/",
+                                                     pattern = "europe_n_depo", 
+                                                     full.names = FALSE)) %>% 
+  mutate(filename = gsub(".tif", "", filename),
+         colname =  gsub("europe_n_depo_", "n_depo_europe_", filename))
+
 
 covs <- rbind(mat_files, 
               max_temp_files, 
@@ -121,6 +133,9 @@ covs <- rbind(mat_files,
 
 if(param == "usa"){
   covs <- rbind(covs, n_depo_usa_files)
+}
+if(param == "europe"){
+  covs <- rbind(covs, n_depo_europe_files)
 }
 
 ############### create cluster ####################
@@ -206,5 +221,11 @@ if(param == "grid"){
     mutate(mean_n_depo_usa = rowMeans(select(., contains("n_depo_usa")), na.rm = TRUE))
   
   fwrite(vect_covs, "data/processedData/dataFragments/grid_usa_with_raw_timeseries.csv")
+} else if(param == "europe"){
+  
+  vect_covs <- vect_covs %>% 
+    mutate(mean_n_depo_europe = rowMeans(select(., contains("n_depo_europe")), na.rm = TRUE))
+  
+  fwrite(vect_covs, "data/processedData/dataFragments/grid_europe_with_raw_timeseries.csv")
 }
 

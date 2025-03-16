@@ -10,8 +10,8 @@ library(ggridges)
 evi_trend <- fread("data/processedData/dataFragments/pas_mean_evi_trends.csv") %>% 
   mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
   group_by(unique_pa_id) %>% 
-  summarize(mean_mean_evi_coef = median(mean_mean_evi_coef), 
-            abs_mean_mean_evi_coef = median(abs_mean_mean_evi_coef))
+  summarize(mean_evi_coef = median(mean_evi_coef), 
+            abs_mean_evi_coef = median(abs_mean_evi_coef))
 burned_area_trend <- fread("data/processedData/dataFragments/pas_burned_area_trends.csv") %>% 
   mutate(unique_pa_id = gsub("_[^_]+$", "", unique_id)) %>% 
   group_by(unique_pa_id) %>% 
@@ -61,7 +61,7 @@ dt_sum <- climate_trends %>%
   left_join(evi_trend) %>% 
   left_join(burned_area_trend) %>% 
   left_join(greenup_trend) %>% 
-  mutate(mean_mean_evi_coef = mean_mean_evi_coef /100, 
+  mutate(mean_evi_coef = mean_evi_coef /100, 
          burned_area_coef = burned_area_coef*100) %>% 
   rename(unique_id = unique_pa_id) 
 
@@ -89,17 +89,17 @@ p_comp <- dt %>%
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
   geom_density_ridges(aes(y = clean_prot, x = global_change_value, color = clean_prot, fill = clean_prot), alpha = 0.75, size = 0.5) +
  # geom_boxplot(aes(x = clean_prot, y = global_change_value), outlier.size = 0.25, outlier.shape = NA, alpha = 0.75) +
-  facet_wrap(~clean_driver, scales = "free") +
+  facet_wrap(~clean_driver, scales = "free", ncol = 5) +
   scale_color_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
   scale_fill_scico_d(palette = "bamako", begin = 0.25, end = 0.75) +
-  labs(x = "", y = "Driver Value") +
+  labs(x = "", y = "") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 70, hjust = 1), 
         panel.grid = element_blank(),
         legend.position = "none")
 p_comp
 
-ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600, height = 4.5, width = 7)
+ggsave(plot = p_comp, "builds/plots/global_change_drivers_comparison_protection.png", dpi = 600, height = 3, width = 10)
 
 #### calculate differences 
 

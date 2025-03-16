@@ -9,6 +9,7 @@ library(sf)
 library(gridExtra)
 library(tidylog)
 library(RColorBrewer)
+library(ggridges)
 
 evi_trend <- fread("data/processedData/dataFragments/grid_mean_evi_trends.csv") 
 burned_area_trend <- fread("data/processedData/dataFragments/grid_burned_area_trends.csv")
@@ -41,10 +42,201 @@ shapes <- raw_shapes %>%
 
 sum(is.na(shapes$mean_evi_coef))
 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+##############################     TRENDS VS TRENDS    ###################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+library(GGally)
+
+dt_gg <- shapes %>%
+  dplyr::select(mean_evi_coef, burned_area_coef, greenup_coef) %>% 
+  as.data.table() %>% 
+  mutate(geom = NULL) %>% 
+  filter(complete.cases(.))
+
+ggpairs(dt_gg)
+
+
+p_tc1 <- shapes %>% 
+  ggplot() +
+  geom_point(aes(x = mean_evi_coef, y = burned_area_coef), alpha = 0.5) +
+  labs(x = "EVI Trend", y = "Burned Area Trend") +
+  theme_classic()
+p_tc1
+
+cor.test(shapes$mean_evi_coef, shapes$burned_area_coef, na.rm = T)
+cor.test(shapes$mean_evi_coef, shapes$greenup_coef, na.rm = T)
+cor.test(shapes$greenup_coef, shapes$burned_area_coef, na.rm = T)
+
+
+p_tc2 <- shapes %>% 
+  ggplot() +
+  geom_point(aes(x = mean_evi_coef, y = greenup_coef), alpha = 0.5) +
+  labs(x = "EVI Trend", y = "Green-Up Trend") +
+  theme_classic()
+p_tc2
+
+p_tc3 <- shapes %>% 
+  ggplot() +
+  geom_point(aes(x = burned_area_coef, y = greenup_coef), alpha = 0.5) +
+  labs(x = "Burned Area Trend", y = "Green-Up Trend") +
+  theme_classic()
+p_tc3
+
+p_tc <- gridExtra::grid.arrange(p_tc1, p_tc2, p_tc3, ncol = 3)
+ggsave(plot = p_tc, "builds/plots/trend_relatiobships.png", dpi = 600, height = 3, width = 9)
+
+
+p_tc4 <- shapes %>% 
+  ggplot() +
+  geom_point(aes(y = mean_evi_coef, x = EVI/100)) +
+  geom_smooth(aes(y = mean_evi_coef, x = EVI/100)) +
+  labs(y = "EVI Trend", x = "EVI Mean") +
+  theme_classic()
+p_tc4
+
+cor.test(shapes$mean_evi_coef, shapes$EVI, na.rm = T)
+
+
+summary(shapes)
+
+#p < 0.05 -------
+
+t_05 <- shapes %>%
+  mutate(mean_evi_change = ifelse(mean_evi_p_value >= 0.05 | is.na(mean_evi_p_value), 0, 1), 
+         burned_area_change = ifelse(burned_area_p_value >= 0.05 | is.na(burned_area_p_value), 0, 1), 
+         greenup_change = ifelse(greenup_p_value >= 0.05 | is.na(greenup_p_value), 0, 1), 
+         sig_changes = case_when(
+           mean_evi_change == 1 & burned_area_change == 0 & greenup_change == 0 ~ "EVI",
+           mean_evi_change == 1 & burned_area_change == 1 & greenup_change == 0 ~ "EVI; Burned Area",
+           mean_evi_change == 1 & burned_area_change == 1 & greenup_change == 1 ~ "EVI; Burned Area; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 1 & greenup_change == 1 ~ "Burned Area; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 1 & greenup_change == 0 ~ "Burned Area",
+           mean_evi_change == 0 & burned_area_change == 0 & greenup_change == 1 ~ "Green-Up",
+           mean_evi_change == 1 & burned_area_change == 0 & greenup_change == 1 ~ "EVI; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 0 & greenup_change == 0 ~ "No Significant Change"
+         ))
+
+library(MetBrewer)
+c(MetBrewer::met.brewer(name = "Archambault", n = 7, type = "discrete"))
+
+custom_colors <- c(
+  "EVI" = "#381a61",
+  "EVI; Burned Area" = "#7c4b73",
+  "EVI; Burned Area; Green-Up" = "#88a0dc",
+  "Burned Area; Green-Up" = "#ed968c",
+  "Burned Area" = "#ab3329",
+  "Green-Up" = "#e78429",
+  "EVI; Green-Up" = "#f9d14a",
+  "No Significant Change" = "grey95"
+)
+
+# Map visualization
+sig_map_05 <- t_05 %>% 
+  ggplot() +
+  geom_sf(aes(color = sig_changes, fill = sig_changes), alpha = 0.7) +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  theme_void() +
+  theme(legend.position = "bottom")
+sig_map_05
+ggsave(plot = sig_map_05, "builds/plots/sig_change_map_p_05.png", dpi = 600)
+
+sig_leg_05 <- t_05 %>%
+  count(sig_changes) %>%
+  mutate(freq = n / sum(n)) %>%
+  ggplot(aes(x = sig_changes, y = freq)) + 
+  geom_bar(aes(color = sig_changes, fill = sig_changes), stat = "identity") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  labs(x = "", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(), 
+        legend.position = "none"
+        )
+sig_leg_05
+ggsave(plot = sig_leg_05, "builds/plots/sig_change_leg_p_05.png", dpi = 600, height = 4, width = 5.2)
+
+table(t_05$sig_changes)
+
+#Burned Area      Burned Area; Green-Up                        EVI           EVI; Burned Area 
+#10837                        888                      80385                       4496 
+#EVI; Burned Area; Green-Up              EVI; Green-Up                   Green-Up      No Significant Change 
+#579                      15670                      24645                     262500 
+
+#p < 0.01 -------
+
+t_01 <- shapes %>%
+  mutate(mean_evi_change = ifelse(mean_evi_p_value >= 0.01 | is.na(mean_evi_p_value), 0, 1), 
+         burned_area_change = ifelse(burned_area_p_value >= 0.01 | is.na(burned_area_p_value), 0, 1), 
+         greenup_change = ifelse(greenup_p_value >= 0.01 | is.na(greenup_p_value), 0, 1), 
+         sig_changes = case_when(
+           mean_evi_change == 1 & burned_area_change == 0 & greenup_change == 0 ~ "EVI",
+           mean_evi_change == 1 & burned_area_change == 1 & greenup_change == 0 ~ "EVI; Burned Area",
+           mean_evi_change == 1 & burned_area_change == 1 & greenup_change == 1 ~ "EVI; Burned Area; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 1 & greenup_change == 1 ~ "Burned Area; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 1 & greenup_change == 0 ~ "Burned Area",
+           mean_evi_change == 0 & burned_area_change == 0 & greenup_change == 1 ~ "Green-Up",
+           mean_evi_change == 1 & burned_area_change == 0 & greenup_change == 1 ~ "EVI; Green-Up",
+           mean_evi_change == 0 & burned_area_change == 0 & greenup_change == 0 ~ "No Significant Change"
+         ))
+
+library(MetBrewer)
+c(MetBrewer::met.brewer(name = "Archambault", n = 7, type = "discrete"))
+
+custom_colors <- c(
+  "EVI" = "#381a61",
+  "EVI; Burned Area" = "#7c4b73",
+  "EVI; Burned Area; Green-Up" = "#88a0dc",
+  "Burned Area; Green-Up" = "#ed968c",
+  "Burned Area" = "#ab3329",
+  "Green-Up" = "#e78429",
+  "EVI; Green-Up" = "#f9d14a",
+  "No Significant Change" = "grey95"
+)
+
+# Map visualization
+sig_map_01 <- t_01 %>% 
+  ggplot() +
+  geom_sf(aes(color = sig_changes, fill = sig_changes), alpha = 0.7) +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  theme_void() +
+  theme(legend.position = "bottom")
+sig_map_01
+ggsave(plot = sig_map_01, "builds/plots/sig_change_map_p_01.png", dpi = 600)
+
+sig_leg_01 <- t_01 %>%
+  count(sig_changes) %>%
+  mutate(freq = n / sum(n)) %>%
+  ggplot(aes(x = sig_changes, y = freq)) + 
+  geom_bar(aes(color = sig_changes, fill = sig_changes), stat = "identity") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors) +
+  labs(x = "", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(), 
+        legend.position = "none"
+  )
+sig_leg_01
+ggsave(plot = sig_leg_01, "builds/plots/sig_change_leg_p_01.png", dpi = 600, height = 4, width = 5.2)
+
+table(t_01$sig_changes)
+
+
+#Burned Area      Burned Area; Green-Up                        EVI           EVI; Burned Area 
+#5707                        214                      51306                       1360 
+#EVI; Burned Area; Green-Up              EVI; Green-Up                   Green-Up      No Significant Change 
+#88                       5940                      12801                     322584 
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ##################################     MAPS    #######################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
 
 ## evi maps -------------
 quantile(shapes$mean_evi_coef, c(.025, .975), na.rm = T)
@@ -71,6 +263,24 @@ p_evi_shapes <- ggplot() +
 p_evi_shapes
 
 ggsave(plot = p_evi_shapes, "builds/plots/evi_grid_shapes_map.png", dpi = 600)
+
+
+p_evi_shapes_leg <- ggplot(shapes %>%
+                             filter(!is.na(mean_evi_coef)) %>% 
+                             mutate(mean_evi_coef = ifelse(mean_evi_coef > q_975_evi, NA, mean_evi_coef),
+                                    mean_evi_coef = ifelse(mean_evi_coef < q_025_evi, NA, mean_evi_coef))) +
+  geom_density_ridges_gradient(aes(x = mean_evi_coef, fill = stat(x), y = factor(1)), alpha = 0.7) +
+  scale_fill_scico(palette = "bam", midpoint = 0) +
+  labs(x = "EVI Trend", y = "", fill = "EVI\nTrend") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        panel.grid = element_blank(), 
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.title.x = element_text(size = 14))
+
+p_evi_shapes_leg
+ggsave(plot = p_evi_shapes_leg, "builds/plots/evi_grid_shapes_leg.png", dpi = 600, height = 3, width = 7)
 
 ## burned area maps-------
 quantile(shapes$burned_area_coef, c(.025, .975), na.rm = T)
@@ -183,11 +393,16 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
 fwrite(dt_est %>% 
          dplyr::select(-facet_label, -sig, -sig_pn, -term, -t.stat, -std_error) %>% 
          filter(!model == "H4.1" & !model == "H5.1") %>% 
+         filter(!model == "H3" & !model == "H4"  & !model == "H5") %>% 
          mutate(p_value = round(p_value, 4), 
                 estimate = round(estimate, 3), 
                 ci_lb = round(ci_lb, 3),
                 ci_ub = round(ci_ub, 3), 
-                dataset = "Grid") %>% 
+                dataset = "Grid", 
+                model = case_when(
+                  .default = model, 
+                  model == "H1" ~ "global_intercept_only", 
+                  model == "H2" ~ "global")) %>% 
          dplyr::select(Response = response, Model = model,
                        Variable = clean_term, Estimate = estimate,
                        `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value, dataset), 
@@ -270,7 +485,7 @@ p_est_burned_area <- dt_est %>%
   )) +
   labs(title = "b)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
   theme_minimal() +
-  theme(legend.position = "none", 
+  theme(legend.position = "bottom", 
         # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),
@@ -318,7 +533,7 @@ p_est_greenup <- dt_est %>%
   )) +
   labs(title = "b)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
   theme_minimal() +
-  theme(legend.position = "none", 
+  theme(legend.position = "bottom", 
         # panel.grid = element_blank(),
         strip.text = element_text(face = "bold", size = 11.5),   
         strip.background = element_rect(fill = "snow2", color = "snow2"),

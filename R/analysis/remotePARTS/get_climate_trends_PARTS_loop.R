@@ -4,7 +4,8 @@ library(data.table)
 
 #param = "pas"
 #param = "grid"
-param = "usa"
+#param = "usa"
+param = "europe"
 
 if(param == "grid"){
   dt <- fread("data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv") %>% 
@@ -14,6 +15,9 @@ if(param == "grid"){
       as.data.frame()
 } else if(param == "usa") {
   dt <- fread("data/processedData/dataFragments/grid_usa_with_raw_timeseries.csv") %>% 
+    as.data.frame()
+} else if(param == "europe") {
+  dt <- fread("data/processedData/dataFragments/grid_europe_with_raw_timeseries.csv") %>% 
     as.data.frame()
 }
 
@@ -48,8 +52,8 @@ process_trend <- function(cols_pattern, trend_name, dt) {
 
 # List of trends
 trend_configs <- data.frame(
-  pattern = c("mat_", "max_temp_", "map_", "n_depo_zhu_", "n_depo_usa_"),
-  name = c("mat", "max_temp", "map", "n_depo_zhu", "n_depo_usa"),
+  pattern = c("mat_", "max_temp_", "map_", "n_depo_zhu_", "n_depo_usa_", "n_depo_europe_"),
+  name = c("mat", "max_temp", "map", "n_depo_zhu", "n_depo_usa", "n_depo_europe"),
   stringsAsFactors = FALSE
 )
 
@@ -57,9 +61,13 @@ if(param != "usa"){
   trend_configs <- trend_configs %>% 
     filter(!name == "n_depo_usa")
 }
+if(param != "europe"){
+  trend_configs <- trend_configs %>% 
+    filter(!name == "n_depo_europe")
+}
 
 #define chunks and remove usa values for the main grids
-if(param %in% c("grid", "usa")){
+if(param %in% c("grid", "usa", "europe")){
   dt <- dt %>% 
     mutate(chunk = "chunk") 
 } else if(param == "pas"){
@@ -123,11 +131,6 @@ print(paste0("done! ", Sys.time()))
 
 
 
-
-
-
-
-
 ctk <- dt %>% dplyr::select(unique_id,
                             mean_burned_area, max_burned_area, 
                             map_era, mat_era, mat_era,
@@ -150,6 +153,6 @@ if(param == "grid"){
   fwrite(dt_res, "data/processedData/data_with_response_timeseries/pas_and_controls_with_climate_trends.csv")
 } else if(param == "usa"){
   fwrite(dt_res, "data/processedData/dataFragments/grid_usa_with_climate_trends.csv")
+} else if(param == "europe"){
+  fwrite(dt_res, "data/processedData/dataFragments/grid_europe_with_climate_trends.csv")
 }
-
-#cor.test(dt_res$mean_n_dep_zhu, dt_res$nitrogen_depo, na.rm = T)

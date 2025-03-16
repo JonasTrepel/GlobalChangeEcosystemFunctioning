@@ -227,6 +227,7 @@ greenup_cols <- grep("greenup_", names(dt), value = T)
 
 #subset to complete cases
 dt_greenup <- dt %>%
+  filter(!grepl("N", functional_biome)) %>% 
   dplyr::select(all_of(greenup_cols), functional_biome, X, Y, lon, lat, unique_id, mean_n_depo_zhu,
                 nitrogen_depo, mat_coef, map_coef, max_temp_coef, human_modification, super_biome,
                 protection_cat_broad) %>% 
@@ -371,11 +372,11 @@ p_est <- dt_plot %>%
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
   facet_wrap(~facet_label, scales = "free_x", ncol = 5) +
-  scale_color_manual(values = c("Sig. Negative" = "#2064AE",
+  scale_color_manual(values = c("Sig. Negative" = "#3191C1",
                                 "Non-Significant" = "grey60", 
-                                "Sig. Positive" = "#995215"
+                                "Sig. Positive" = "#AF7F2A"
   )) +
-  labs(title = "Nitrogen Deposition by Zhu et al., 2025", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
+  labs(title = "Nitrogen Deposition by Zhu et al., 2025", y = NULL, x = "Trend Estimate", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "bottom", 
         # panel.grid = element_blank(),

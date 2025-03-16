@@ -75,6 +75,8 @@ sum(is.na(shapes$mean_evi_coef))
 
 sum(shapes[shapes$protection_cat_broad == "strictly_protected", ]$area_km2, na.rm = T)
 
+table(shapes %>% dplyr::select(unique_id, protection_cat_broad) %>% unique() %>% pull(protection_cat_broad))
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   PROTECTION MAP   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -134,7 +136,13 @@ dt_est <- rbind(evi_est, burned_area_est, greenup_est) %>%
       model == "H6.1" ~ "Abs. Trend ~\nPA Characteristics", #PA median 
       model == "H7" ~ "Trend ~\nProtection", #PA median 
       model == "H7.1" ~ "Abs. Trend ~\nProtection" #PA median
-    )
+    ),
+    facet_label = factor(facet_label, levels = c(
+      "Trend ~\nProtection",
+      "Abs. Trend ~\nProtection",
+      "Trend ~\nPA Characteristics",
+      "Abs. Trend ~\nPA Characteristics"
+    ))
   )
 
 #H4 - mean protection 
@@ -160,6 +168,7 @@ fwrite(dt_est %>%
                   model == "H7" ~ "Trend ~ Protection (PA median)", #PA median 
                   model == "H7.1" ~ "Abs. Trend ~ Protection (PA median)" #PA median
                   )) %>% 
+         filter(model == "H4" | model == "H6") %>% 
          dplyr::select(Response = response, Model = model,
                        Variable = clean_term, Estimate = estimate,
                        `lower CI` = ci_lb, `upper CI` = ci_ub, p = p_value, dataset,
@@ -175,12 +184,12 @@ p_pa_est_evi <- dt_est %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 12) +
+  facet_wrap(~facet_label, scales = "free", ncol = 1) +
   scale_color_manual(values = c("Sig. Negative" = "#9E3C85",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#457B2A"
   )) +
-  labs(title = "a)", y = NULL, x = "EVI Trend Estimate", color = "Significance") +
+  labs(title = "", y = NULL, x = "EVI Trend", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -223,12 +232,12 @@ p_pa_est_burned_area <- dt_est %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 12) +
+  facet_wrap(~facet_label, scales = "free", ncol = 1) +
   scale_color_manual(values = c("Sig. Negative" = "#023E7D",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#8B2706"
   )) +
-  labs(title = "c)", y = NULL, x = "Burned Area Trend Estimate", color = "Significance") +
+  labs(title = "", y = NULL, x = "Burned Area Trend", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -272,12 +281,12 @@ p_pa_est_greenup <- dt_est %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(x = estimate, xmin = ci_lb, xmax = ci_ub, y = clean_term, color = sig_pn),
                   alpha = 0.9, linewidth = 1.2) +
-  facet_wrap(~facet_label, scales = "free", ncol = 12) +
+  facet_wrap(~facet_label, scales = "free", ncol = 1) +
   scale_color_manual(values = c("Sig. Negative" = "#3D7D3C",
                                 "Non-Significant" = "grey60", 
                                 "Sig. Positive" = "#386695"
   )) +
-  labs(title = "e)", y = NULL, x = "Vegetation Green-Up Trend Estimate", color = "Significance") +
+  labs(title = "", y = NULL, x = "Vegetation Green-Up Trend", color = "Significance") +
   theme_minimal() +
   theme(legend.position = "none", 
         panel.grid = element_blank(),
@@ -315,11 +324,11 @@ p_pa_est_abs_greenup
 empty_plot <- ggplot() +
   theme_void()
 
-p_pa_a <- gridExtra::grid.arrange(p_pa_est_evi, p_pa_est_burned_area, p_pa_est_greenup)
-p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_pa_est_abs_greenup)
+p_pa_a <- gridExtra::grid.arrange(p_pa_est_evi, empty_plot, p_pa_est_burned_area, empty_plot, p_pa_est_greenup, ncol = 5, widths = c(1, 0.2, 1, 0.2, 1))
+#p_pa_b <- gridExtra::grid.arrange(p_pa_est_abs_evi, p_pa_est_abs_burned_area, p_pa_est_abs_greenup)
 
-p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
-ggsave(plot = p_pa_est, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 6, width = 9)
+#p_pa_est <- gridExtra::grid.arrange(p_pa_a, empty_plot, p_pa_b, ncol = 3, widths = c(1, 0.1, 1)) 
+ggsave(plot = p_pa_a, "builds/plots/pa_protection_estimates.png", dpi = 600, height = 3.75, width = 9)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -333,23 +342,12 @@ count_plot <- shapes %>%
                                       labels = c("≤ 100 km", "≤ 500 km", "≤ 1000 km", "> 1000 km"))) %>%
   ggplot(aes(x = control_within_dist)) +
   geom_bar() +
-  labs(x = "Distance", y = "Count", title = "a ) Count of Distances") +
+  labs(x = "Distance", y = "Count", title = "Distance between control and PA") +
   theme_minimal()
 count_plot
 
-freq_plot <- shapes %>%
-  filter(protection_cat_broad == "strictly_protected") %>% 
-  mutate(control_within_dist = factor(control_within_dist, 
-                                      levels = c("100k", "500k", "1000k", "over_1000k"),
-                                      labels = c("≤ 100 km", "≤ 500 km", "≤ 1000 km", "> 1000 km"))) %>%
-  ggplot(aes(x = control_within_dist)) +
-  geom_bar(aes(y = ..prop.., group = 1)) +
-  labs(x = "Distance", y = "Frequency", title = "b) Frequency of Distances") +
-  theme_minimal()
-freq_plot
-
 p_dist <- gridExtra::grid.arrange(count_plot, freq_plot, ncol = 2, widths = c(1, 1)) 
-ggsave(plot = p_dist, "builds/plots/pa_control_within_dist_ditribution.png", dpi = 600, height = 4.5, width = 9)
+ggsave(plot = count_plot, "builds/plots/pa_control_within_dist_ditribution.png", dpi = 600, height = 4.5, width = 4.5)
 
  
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
