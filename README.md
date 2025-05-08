@@ -96,4 +96,4 @@ This repository contains all scripts used for the analyses in the manuscript:
 
 ## Contact
 
-For questions, please contact: *jonas.trepel[at]gmail.com*
+For questions, please contact: *jonas.trepel[at]bio.au.dk.com*
