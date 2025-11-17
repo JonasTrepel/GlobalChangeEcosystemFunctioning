@@ -5,6 +5,7 @@ data/spatialData/protectedAreas/reserve_shapes.gpkg
 data/processedData/dataFragments/ReserveDataSouthAfricaFinal.csv
 builds/modelOutputs/exploratoryGamReserveRes.Rds
 data/rawData/raw_time_series/
+data/
 data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv
 data/processedData/dataFragments/grid_sample_with_climate_trends.csv
 data/processedData/cleanData/pa_and_control_grid_with_covs.csv
