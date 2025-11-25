@@ -1,17 +1,20 @@
-### Get all fire ###
-
 
 library(rgee)
 library(data.table)
 library(tidyverse)
 library(googledrive)
-library(terra)
 
-ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
-drive_auth(email = "jonas.trepel@bio.au.dk")
+source("R/functions/monitor_gee_task.R")
+#  
+rgee_env_dir <- c("C:\\Users\\au713983\\.conda\\envs\\rgee_env")
+reticulate::use_python(rgee_env_dir, required=T)
+#ee_clean_user_credentials()
+#ee$Authenticate(auth_mode='notebook')
+ee$Initialize(project = "jonas-trepel")
+drive_auth(email = "jonas.trepel@gmail.com")
+ee$String('Hello from the Earth Engine servers!')$getInfo()
 
-
-years <- c(2001:2023)
+years <- c(2001:2024)
 
 
 for(year in years){
@@ -88,8 +91,7 @@ yearly_fires <- function(year) {
       max()$
       setDefaultProjection(
         crs = "SR-ORG:6974",
-        crsTransform = c(463.3127165279165, 0, -20015109.354, 
-                         0, -463.3127165279167, 7783653.6376640005)
+        scale = 500
       )$
       reduceResolution(
         reducer = ee$Reducer$mean(), # Fractional cover 
@@ -126,7 +128,7 @@ yearly_fires <- function(year) {
   
   export_task <- ee_image_to_drive(image = mean_burned,
                                    region = world_ext,
-                                   folder = "rgee_backup",
+                                   folder = "rgee_backup_burned_area",
                                    description = "annual_burned_area",
                                    scale = 5000, 
                                    timePrefix = FALSE, 
@@ -134,49 +136,21 @@ yearly_fires <- function(year) {
   )
   export_task$start()
   
-  #monitor task
+  Sys.sleep(300)
+  monitor_gee_task(pattern = "annual_burned_area", path = "rgee_backup_burned_area",
+                   last_sleep_time = 300, mail = "jonas.trepel@gmail.com")
   
-  # Monitor the task status
+  Sys.sleep(60)  
   
-  drive_auth(email = "jonas.trepel@bio.au.dk")
   
-  for (i in 1:1000) {
-    
-    drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_burned_area") %>% 
-      dplyr::select(name)
-    
-    # Check if the folder is empty
-    if (n_distinct(drive_files) == 0) {
-      Sys.sleep(30)  
-      print(paste0("Attempt ", i, ": Drive still empty"))
-    } else {
-      print("Files found:")
-      print(drive_files)
-      
-      if(n_distinct(drive_files) < 2){
-        Sys.sleep(150) #to make sure all tiles are there
-        drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_burned_area") %>% 
-          dplyr::select(name)
-      }
-      #check again
-      if(n_distinct(drive_files) < 2){
-        Sys.sleep(150) #to make sure all tiles are there
-      }
-      drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_burned_area") %>%  dplyr::select(name)
-      print(drive_files)
-      
-      break  #
-    }
-  }
-  
-  drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_burned_area") %>%
+  drive_files <- drive_ls(path = "rgee_backup_burned_area", pattern = "annual_burned_area") %>%
     dplyr::select(name) %>% 
     unique()
   
   
   for(filename in unique(drive_files$name)){
     
-    path_name = paste0("data/rawData/raw_time_series/fire/burned_area/burned_area_tmp_tiles/", filename)
+    path_name = paste0("data/raw_data/raw_tiles/", filename)
     
     drive_download(file = filename, path = path_name, overwrite = TRUE)
     
@@ -186,30 +160,23 @@ yearly_fires <- function(year) {
   #googledrive::drive_empty_trash()
   
   
-  files <- list.files("data/rawData/raw_time_series/fire/burned_area/burned_area_tmp_tiles/",
-                      full.names = T, 
-                      pattern = "annual_burned_area")
-  
-
-  file_name_merge <- paste0("data/rawData/raw_time_series/fire/burned_area/burned_area_modis_5000m_", year, ".tif")
-  
-  if(n_distinct(files) > 1){
+  files <- list.files("data/raw_data/raw_tiles/", full.names = T, pattern = "annual_burned_area")
   
   raster_list <- lapply(files, rast)
-    
-  global_ba <- do.call(merge, c(raster_list, list(filename = file_name_merge, overwrite = TRUE)))
   
-  }else{
-  global_ba <- rast(files)
+  file_name_merge <- paste0("data/raw_data/time_series/burned_area_modis_5000m_", year, ".tif")
   
-  writeRaster(global_ba, filename = file_name_merge, overwrite = TRUE )
-
+  
+  if(length(raster_list) > 1){
+    global_burned_area<- do.call(merge, c(raster_list,
+                                  list(filename = file_name_merge, overwrite = TRUE)))
+  } else {
+    global_burned_area <- raster_list[[1]]
+    writeRaster(global_burned_area, filename = file_name_merge, overwrite = TRUE)
   }
   
   
-  
-  
-  plot(global_ba, main = paste0(year))
+  plot(global_burned_area, main = paste0(year))
   
   file.remove(files)
   

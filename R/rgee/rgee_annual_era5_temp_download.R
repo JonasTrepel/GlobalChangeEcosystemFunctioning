@@ -1,15 +1,19 @@
-##### Load all rasters 😵‍💫 ##### 
 
 library(rgee)
 library(data.table)
 library(tidyverse)
 library(googledrive)
 
-ee_Initialize(project = "ee-jonastrepel", drive = TRUE)
-drive_auth(email = "jonas.trepel@bio.au.dk")
-
-
-years <- c(1950:2023)
+source("R/functions/monitor_gee_task.R")
+#  
+rgee_env_dir <- c("C:\\Users\\au713983\\.conda\\envs\\rgee_env")
+reticulate::use_python(rgee_env_dir, required=T)
+#ee_clean_user_credentials()
+#ee$Authenticate(auth_mode='notebook')
+ee$Initialize(project = "jonas-trepel")
+drive_auth(email = "jonas.trepel@gmail.com")
+ee$String('Hello from the Earth Engine servers!')$getInfo()
+years <- c(1951:2024)
 
 
 for(year in years){
@@ -25,7 +29,9 @@ for(year in years){
     filterDate(start_date, end_date)$
     mean()$subtract(273.15)
   
-  Map$addLayer(annual_img, vis_params)
+  Map$addLayer(annual_img)
+  
+  # ee_print(annual_img)
   
   world_ext <- ee$Geometry$Rectangle(
     coords = c(-179.99999, -89.9999, 179.99999, 89.9999),
@@ -34,77 +40,64 @@ for(year in years){
     geodesic = FALSE
   )
   
-  Map$addLayer(world_ext)
+  #Map$addLayer(world_ext)
   
   export_task <- ee_image_to_drive(image = annual_img,
                                    region = world_ext,
-                                   folder = "rgee_backup",
-                                   description = "annual_temp",
+                                   folder = "rgee_backup_mat",
+                                   description = "annual_mat",
                                    scale = 11132, 
                                    timePrefix = FALSE, 
                                    maxPixels = 1e13
   )
   export_task$start()
   
-  #monitor task
+  Sys.sleep(300)
+  monitor_gee_task(pattern = "annual_mat", path = "rgee_backup_mat",
+                   last_sleep_time = 600, mail = "jonas.trepel@gmail.com")
   
-  # Monitor the task status
-  task_monitor <- function(task) {
-    status <- task$status()$state
-    print(paste("Initial status:", status))  # Debugging output
-    
-    while (status %in% c("READY", "RUNNING")) {
-      cat("Task is still running...\n")
-      Sys.sleep(30)  # Wait 30 seconds before checking again
-      status <- task$status()$state
-      print(paste("Updated status:", status))  # Debugging output
-    }
-    
-    # Final status update
-    if (status == "COMPLETED") {
-      cat("Task completed successfully!\n")
-    } else {
-      cat("Task failed or cancelled.\n")
-    }
-  }
+  Sys.sleep(600)  
   
-  task_monitor(export_task)
   
-  drive_auth(email = "jonas.trepel@bio.au.dk")
-  drive_files <- drive_ls(path = "rgee_backup", pattern = "annual_temp") %>% dplyr::select(name)
+  drive_files <- drive_ls(path = "rgee_backup_mat", pattern = "annual_mat") %>%
+    dplyr::select(name) %>% 
+    unique()
   
   
   for(filename in unique(drive_files$name)){
     
-    path_name = paste0("data/rawData/raw_time_series/era5/era5_mat/mat_tmp_images/", filename)
+    path_name = paste0("data/raw_data/raw_tiles/", filename)
     
     drive_download(file = filename, path = path_name, overwrite = TRUE)
     
   }
   
   googledrive::drive_rm(unique(drive_files$name))
-  googledrive::drive_empty_trash()
+  #googledrive::drive_empty_trash()
   
   
-  files <- list.files("data/rawData/raw_time_series/era5/era5_mat/mat_tmp_images/", full.names = T)
+  files <- list.files("data/raw_data/raw_tiles/", full.names = T, pattern = "annual_mat")
   
-  r1 <- rast(files[1])
-  # r2 <- rast(files[2])
-  # r3 <- rast(files[3])
-  # r4 <- rast(files[4])
-  # r5 <- rast(files[5])
-  # r6 <- rast(files[6])
-  # r7 <- rast(files[7])
-  # r8 <- rast(files[8])
+  raster_list <- lapply(files, rast)
   
-  file_name_merge <- paste0("data/rawData/raw_time_series/era5/era_5_mat_", year, ".tif")
+  file_name_merge <- paste0("data/raw_data/time_series/era5_mat_", year, ".tif")
   
-  writeRaster(r1, # r2, r3, r4, r5, r6, r7, r8,
-                      filename = file_name_merge, 
-                      overwrite = TRUE)
   
-  plot(r1)
+  if(length(raster_list) > 1){
+    global_mat<- do.call(merge, c(raster_list,
+                                       list(filename = file_name_merge, overwrite = TRUE)))
+  } else {
+    global_mat <- raster_list[[1]]
+    writeRaster(global_mat, filename = file_name_merge, overwrite = TRUE)
+  }
   
-  print(paste0(year, " done"))
+  
+  plot(global_mat, main = paste0(year))
+  
+  file.remove(files)
+  
+  print(paste0(year, " MAT done"))
   
 }
+
+

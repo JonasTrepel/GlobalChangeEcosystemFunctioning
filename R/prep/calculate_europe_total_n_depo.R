@@ -1,10 +1,10 @@
 library(terra)
 library(tidyverse)
 
-years <- c(2001:2023)
+years <- c(2001:2024)
 
-#https://thredds.met.no/thredds/catalog/data/EMEP/2024_Reporting/catalog.html
-files <- data.frame(filepath = list.files("data/rawData/raw_time_series/europe_n_depo/emep_nc/", full.names = T))
+#https://thredds.met.no/thredds/catalog/data/EMEP/2025_Reporting/catalog.html
+(files <- data.frame(filepath = list.files("data/raw_data/emep_nc/", full.names = T)))
 
 for(year in years){
   
@@ -14,10 +14,10 @@ for(year in years){
   
   r <- rast(path)
   
-  if(year %in% c(2022, 2023)){
+  if(year %in% c(2023, 2024)){
     
     
-  r <- subset(r, c(1:59))
+  r <- subset(r, c(1:58))
     
   } 
   
@@ -28,7 +28,7 @@ for(year in years){
   
   plot(total_n_dep, main = paste0(year))
   
-  writeRaster(total_n_dep, paste0("data/rawData/raw_time_series/europe_n_depo/europe_n_depo_", year, ".tif"), overwrite=TRUE)
+  writeRaster(total_n_dep, paste0("data/raw_data/time_series/europe_n_depo_", year, ".tif"), overwrite=TRUE)
   
 }
 

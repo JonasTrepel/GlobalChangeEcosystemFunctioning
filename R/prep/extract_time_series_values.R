@@ -9,117 +9,177 @@ library(tidyverse)
 #read vectors 
 #param = "grid"
 #param = "pas"
+param = "pa_controls"
 #param = "usa"
-param = "europe"
+#param = "europe"
 
 if(param == "grid"){
-  vect <- st_read("data/spatialData/grid_sample.gpkg") 
+  
+  vect <- st_read("data/spatial_data/grids/world_grid.gpkg")
+  
 }else if(param == "pas"){
-  vect <- st_read("data/spatialData/protectedAreas/pa_and_control_grid_1km_with_covs.gpkg")
+  
+  vect <- st_read("data/spatial_data/protected_areas/pa_shapes.gpkg")
+  
+  coords <- vect %>% st_transform(crs = "ESRI:54009") %>%
+    st_centroid() %>% st_coordinates()
+  
+  sf_use_s2(FALSE)
+  coords_lat_lon <- vect %>% st_centroid() %>% st_coordinates()
+  sf_use_s2(TRUE)
+  
+  
+  vect$x_moll <- coords[,1]
+  vect$y_moll <- coords[,2]
+  
+  vect$lon <- coords_lat_lon[,1]
+  vect$lat <- coords_lat_lon[,2]
+  
+}  else if(param == "pa_controls"){
+  
+  vect <- read_sf("data/spatial_data/protected_areas/controls_for_pas.gpkg")
+  
+  coords <- vect %>% st_transform(crs = "ESRI:54009") %>% st_centroid() %>% st_coordinates()
+ 
+  sf_use_s2(FALSE)
+  coords_lat_lon <- vect %>% st_centroid() %>% st_coordinates()
+  sf_use_s2(TRUE)
+  
+  
+  vect$x_moll <- coords[,1]
+  vect$y_moll <- coords[,2]
+  
+  vect$lon <- coords_lat_lon[,1]
+  vect$lat <- coords_lat_lon[,2]
+  
 } else if(param == "usa"){
-  vect <- st_read("data/spatialData/grid_usa.gpkg")
+  
+  vect_raw <- st_read("data/spatial_data/grids/world_grid.gpkg")
+  
+  #outline from https://public.opendatasoft.com/explore/dataset/us-state-boundaries/export/
+  usa_all <- st_read("data/spatial_data/random_shapefiles//usa_boundaries/us-state-boundaries.shp")
+  
+  usa <- usa_all %>% 
+    filter(name %in% c(
+      "Alabama", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+      "Delaware", "Florida", "Georgia", "Idaho", "Illinois", "Indiana", "Iowa", 
+      "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", 
+      "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", 
+      "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", 
+      "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+      "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+      "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+      "West Virginia", "Wisconsin", "Wyoming"
+    )) %>% summarize() %>% st_transform(crs = st_crs(vect_raw))
+  
+  vect <- vect_raw %>% 
+    filter(lengths(st_intersects(., usa)) > 0)
+  
+  #mapview::mapview(grid_usa)
+  
+  write_sf(vect, "data/spatial_data/grids/grid_usa.gpkg", append = FALSE)
+  
+  
+  
 } else if(param == "europe"){
-  vect <- st_read("data/spatialData/grid_europe.gpkg")
+  
+  vect_raw <- st_read("data/spatial_data/grids/world_grid.gpkg")
+  
+  r <- rast("data/raw_data/time_series/europe_n_depo_2020.tif")
+  
+  extent_shp <- as.polygons(ext(r), crs = crs(r)) %>% 
+    st_as_sf() %>% 
+    st_transform(crs = st_crs(vect_raw))
+  
+  set.seed(161)
+  vect <- vect_raw %>% 
+    filter(lengths(st_intersects(., extent_shp)) > 0)
+  
+  write_sf(vect, "data/spatial_data/grids/grid_europe.gpkg", append = FALSE)
+  
 }
 
 
 ## get file paths sorted 
 
-mat_files <- data.table(filepath = list.files("data/rawData/raw_time_series/era5/era5_mat/",
-                                              pattern = ".tif", 
+(mat_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                              pattern = "era5_mat", 
                                               full.names = TRUE), 
-                        filename = list.files("data/rawData/raw_time_series/era5/era5_mat/",
-                                              pattern = ".tif", 
+                        filename = list.files("data/raw_data/time_series/",
+                                              pattern = "era5_mat", 
                                               full.names = FALSE)
                         ) %>% 
   mutate(filename = gsub(".tif", "", filename), 
-         colname = gsub("era_5_", "", filename))
+         colname = gsub("era5_", "", filename)))
 
-max_temp_files <- data.table(filepath = list.files("data/rawData/raw_time_series/era5/era5_max_temp/",
-                                                   pattern = ".tif", 
+(max_temp_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                                   pattern = "era5_max_temp", 
                                                    full.names = TRUE), 
-                             filename = list.files("data/rawData/raw_time_series/era5/era5_max_temp/",
-                                                   pattern = ".tif", 
+                             filename = list.files("data/raw_data/time_series/",
+                                                   pattern = "era5_max_temp", 
                                                    full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename), 
-         colname = gsub("era_5_", "", filename))
+         colname = gsub("era5_", "", filename)))
 
-map_files <- data.table(filepath = list.files("data/rawData/raw_time_series/era5/era5_map/",
-                                              pattern = ".tif", 
+(map_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                              pattern = "prec", 
                                               full.names = TRUE), 
-                        filename = list.files("data/rawData/raw_time_series/era5/era5_map/",
-                                              pattern = ".tif", 
+                        filename = list.files("data/raw_data/time_series/",
+                                              pattern = "prec", 
                                               full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename), 
-         colname = gsub("era_5_", "", filename))
+         colname = gsub("era5_", "", filename)))
 
 
-evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series/evi/",
-                                              pattern = ".tif", 
+(evi_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                              pattern = "evi", 
                                               full.names = TRUE), 
-                        filename = list.files("data/rawData/raw_time_series/evi/",
-                                              pattern = ".tif", 
+                        filename = list.files("data/raw_data/time_series/",
+                                              pattern = "evi", 
                                               full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename), 
-         colname = gsub("evi_modis_median_500m", "median_evi", filename))
+         colname = gsub("modis_", "", filename),
+         colname = gsub("500m_", "", colname)))
 
-burned_area_files <- data.table(filepath = list.files("data/rawData/raw_time_series/fire/burned_area/",
-                                                      pattern = ".tif", 
+(burned_area_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                                      pattern = "burned_area", 
                                                       full.names = TRUE), 
-                                filename = list.files("data/rawData/raw_time_series/fire/burned_area/",
-                                                      pattern = ".tif", 
+                                filename = list.files("data/raw_data/time_series/",
+                                                      pattern = "burned_area", 
                                                       full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("burned_area_modis_median_500m", "burned_area", filename))
+         colname =  gsub("modis_5000m_", "", filename)))
 
 
-sos_files <- data.table(filepath = list.files("data/rawData/raw_time_series/phenology/",
-                                              pattern = "doy_greenup_1", 
-                                              full.names = TRUE), 
-                        filename = list.files("data/rawData/raw_time_series/phenology/",
-                                              pattern = "doy_greenup_1", 
-                                              full.names = FALSE)) %>% 
-  mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("_modis_500m", "", filename))
 
 
-mean_evi_files <- data.table(filepath = list.files("data/rawData/raw_time_series/mean_evi/",
-                                              pattern = "envi_", 
-                                              full.names = TRUE), 
-                        filename = list.files("data/rawData/raw_time_series/mean_evi/",
-                                              pattern = "envi_", 
-                                              full.names = FALSE)) %>% 
-  mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("envi_mean_500m", "mean_evi", filename))
-
-
-n_depo_zhu_files <- data.table(filepath = list.files("data/rawData/raw_time_series/zhu_2025_nitrogen_depo/Global_N_deposition_grid_dataset_2008_2020/",
+(n_depo_zhu_files <- data.table(filepath = list.files("data/raw_data/time_series/",
                                                    pattern = "mean_totN_", 
                                                    full.names = TRUE), 
-                             filename = list.files("data/rawData/raw_time_series/zhu_2025_nitrogen_depo/Global_N_deposition_grid_dataset_2008_2020/",
+                             filename = list.files("data/raw_data/time_series/",
                                                    pattern = "mean_totN_", 
                                                    full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename),
          filename = gsub("_hm", "", filename),
-         colname =  gsub("mean_totN", "n_depo_zhu", filename))
+         colname =  gsub("mean_totN", "n_depo_zhu", filename)))
 
-n_depo_usa_files <- data.table(filepath = list.files("data/rawData/raw_time_series/usa_n_depo/",
-                                                     pattern = "n_tw", 
+(n_depo_usa_files <- data.table(filepath = list.files("data/raw_data/time_series/",
+                                                     pattern = "usa_n_depo", 
                                                      full.names = TRUE), 
-                               filename = list.files("data/rawData/raw_time_series/usa_n_depo/",
-                                                     pattern = "n_tw", 
+                               filename = list.files("data/raw_data/time_series/",
+                                                     pattern = "usa_n_depo", 
                                                      full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("n_tw-", "n_depo_usa_", filename))
+         colname =  gsub("n_tw-", "n_depo_usa_", filename)))
 
-n_depo_europe_files <- data.table(filepath = list.files("data/rawData/raw_time_series/europe_n_depo/",
+(n_depo_europe_files <- data.table(filepath = list.files("data/raw_data/time_series/",
                                                      pattern = "europe_n_depo", 
                                                      full.names = TRUE), 
-                               filename = list.files("data/rawData/raw_time_series/europe_n_depo/",
+                               filename = list.files("data/raw_data/time_series/",
                                                      pattern = "europe_n_depo", 
                                                      full.names = FALSE)) %>% 
   mutate(filename = gsub(".tif", "", filename),
-         colname =  gsub("europe_n_depo_", "n_depo_europe_", filename))
+         colname =  gsub("europe_n_depo_", "n_depo_europe_", filename)))
 
 
 covs <- rbind(mat_files, 
@@ -127,8 +187,6 @@ covs <- rbind(mat_files,
               map_files,
               evi_files,
               burned_area_files,
-              sos_files, 
-              mean_evi_files, 
               n_depo_zhu_files)
 
 if(param == "usa"){
@@ -144,7 +202,7 @@ library(foreach)
 library(tictoc)
 
 # Create and register a cluster
-clust <- makeCluster(56)
+clust <- makeCluster(40)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -172,6 +230,11 @@ dt_covs <- foreach(i = 1:nrow(covs),
                     
                     vect_trans <- st_transform(vect, crs = st_crs(cov_r))
                     
+                    if(param == "pa_controls"){
+                      vect_trans <- vect_trans %>% st_make_valid()
+                      vect_trans <- vect_trans[!st_is_empty(vect_trans) & !is.na(st_dimension(vect_trans)), ]
+                    }
+                    
                     extr <- exactextractr::exact_extract(cov_r, 
                                                          append_cols = c("unique_id"),
                                                          vect_trans, 
@@ -185,6 +248,10 @@ dt_covs <- foreach(i = 1:nrow(covs),
                       unique()
                    
                     return(dt_extr_fin)
+                    
+                    rm(cov_r)
+                    rm(vect_trans) 
+                    gc()
                     
     }
 
@@ -201,31 +268,37 @@ vect_covs <- vect %>%
   mutate(x = NULL, 
          geom = NULL,
          geometry = NULL) %>% 
-  mutate(mean_burned_area = rowMeans(select(., contains("burned_area")), na.rm = TRUE), 
-         max_burned_area = apply(select(., contains("burned_area")), 1, max, na.rm = TRUE),
-         map_era = rowMeans(select(., contains("map_")), na.rm = TRUE), 
-         mat_era = rowMeans(select(., contains("mat_")), na.rm = TRUE), 
-         max_temp_era = apply(select(., contains("max_temp")), 1, max, na.rm = TRUE), 
-         mean_evi = rowMeans(select(., contains("mean_evi")), na.rm = TRUE), 
-         mean_greenup = rowMeans(select(., contains("greenup")), na.rm = TRUE), 
-         mean_n_depo_zhu = rowMeans(select(., contains("n_depo_zhu")), na.rm = TRUE)) 
+  mutate(mean_burned_area = rowMeans(select(., contains("burned_area_")), na.rm = TRUE), 
+         mean_prec = rowMeans(select(., contains("prec_")), na.rm = TRUE), 
+         mean_mat = rowMeans(select(., contains("mat_")), na.rm = TRUE), 
+         mean_max_temp = rowMeans(select(., contains("max_temp_")), na.rm = TRUE), 
+         mean_evi = rowMeans(select(., contains("evi_")), na.rm = TRUE), 
+         mean_n_depo_zhu = rowMeans(select(., contains("n_depo_zhu_")), na.rm = TRUE)) 
 
 
 if(param == "grid"){
-  fwrite(vect_covs, "data/processedData/dataFragments/grid_sample_with_raw_timeseries.csv")
+  
+  fwrite(vect_covs, "data/processed_data/grid_with_timeseries.csv")
+  
 }else if(param == "pas"){
-  fwrite(vect_covs, "data/processedData/dataFragments/pa_and_controls_with_raw_timeseries.csv")
+  
+  fwrite(vect_covs, "data/processed_data/pas_with_timeseries.csv")
+  
+} else if(param == "pa_controls"){
+  
+  fwrite(vect_covs, "data/processed_data/pa_controls_with_timeseries.csv")
+  
 } else if(param == "usa"){
   
   vect_covs <- vect_covs %>% 
-    mutate(mean_n_depo_usa = rowMeans(select(., contains("n_depo_usa")), na.rm = TRUE))
+    mutate(mean_n_depo_usa = rowMeans(select(., contains("usa_n_depo_")), na.rm = TRUE))
   
-  fwrite(vect_covs, "data/processedData/dataFragments/grid_usa_with_raw_timeseries.csv")
+  fwrite(vect_covs, "data/processed_data/grid_usa_with_timeseries.csv")
 } else if(param == "europe"){
   
   vect_covs <- vect_covs %>% 
-    mutate(mean_n_depo_europe = rowMeans(select(., contains("n_depo_europe")), na.rm = TRUE))
+    mutate(mean_n_depo_europe = rowMeans(select(., contains("n_depo_europe_")), na.rm = TRUE))
   
-  fwrite(vect_covs, "data/processedData/dataFragments/grid_europe_with_raw_timeseries.csv")
+  fwrite(vect_covs, "data/processed_data/grid_europe_with_timeseries.csv")
 }
 

@@ -15,49 +15,65 @@ library(mapview)
 source("R/functions/move_polygon.R")
 source("R/functions/resolve_overlaps.R")
 
-dt_pas <- fread("data/processedData/cleanData/pas_with_covs.csv") %>% 
+# just gotta do two data sets. One strict, one not so strict. 
+dt_pas <- fread("data/processed_data/pas_with_covariates.csv") %>% 
   mutate(STATUS_YR = ifelse(STATUS_YR == 0, NA, STATUS_YR), 
-         PaAge = 2023-STATUS_YR) %>% 
-  filter(!land_cover %in% c("Water", "Ocean", "Urban", "Cultivated") & 
-           IUCN_CAT %in% c("Ib", "Ia", "II")) %>% unique()
+         pa_age = 2024-STATUS_YR) %>% 
+  filter(!land_cover %in% c("water", "ocean", "urban", "cultivated")) %>% unique()
 
+dt_strict_pas <- dt_pas %>% 
+  filter(iucn_cat %in% c("Ia", "Ib", "II"))
 
-pa_shapes_raw <- read_sf("data/spatialData/protectedAreas/paShapes.gpkg") %>% 
+dt_loose_pas <- dt_pas %>% 
+  filter(!iucn_cat %in% c("Ia", "Ib", "II"))
+
+strict_pa_shapes_raw <- read_sf("data/spatial_data/protected_areas/pa_shapes.gpkg") %>% 
   dplyr::select(unique_id) %>% 
-  filter(unique_id %in% unique(dt_pas$unique_id)) %>%
+  filter(unique_id %in% unique(dt_strict_pas$unique_id)) %>%
   left_join(dt_pas) %>% 
-  mutate(seed = 1:nrow(.))
+  mutate(seed = 1:nrow(.), 
+         protection_cat_broad = "strict") %>% 
+  st_transform(., crs = "ESRI:54009")
+
+loose_pa_shapes_raw <- read_sf("data/spatial_data/protected_areas/pa_shapes.gpkg") %>% 
+  dplyr::select(unique_id) %>% 
+  filter(unique_id %in% unique(dt_loose_pas$unique_id)) %>%
+  left_join(dt_pas) %>% 
+  mutate(seed = 1:nrow(.), 
+         protection_cat_broad = "loose") %>% 
+  st_transform(., crs = "ESRI:54009")
 
 #remove overlapping polygons (keep only the largest)
-pa_shapes <- resolve_overlaps(polygons = pa_shapes_raw, keep_largest = TRUE)
+pa_shapes_strict <- resolve_overlaps(polygons = strict_pa_shapes_raw, keep_largest = TRUE)
+pa_shapes_loose <- resolve_overlaps(polygons = loose_pa_shapes_raw, keep_largest = TRUE)
 
-write_sf(pa_shapes, "data/spatialData/protectedAreas/strict_pas.gpkg")
+pa_shapes <- rbind(pa_shapes_strict, pa_shapes_loose) %>% 
+  dplyr::select(-IUCN_CAT)
 
-pas_covsT <- dt_pas %>% filter(unique_id %in% unique(pa_shapes$unique_id))
+names(pa_shapes)
 
-fwrite(pas_covsT, "data/processedData/cleanData/strict_pas_with_covs.csv")
-
-#pa_shapes <- st_read("data/spatialData/protectedAreas/strict_pas.gpkg")
-
+write_sf(pa_shapes, "data/spatial_data/protected_areas/pa_shapes_no_overlap.gpkg", append = FALSE)
 
 
-grid_raw <- read_sf("data/spatialData/protectedAreas/gridWithCovs.gpkg") 
+dt_grid <- fread("data/processed_data/grid_with_covariates.csv")
+grid_raw <- read_sf("data/spatial_data/grids/world_grid.gpkg") %>% 
+  left_join(dt_grid %>% dplyr::select(-c(x_moll, y_moll,lon, lat )))
 
 grid_not_prot <- grid_raw %>% 
   mutate(iucn_cat_ord = ifelse(is.na(iucn_cat_ord), "not_protected", iucn_cat_ord)) %>% 
   filter(iucn_cat_ord == "not_protected")
 
+st_crs(grid_raw)==st_crs(pa_shapes) 
+#pas_t <- pa_shapes %>% st_transform(st_crs(grid_not_prot))
 
-pas_t <- pa_shapes %>% st_transform(st_crs(grid_not_prot))
-
-pas_t <- pas_t %>% sample_n(10)
+pas_t <- pa_shapes #%>% sample_n(10)
 
 ############### create cluster ####################
 library(doSNOW)
 library(foreach)
 library(tictoc)
 
-nCores <- parallel::detectCores()
+n_cores <- parallel::detectCores()
 # Create and register a cluster
 clust <- makeCluster(40)
 registerDoSNOW(clust)
@@ -82,15 +98,15 @@ pa_controls_raw <- foreach(i = 1:nrow(pas_t),
   
   pa <- pas_t[i,]
   
-  mat <- pa$MAT
-  map <- pa$MAP
+  mat <- pa$mat
+  map <- pa$map
   biome <- pa$functional_biome
-  cont <- pa$Continent 
+  cont <- pa$continent 
   Seed <- pa$seed 
 
   potential_space <- grid_not_prot %>% 
-    filter(!MAT > (mat+2) & !MAT < (mat-2)) %>% 
-    filter(!MAP > (map+250) & !MAP < (map-250)) %>% 
+    filter(!mat > (mat+2) & !mat < (mat-2)) %>% 
+    filter(!map > (map+250) & !map < (map-250)) %>% 
     filter(functional_biome == biome & continent == cont) 
   
   if(nrow(potential_space) == 0){return(NULL)}
@@ -173,7 +189,7 @@ pa_controls_raw <- foreach(i = 1:nrow(pas_t),
   if(!is.null(new_poly)){
      new_poly <- new_poly %>% 
        mutate(control_for = pas_t[i,]$unique_id, 
-              Continent = cont, 
+              continent = cont, 
               functional_biome = biome, 
               control_within_dist = dist_cat)
      
@@ -187,16 +203,25 @@ toc()
 stopCluster(clust)
 print(paste0("Loop done! ", Sys.time()))
 
-pa_controls <- resolve_overlaps(polygons = pa_controls_raw, keep_largest = TRUE)
+pa_controls_raw_strict <- pa_controls_raw %>% 
+  filter(control_for %in% unique(dt_strict_pas$unique_id))
+
+pa_controls_raw_loose <- pa_controls_raw %>% 
+  filter(control_for %in% unique(dt_loose_pas$unique_id))
+  
+pa_controls_strict <- resolve_overlaps(polygons = pa_controls_raw_strict, keep_largest = TRUE)
+pa_controls_loose <- resolve_overlaps(polygons = pa_controls_raw_loose, keep_largest = TRUE)
+
+pa_controls <- rbind(pa_controls_strict, pa_controls_loose)
 
 print(Sys.time())
 print(paste0("Found controls for ", 
              round((nrow(pa_controls)/nrow(pas_t)*100), 1), "% of the PAs (", nrow(pa_controls), " in total)"))
 
-#""Found controls for 69.7% of the PAs (7278 in total)"
+#"Found controls for 62% of the PAs (30017 in total)"
 table(pa_controls$control_within_dist)
 
 pa_controls_final <- pa_controls %>% 
   mutate(unique_id = paste0(control_for, "_control"))
 
-write_sf(pa_controls_final, "data/spatialData/protectedAreas/controls_for_strict_pas.gpkg")
+write_sf(pa_controls_final, "data/spatial_data/protected_areas/controls_for_pas.gpkg")
