@@ -34,7 +34,7 @@ extr_guide <- CJ(tier = tiers,
                       vars = vars) %>% 
   left_join(dt_bm_subset)
 
-plan(multisession, workers = 40)
+plan(multisession, workers = 50)
 
 for_results_pred <- future_map(
   1:nrow(extr_guide),
@@ -63,7 +63,7 @@ for_results_pred <- future_map(
     
     plot_data <- as.data.table(m_plot) %>%
       mutate(
-        x_unscaled = round(x * sd_x + mean_x, 3),
+        x_unscaled = round(x * sd_x + mean_x, 7),
         var_name = var,
         response_name = response,
         tier = tier,
@@ -99,81 +99,87 @@ plan(sequential)
 print(paste0("subsetp done ", Sys.time()))
 
 dt_pred_comp <- rbindlist(for_results_pred) %>% 
-  mutate(scale = "km2", 
-         response_clean = case_when(
-           response_name == "canopy_height_900m_coef" ~ "Canopy Height Trend",
-           response_name == "tree_cover_1000m_coef" ~ "Tree Cover Trend"
-         ),
-         var_clean = case_when(
-           var_name == "local_density_km2_scaled" ~ "Local Elephant Density",
-           var_name == "months_extreme_drought_scaled" ~ "N Drought Months",
-           var_name == "fire_frequency_scaled" ~ "Fire Frequency",
-           var_name == "mat_coef_scaled" ~ "Temperature Change",
-           var_name == "n_deposition_scaled" ~ "N Deposition",
-         ),
-         tier_clean = case_when(
-           grepl("_lq", tier) ~  "Lower Third", 
-           grepl("_mq", tier) ~  "Middle Third", 
-           grepl("_uq", tier) ~  "Upper Third", 
-           grepl("_unfenced", tier) ~  "Unfenced", 
-           grepl("_fenced", tier) ~  "Fenced"
-         ), 
-         response_tier = paste0(response_clean, "\n", tier_clean))
-unique(dt_pred_comp$response_name)
+  mutate(var_clean = case_when(
+    grepl("nitrogen_depo_scaled", var_name) ~ "Nitrogen Deposition",
+    grepl("mat_coef_scaled", var_name) ~ "MAT Trend",
+    grepl("prec_coef_scaled", var_name) ~ "Precipitation Trend",
+    grepl("max_temp_coef_scaled", var_name) ~ "Max. Temperature Trend",
+    grepl("hmi_change_scaled", var_name) ~ "HMI Change",
+    grepl("fire_frequency_scaled", var_name) ~ "Fire frequency"))
 unique(dt_pred_comp$var_name)
 
-fwrite(dt_pred_comp, "builds/model_outputs/subset_predictions_1000m.csv")
+fwrite(dt_pred_comp, "builds/model_outputs/world_grid_predictions.csv")
 
 ###### Plot - 1 facte_grid for each response, comparing different tiers? 
 
 
-p_q <- dt_pred_comp %>% 
-  filter(tier_clean %in% c("Lower Third", "Middle Third", "Upper Third")) %>% 
+m <- readRDS(unique(extr_guide[extr_guide$tier == "full_dataset_yes", ]$model_path))
+dat <- m$data
+
+c("#FFCE66","#DC9954","#B96C46","#92463A", "#662A3C","#4E305D","#4D5492","#5B80BC","#6CB0DD","#80E6FF")
+
+
+dt_long <- dat %>% pivot_longer(
+  cols = c("nitrogen_depo", "mat_coef",
+           "prec_coef", "hmi_change", 
+           "max_temp_coef", "fire_frequency"), 
+  names_to = "var_name", 
+  values_to = "var_value") %>% 
+  mutate(var_clean = case_when(
+    grepl("nitrogen_depo", var_name) ~ "Nitrogen Deposition",
+    grepl("mat_coef", var_name) ~ "MAT Trend",
+    grepl("prec_coef", var_name) ~ "Precipitation Trend",
+    grepl("max_temp_coef", var_name) ~ "Max. Temperature Trend",
+    grepl("hmi_change", var_name) ~ "HMI Change",
+    grepl("fire_frequency", var_name) ~ "Fire frequency")
+  ) #%>% 
+  #left_join(dt_pred_comp %>% 
+   #           dplyr::select(q05_unscaled, q95_unscaled, var_clean) %>% 
+    #          unique())
+
+p_b <- dt_pred_comp %>% 
+  filter(tier == "full_dataset_yes") %>% 
+  #filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
   ggplot() +
-  # geom_point(data = dt_long, aes(x = var_value, y = response_value), alpha = 0.1, size = 0.1, color = "grey25") +
+  geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
-  geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high, 
-                  fill = response_clean), alpha = 0.25) +
-  geom_line(aes(x = x_unscaled, y = predicted, color = response_clean), linewidth = 1) +
-  facet_grid(rows = vars(response_tier), cols = vars(var_clean), scales = "free") +
-  labs(y = "Response Value", x = "Predictor Value") +
-  scico::scale_color_scico_d(begin = .2, end = .8, palette = "batlow") +
-  scico::scale_fill_scico_d(begin = .2, end = .8, palette = "batlow") +
-  theme_bw() +
-  theme(legend.position = "none", 
-        panel.grid.major.x = element_blank(), 
-        panel.grid.minor.x = element_blank(),
+  geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high),
+              fill = "#662A3C", alpha = 0.25) +
+  geom_line(aes(x = x_unscaled, y = predicted), linewidth = 1, color = "#662A3C") +
+  facet_wrap(~var_clean, scales = "free_x", ncol = 6) +
+  labs(y = "Response Value", x = "Predictor Value", color = "", fill = "", title = "B") +
+  theme_minimal() +
+  theme(legend.position = "bottom", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
         panel.border = element_blank(), 
-        panel.background = element_rect(fill = "snow"), 
-        strip.background = element_rect(fill = "linen", color = "linen"))
+        panel.background = element_rect(fill = "white", color = "white"), 
+        strip.background = element_rect(fill = "snow", color = "snow"))
 
-p_q
+p_b
 
-ggsave(plot = p_q, "builds/plots/supplement/1000m_predictions_different_starting_conditions.png",
-       dpi = 600, height = 10, width = 10)
-
-
-p_f <- dt_pred_comp %>% 
-  filter(!tier_clean %in% c("Lower Third", "Middle Third", "Upper Third")) %>% 
+p_a <- dt_pred_comp %>% 
+  filter(tier == "full_dataset_yes") %>% 
+  #filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
   ggplot() +
-  # geom_point(data = dt_long, aes(x = var_value, y = response_value), alpha = 0.1, size = 0.1, color = "grey25") +
+  # geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
-  geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high, 
-                  fill = response_clean), alpha = 0.25) +
-  geom_line(aes(x = x_unscaled, y = predicted, color = response_clean), linewidth = 1) +
-  facet_grid(rows = vars(response_tier), cols = vars(var_clean), scales = "free") +
-  labs(y = "Response Value", x = "Predictor Value") +
-  scico::scale_color_scico_d(begin = .2, end = .8, palette = "batlow") +
-  scico::scale_fill_scico_d(begin = .2, end = .8, palette = "batlow") +
-  theme_bw() +
-  theme(legend.position = "none", 
-        panel.grid.major.x = element_blank(), 
-        panel.grid.minor.x = element_blank(),
+  geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high),
+              fill = "#662A3C", alpha = 0.25) +
+  geom_line(aes(x = x_unscaled, y = predicted), linewidth = 1, color = "#662A3C") +
+  facet_wrap(~var_clean, scales = "free_x", ncol = 6) +
+  labs(y = "Response Value", x = "Predictor Value", color = "", fill = "", title = "A") +
+  theme_minimal() +
+  theme(legend.position = "bottom", 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
         panel.border = element_blank(), 
-        panel.background = element_rect(fill = "snow"), 
-        strip.background = element_rect(fill = "linen", color = "linen"))
+        panel.background = element_rect(fill = "white", color = "white"), 
+        strip.background = element_rect(fill = "snow", color = "snow"))
 
-p_f
+p_a
 
-ggsave(plot = p_f, "builds/plots/supplement/1000m_predictions_fences.png",
-       dpi = 600, height = 7, width = 10)
+p_q = p_a / p_b
+
+ggsave(plot = p_q, "builds/plots/supplement/world_grid_predictions_with_points.png",
+       dpi = 600, height = 6, width = 12)
