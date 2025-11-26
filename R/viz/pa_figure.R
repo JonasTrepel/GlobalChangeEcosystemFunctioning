@@ -40,10 +40,15 @@ world <- rnaturalearth::ne_countries() %>% filter(!name_en == "Antarctica") %>%
 scico(palette = "managua", n = 10)
 c("#FFCE66","#DC9954","#B96C46","#92463A", "#662A3C","#4E305D","#4D5492","#5B80BC","#6CB0DD","#80E6FF")
 
+
+world_crop <- st_crop(world, st_bbox(sf_pa))
+
+plot(world_crop)
+
 p_pa_shapes <- ggplot() +
-  geom_sf(data = world, fill = "white", color = "grey75") +
+  geom_sf(data = world_crop, fill = "white", color = "grey75") +
   geom_sf(data = sf_pa,
-          aes(color = protection_cat_broad, fill = protection_cat_broad), alpha = 1) +
+                    aes(color = protection_cat_broad, fill = protection_cat_broad), alpha = 1) +
   scale_fill_manual(values = c("#DC9954", "#5B80BC")) +
   scale_color_manual(values = c("#DC9954", "#5B80BC")) +
   theme_void() +
@@ -256,7 +261,7 @@ p_me
 
 p_difference <- (p_ridge | p_est) + plot_layout(widths = c(2, 1))
 ggsave(plot = p_difference, "builds/plots/global_change_difference_pas.png",
-       dpi = 900, height = 9, width = 9)
+       dpi = 900, height = 7, width = 9)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   CONTROL DISTANCE   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#

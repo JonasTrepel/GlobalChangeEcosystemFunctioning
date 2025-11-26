@@ -159,7 +159,7 @@ p_ct_map = dt %>%
 p_ct_map
 
 p_ct_est <- dt_bm %>% 
-  filter(subset_group == "super_biome" & !clean_term == "(Intercept)") %>%
+  filter(subset_group == "climatic_region" & !clean_term == "(Intercept)") %>%
   ggplot() +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_pointrange(aes(y = clean_term, 
@@ -242,7 +242,7 @@ p_sb
 p_sub <- p_ct/p_sb
 p_sub
 ggsave(plot = p_sub, "builds/plots/main_subsets.png", dpi = 900, 
-       height = 9, width = 10)
+       height = 8, width = 10)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#

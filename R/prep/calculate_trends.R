@@ -5,10 +5,10 @@ library(future)
 library(furrr)
 library(tictoc)
 
-param = "pas"
+#param = "pas"
 #param = "pa_controls"
 #param = "grid"
-#param = "usa"
+param = "usa"
 #param = "europe"
 
 if(param == "grid"){
