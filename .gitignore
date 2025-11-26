@@ -2,6 +2,8 @@
 data/
 builds/cv_models/
 builds/models/
+builds/model_outputs/world_grid_predictions.csv
+builds/model_outputs/subset_predictions_1000m.csv
 
 C:/
 ##################
