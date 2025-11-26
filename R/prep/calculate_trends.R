@@ -8,8 +8,8 @@ library(tictoc)
 #param = "pas"
 #param = "pa_controls"
 #param = "grid"
-param = "usa"
-#param = "europe"
+#param = "usa"
+param = "europe"
 
 if(param == "grid"){
   dt <- fread("data/processed_data/grid_with_timeseries.csv") %>% 

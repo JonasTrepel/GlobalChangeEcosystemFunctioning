@@ -125,7 +125,8 @@ p_pred <- dt_pred %>%
 
 p_pred
 
-p_main = (p_evi_map / p_pred) + plot_layout(heights = c(3, 1))
+p_main = (p_evi_map / p_pred) + plot_layout(heights = c(3, 1)) +
+  plot_annotation(tag_levels = 'A')
 ggsave(plot = p_main, "builds/plots/evi_map_and_preds.png", 
        dpi = 900, height = 8, width = 10)
 
@@ -239,7 +240,8 @@ p_ct
 p_sb <- (p_sb_est | p_sb_map) + plot_layout(widths = c(1, 2))
 p_sb
 
-p_sub <- p_ct/p_sb
+p_sub <- p_ct/p_sb  +
+  plot_annotation(tag_levels = 'A')
 p_sub
 ggsave(plot = p_sub, "builds/plots/main_subsets.png", dpi = 900, 
        height = 8, width = 10)

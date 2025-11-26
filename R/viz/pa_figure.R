@@ -85,7 +85,8 @@ p_pred <- dt_pred%>%
 
 p_pred
 
-p_pa <- (p_pa_shapes / p_pred) + plot_layout(heights = c(3, 1))
+p_pa <- (p_pa_shapes / p_pred) + plot_layout(heights = c(3, 1)) +
+  plot_annotation(tag_levels = 'A')
 ggsave(plot = p_pa, "builds/plots/pas_map_n_preds.png", dpi = 900, height = 8, width = 10)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -219,11 +220,11 @@ p_d = dt_res %>%
   scale_fill_manual(values = c("grey50", "black"), guide = "none") +
   scale_colour_manual(values = c("grey50", "black"), guide = "none") +
   annotate("text", x = min(dt_res$cohens_d, na.rm=TRUE) - 0.05,
-           y = 6.5,
+           y = 6.1,
            label = "Higher in\ncontrols",
            hjust = 0, size = 2, color = "grey50", fontface = "italic") +
   annotate("text", x = max(dt_res$cohens_d, na.rm=TRUE) + 0.05,
-           y = 6.5,
+           y = 6.1,
            label = "Higher in\nprotected areas",
            hjust = 1, size = 2, color = "grey50", fontface = "italic") +
   
@@ -259,9 +260,11 @@ p_me
 
 (p_est = (p_d / p_me) + plot_layout(heights = c(2, 1)))
 
-p_difference <- (p_ridge | p_est) + plot_layout(widths = c(2, 1))
+p_difference <- (p_ridge | p_est) + 
+  plot_layout(widths = c(2, 1)) +
+  plot_annotation(tag_levels = 'A')
 ggsave(plot = p_difference, "builds/plots/global_change_difference_pas.png",
-       dpi = 900, height = 7, width = 9)
+       dpi = 900, height = 6, width = 9)
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   CONTROL DISTANCE   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
