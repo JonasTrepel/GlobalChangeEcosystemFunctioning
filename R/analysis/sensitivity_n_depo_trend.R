@@ -484,6 +484,12 @@ unique(dt_res$clean_term)
 summary(dt_res)
 fwrite(dt_res, "builds/model_outputs/sdmtmb_results_n_depo_trend.csv")
 
+############## PLOTS ######################################
+library(data.table)
+library(tidyverse)
+library(sf)
+library(scico)
+dt_res <- fread("builds/model_outputs/sdmtmb_results_n_depo_trend.csv")
 
 p_est <- dt_res %>% 
   mutate(sig = (conf.low > 0 | conf.high < 0)) %>% 
@@ -511,3 +517,77 @@ p_est <- dt_res %>%
 p_est
 ggsave(plot = p_est, "builds/plots/supplement/usa_europe_n_depo_trend_estimates.png", 
        dpi = 900, height = 3, width = 7)
+
+
+m_us = readRDS(unique(dt_res[dt_res$tier == "USA", ]$model_path))
+dt_us <- m_us$data
+
+m_eu = readRDS(unique(dt_res[dt_res$tier == "Europe", ]$model_path))
+dt_eu <- m_eu$data
+
+
+p_us_mean = dt_mod %>% 
+  filter(region == "USA") %>%
+  ggplot() +
+  geom_tile(aes(x = x_moll, y = y_moll, fill = nitrogen_depo)) +
+  scale_fill_scico(palette = "batlow", begin = .1, end = .9) +
+  theme_void() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  labs(fill = "Mean N deposition")
+p_us_mean
+
+
+p_us_trend = dt_mod %>% 
+  filter(region == "USA") %>%
+  mutate(n_depo_coef = case_when(
+    .default = n_depo_coef, 
+    n_depo_coef < quantile(n_depo_coef, .025) ~ quantile(n_depo_coef, .025), 
+    n_depo_coef > quantile(n_depo_coef, .975) ~ quantile(n_depo_coef, .975)
+  )) %>% 
+  ggplot() +
+  geom_tile(aes(x = x_moll, y = y_moll, fill = n_depo_coef)) +
+  scale_fill_scico(palette = "roma",midpoint = 0, direction = -1) +
+  theme_void() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  labs(fill = "N deposition Trend")
+p_us_trend
+
+
+p_eu_mean = dt_mod %>% 
+  filter(region == "Europe") %>%
+  ggplot() +
+  geom_tile(aes(x = x_moll, y = y_moll, fill = nitrogen_depo)) +
+  scale_fill_scico(palette = "batlow", begin = .1, end = .9, 
+                   breaks = scales::pretty_breaks(n = 3)) +
+  theme_void() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  labs(fill = "Mean N deposition")
+p_eu_mean
+
+
+p_eu_trend = dt_mod %>% 
+  filter(region == "Europe") %>%
+  mutate(n_depo_coef = case_when(
+    .default = n_depo_coef, 
+    n_depo_coef < quantile(n_depo_coef, .025) ~ quantile(n_depo_coef, .025), 
+    n_depo_coef > quantile(n_depo_coef, .975) ~ quantile(n_depo_coef, .975)
+  )) %>% 
+  ggplot() +
+  geom_tile(aes(x = x_moll, y = y_moll, fill = n_depo_coef)) +
+  scale_fill_scico(palette = "roma",midpoint = 0, direction = -1) +
+  theme_void() +
+  coord_fixed() +
+  theme(legend.position = "bottom") +
+  labs(fill = "N deposition Trend")
+p_eu_trend
+
+
+library(patchwork)
+
+p_maps = ((p_eu_mean | p_eu_trend) / (p_us_mean | p_us_trend))
+p_all = (p_maps / p_est) + plot_layout(ncol = 1, heights = c(1.25, 1.25, 1)) + plot_annotation(tag_levels = "A")
+ggsave(plot = p_all, "builds/plots/supplement/n_depo_trend_full.png", dpi = 900, 
+       height = 10, width = 10)
