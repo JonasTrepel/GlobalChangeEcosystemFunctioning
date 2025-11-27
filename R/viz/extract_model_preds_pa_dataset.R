@@ -116,7 +116,7 @@ unique(dt_pred_comp$var_name)
 
 fwrite(dt_pred_comp, "builds/model_outputs/pa_dataset_global_change_predictions.csv")
 
-###### Plot - 1 facte_grid for each response, comparing different tiers? 
+###### Plot ------------------
 m <- readRDS(extr_guide[1, ]$model_path)
 dat <- m$data
 

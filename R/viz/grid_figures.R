@@ -76,7 +76,6 @@ for(t in sb_tiers){
 m <- readRDS(unique(dt_bm[dt_bm$tier == "full_dataset_yes", ]$model_path))
 dt_fm <- m$data
 
-quantile(shapes$mean_evi_coef, c(.025, .975), na.rm = T)
 
 q_025_evi <- as.numeric(quantile(dt_fm$evi_coef, c(.025), na.rm = T))
 q_975_evi <- as.numeric(quantile(dt_fm$evi_coef, c(.975), na.rm = T))
@@ -105,6 +104,7 @@ p_pred <- dt_pred %>%
   filter(tier == "full_dataset_yes") %>% 
   filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
   left_join(dt_bm %>% 
+              filter(tier == "full_dataset_yes", !term == "(Intercept)") %>% 
               select(tier, term, sig) %>% 
               unique()) %>% 
   ggplot() +

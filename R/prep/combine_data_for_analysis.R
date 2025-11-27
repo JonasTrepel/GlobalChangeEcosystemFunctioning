@@ -1,7 +1,5 @@
 ### Combine analysis ready datasets
 
-
-library(terra)
 library(sf)
 library(data.table)
 library(tidyverse)
@@ -113,3 +111,48 @@ dt_pa_all %>%
   ggplot() +
   geom_density_ridges(aes(y = protection_cat_broad, x = value)) +
   facet_wrap(~name, scales = "free")
+
+#### Trend datasets ---------
+
+
+dt_grid_covs <- fread("data/processed_data/grid_with_covariates.csv")
+glimpse(dt_grid_covs)
+
+dt_usa_trends <- fread("data/processed_data/grid_usa_with_trends.csv") %>% 
+  rename(n_depo_coef = n_depo_usa_coef, 
+         n_depo_p_value = n_depo_usa_p_value) %>% 
+  dplyr::select(-c(x_moll, y_moll, lon, lat), -contains("usa_n_depo_")) %>% 
+  rename(mean_local_n_depo = mean_n_depo_usa) %>% 
+  mutate(region = "USA")
+
+dt_europe_trends <- fread("data/processed_data/grid_europe_with_trends.csv") %>% 
+  rename(n_depo_coef = n_depo_europe_coef, 
+         n_depo_p_value = n_depo_europe_p_value) %>% 
+  dplyr::select(-c(x_moll, y_moll, lon, lat), -contains("n_depo_europe_")) %>% 
+  rename(mean_local_n_depo = mean_n_depo_europe) %>% 
+  mutate(region = "Europe")
+
+dt_trend_trends = rbind(dt_usa_trends, dt_europe_trends)
+
+names(dt_usa_trends)
+
+dt_n_trend_grid <- dt_trend_trends %>% 
+  left_join(dt_grid_covs) %>% 
+  filter(functional_biome != "") %>% 
+  distinct(lon, lat, .keep_all = TRUE) %>% 
+  mutate(
+    protection_cat_broad = case_when(
+      iucn_cat %in% c("Ia", "Ib", "II") ~ "strict", 
+      iucn_cat %in% c("III", "IV", "V", "VI", "unknown_or_NA") ~ "mixed",
+      iucn_cat == "unprotected" ~ "unprotected"), 
+    super_biome = case_when(
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("T", functional_biome) ~ "cold_tall", 
+      (grepl("C", functional_biome) | grepl("B", functional_biome)) & grepl("S", functional_biome) ~ "cold_short", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("T", functional_biome) ~ "not_cold_tall", 
+      !grepl("C", functional_biome) & !grepl("B", functional_biome) & grepl("S", functional_biome) ~ "not_cold_short"
+    )) %>%
+  unique() %>% 
+  dplyr::select(-c(iucn_cat_ord)) %>% 
+  filter(complete.cases(.))
+
+fwrite(dt_n_trend_grid, "data/processed_data/analysis_ready_n_depo_trend_grid.csv")
