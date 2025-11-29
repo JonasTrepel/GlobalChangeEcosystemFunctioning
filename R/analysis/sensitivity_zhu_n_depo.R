@@ -38,7 +38,7 @@ dt_mod <- dt %>%
 #check corr
 
 dt_corr <- dt_mod %>%
-  dplyr::select(n_depo_zhu_coef, hmi_change, 
+  dplyr::select(mean_n_depo_zhu, hmi_change, 
                 mat_coef, prec_coef, max_temp_coef, 
                 fire_frequency, evi_coef)
 corr <- round(cor(dt_corr), 1)
@@ -118,7 +118,7 @@ mesh_guide = mesh_guide_raw %>%
   unique() %>% 
   left_join(mesh_grid)
 
-plan(multisession, workers = 35)
+plan(multisession, workers = 50)
 options(future.globals.maxSize = 10 * 1024^3)  # 10 GiB
 start_time <- Sys.time()
 
@@ -152,7 +152,7 @@ all_mesh_results <- future_map(
       mutate(row_nr = 1:n()) %>%
       filter(row_nr %in% acceptable_numbers) %>%
       mutate(
-        n_depo_zhu_coef_scaled = as.numeric(scale(n_depo_zhu_coef)),
+        mean_n_depo_zhu_scaled = as.numeric(scale(mean_n_depo_zhu)),
         fire_frequency_scaled = as.numeric(scale(fire_frequency)),
         mat_coef_scaled = as.numeric(scale(mat_coef)),
         prec_coef_scaled = as.numeric(scale(prec_coef)),
@@ -173,7 +173,7 @@ all_mesh_results <- future_map(
     )
     
     formula <- as.formula(
-      paste0(resp, " ~ n_depo_zhu_coef_scaled +
+      paste0(resp, " ~ mean_n_depo_zhu_scaled +
                      mat_coef_scaled +
                      prec_coef_scaled +
                      hmi_change_scaled +
@@ -302,7 +302,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                      mutate(row_nr = 1:n()) %>% 
                                      filter(row_nr %in% acceptable_numbers) %>% 
                                      mutate(
-                                       n_depo_zhu_coef_scaled = as.numeric(scale(n_depo_zhu_coef)),
+                                       mean_n_depo_zhu_scaled = as.numeric(scale(mean_n_depo_zhu)),
                                        fire_frequency_scaled = as.numeric(scale(fire_frequency)),
                                        mat_coef_scaled = as.numeric(scale(mat_coef)),
                                        prec_coef_scaled = as.numeric(scale(prec_coef)),
@@ -327,7 +327,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    int_formula <- as.formula(paste0(resp, "~ 1"))
                                    
-                                   n_dep_formula <- as.formula(paste0(resp, "~ n_depo_zhu_coef_scaled"))
+                                   n_dep_formula <- as.formula(paste0(resp, "~ mean_n_depo_zhu_scaled"))
                                    
                                    no_dep_formula <- as.formula(paste0(resp, "~
                                    prec_coef_scaled +
@@ -338,7 +338,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    
                                    fixed_formula <- as.formula(paste0(resp, " ~
-                                   n_depo_zhu_coef_scaled +
+                                   mean_n_depo_zhu_scaled +
                                    prec_coef_scaled +
                                    mat_coef_scaled +
                                    hmi_change_scaled + 
@@ -346,7 +346,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    fire_frequency_scaled"))
                                    
                                    full_formula <- as.formula(paste0(resp, " ~
-                                   n_depo_zhu_coef_scaled +
+                                   mean_n_depo_zhu_scaled +
                                    prec_coef_scaled +
                                    hmi_change_scaled +
                                    mat_coef_scaled +
@@ -498,7 +498,7 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
   ), 
   clean_term = case_when(
     .default = term,
-    term == "n_depo_zhu_coef_scaled" ~ "N Deposition Trend",
+    term == "mean_n_depo_zhu_scaled" ~ "N Deposition",
     term == "mat_coef_scaled" ~ "MAT Trend",
     term == "prec_coef_scaled" ~ "Precipitation Trend",
     term == "max_temp_coef_scaled" ~ "Max. Temperature Trend",

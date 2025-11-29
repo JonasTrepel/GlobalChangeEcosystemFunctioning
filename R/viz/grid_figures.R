@@ -76,6 +76,11 @@ for(t in sb_tiers){
 m <- readRDS(unique(dt_bm[dt_bm$tier == "full_dataset_yes", ]$model_path))
 dt_fm <- m$data
 
+cor.test(dt_fm$mean_n_depo_zhu, dt_fm$nitrogen_depo)
+cor.test(dt$mean_n_depo_zhu, dt$nitrogen_depo)
+cor.test(dt_fm$prec_coef, dt_fm$mean_prec)
+nrow(dt_fm)
+
 
 q_025_evi <- as.numeric(quantile(dt_fm$evi_coef, c(.025), na.rm = T))
 q_975_evi <- as.numeric(quantile(dt_fm$evi_coef, c(.975), na.rm = T))
