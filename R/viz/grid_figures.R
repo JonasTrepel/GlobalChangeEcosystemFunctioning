@@ -180,7 +180,7 @@ p_ct_est <- dt_bm %>%
                                 "Polar" = "#80E6FF"
   )) + 
   theme_minimal() +
-  labs(y = "") +
+  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
@@ -233,7 +233,7 @@ p_sb_est <- dt_bm %>%
                                 "Not Cold Limited\nTall Vegetation" = "#3B6C55"
   )) + 
   theme_minimal() +
-  labs(y = "") +
+  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())

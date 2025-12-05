@@ -40,3 +40,15 @@ writeRaster(r_2015,"data/spatial_data/covariates/hmi_2015.tif", overwrite = T)
 r_hmi_change <- (r_2015 - r_2000)
 plot(r_hmi_change)
 writeRaster(r_hmi_change,"data/spatial_data/covariates/hmi_change.tif", overwrite = T)
+
+
+
+
+r_2015 = rast("data/spatial_data/covariates/hmi_2015.tif")
+r_2000 = rast("data/spatial_data/covariates/hmi_2000.tif")
+r_change = rast("data/spatial_data/covariates/hmi_change.tif")
+plot(r_2000)
+plot(r_2015)
+plot(r_change)
+
+hist(values(r_change))

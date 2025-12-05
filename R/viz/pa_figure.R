@@ -77,7 +77,7 @@ p_pred <- dt_pred%>%
   theme_minimal() +
   theme(legend.position = "none", 
         axis.text.x = element_text(angle = 22.5),
-        panel.grid.major.x = element_blank(), 
+        panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
         panel.border = element_blank(), 
         panel.background = element_rect(fill = "white", color = "white"), 
@@ -250,10 +250,11 @@ p_me <- dt_bm %>%
                   alpha = 0.9) +
   scale_fill_manual(values = c("#DC9954", "#5B80BC")) +
   scale_color_manual(values = c("#DC9954", "#5B80BC")) +
-  labs(x = "Model estimate (± 95 % CI)", y = "") +
+  labs(x = "Model estimate (± 95 % CI)", y = "", subtitle = "Changes in EVI") +
   theme_minimal() +
   theme(
     legend.position = "none",
+    plot.subtitle = element_text(hjust = 0.5),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank())
 p_me
