@@ -64,7 +64,7 @@ ggsave(plot = p_pa_shapes, "builds/plots/pas_protection_map_shapes.png", dpi = 9
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 p_pred <- dt_pred%>% 
-  filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
+  filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
   #geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
   geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high, 
@@ -175,7 +175,7 @@ for(var in protected_vars){
   d_out <- cohens_d(var, ctrl,
                     data = dt_comp,
                     paired = TRUE,
-                    ci = 0.95)
+                    ci = 0.975)
   
   tmp <- data.frame(
     variable  = general_var,
@@ -219,11 +219,11 @@ p_d = dt_res %>%
                   alpha = 0.75) +
   scale_fill_manual(values = c("grey50", "black"), guide = "none") +
   scale_colour_manual(values = c("grey50", "black"), guide = "none") +
-  annotate("text", x = min(dt_res$cohens_d, na.rm=TRUE) - 0.05,
+  annotate("text", x = min(dt_res$cohens_d, na.rm=TRUE) - 0.025,
            y = 6.1,
            label = "Higher in\ncontrols",
            hjust = 0, size = 2, color = "grey50", fontface = "italic") +
-  annotate("text", x = max(dt_res$cohens_d, na.rm=TRUE) + 0.05,
+  annotate("text", x = max(dt_res$cohens_d, na.rm=TRUE) + 0.025,
            y = 6.1,
            label = "Higher in\nprotected areas",
            hjust = 1, size = 2, color = "grey50", fontface = "italic") +
@@ -250,7 +250,7 @@ p_me <- dt_bm %>%
                   alpha = 0.9) +
   scale_fill_manual(values = c("#DC9954", "#5B80BC")) +
   scale_color_manual(values = c("#DC9954", "#5B80BC")) +
-  labs(x = "Model estimate (± 95 % CI)", y = "", subtitle = "Changes in EVI") +
+  labs(x = "Model estimate (± 975 % CI)", y = "", subtitle = "Changes in EVI") +
   theme_minimal() +
   theme(
     legend.position = "none",

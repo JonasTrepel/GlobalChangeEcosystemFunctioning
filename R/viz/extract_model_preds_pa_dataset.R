@@ -72,10 +72,10 @@ for_results_pred <- future_map(
         dev_explained_full = extr_guide[i,]$dev_explained_full,
         dev_explained_var = extr_guide[i,]$dev_explained_var,
         n = nrow(dat),
-        q95_unscaled = as.numeric(quantile(dat[[var_us]], .95, na.rm = T)), 
-        q05_unscaled = as.numeric(quantile(dat[[var_us]], .05, na.rm = T)), 
-        q95 = as.numeric(quantile(dat[[var]], .95, na.rm = T)), 
-        q05 = as.numeric(quantile(dat[[var]], .05, na.rm = T))
+        q975_unscaled = as.numeric(quantile(dat[[var_us]], .975, na.rm = T)), 
+        q025_unscaled = as.numeric(quantile(dat[[var_us]], .025, na.rm = T)), 
+        q975 = as.numeric(quantile(dat[[var]], .975, na.rm = T)), 
+        q025 = as.numeric(quantile(dat[[var]], .025, na.rm = T))
       )
     
     # Ensure confidence interval columns exist
@@ -135,11 +135,11 @@ dt_long <- dat %>% pivot_longer(
     grepl("fire_frequency", var_name) ~ "Fire frequency")
   ) %>% 
   left_join(dt_pred_comp %>% 
-              dplyr::select(q05_unscaled, q95_unscaled, var_clean) %>% 
+              dplyr::select(q025_unscaled, q975_unscaled, var_clean) %>% 
               unique())
 
 p_b <- dt_pred_comp %>% 
-  #filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
+  #filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
   geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
@@ -161,7 +161,7 @@ p_b <- dt_pred_comp %>%
 p_b
 
 p_a <- dt_pred_comp %>% 
-  #filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
+  #filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
  # geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +

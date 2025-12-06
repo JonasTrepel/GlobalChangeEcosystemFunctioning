@@ -107,7 +107,7 @@ p_evi_map
 
 p_pred <- dt_pred %>% 
   filter(tier == "full_dataset_yes") %>% 
-  filter(x_unscaled > q05_unscaled,  x_unscaled < q95_unscaled) %>% 
+  filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   left_join(dt_bm %>% 
               filter(tier == "full_dataset_yes", !term == "(Intercept)") %>% 
               select(tier, term, sig) %>% 
@@ -180,7 +180,7 @@ p_ct_est <- dt_bm %>%
                                 "Polar" = "#80E6FF"
   )) + 
   theme_minimal() +
-  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
+  labs(y = "", x = "Coefficient estimate (± 975 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
@@ -189,7 +189,7 @@ p_ct_est
 
 
 scico(palette = "batlow", n = 10)
-c("#001959", "#0F3F60", "#1B5961", "#3B6C55", "#687A3D", "#9C892A", "#D29243",
+c("#0019759", "#0F3F60", "#1B5961", "#3B6C55", "#687A3D", "#9C892A", "#D29243",
   "#F8A17B","#FDB6BB", "#F9CCF9")
 
 p_sb_map = dt %>%
@@ -233,7 +233,7 @@ p_sb_est <- dt_bm %>%
                                 "Not Cold Limited\nTall Vegetation" = "#3B6C55"
   )) + 
   theme_minimal() +
-  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
+  labs(y = "", x = "Coefficient estimate (± 975 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
