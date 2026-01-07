@@ -2,8 +2,7 @@
 
 This repository contains all scripts used for the analyses in the manuscript:
 
-> *"Global analysis suggests nitrogen deposition as an underestimated driver of vegetation greening"*
-> Authors: Jonas Trepel, Joe Atkinson, Oliver Baines, Matthew Kerr, Elizabeth le Roux, Hannah Rubin, Jens-Christian Svenning, Robert Buitenwerf  
+*"Global analysis suggests nitrogen deposition as an underestimated driver of vegetation greening"*
 
 ---
 
