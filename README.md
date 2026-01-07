@@ -62,7 +62,3 @@ Since we are not the owner of the data (and files exceed storage capacity of mos
 - R ≥ 4.5.0
 - Google Earth Engine account and `rgee` setup required for remote sensing extraction.
 
-
-## Contact
-
-For questions, please don't hesitate to contact: *jonas.trepel[at]bio.au.dk*
