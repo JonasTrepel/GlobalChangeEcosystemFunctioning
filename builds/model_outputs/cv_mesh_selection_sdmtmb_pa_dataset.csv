@@ -4,38 +4,48 @@ prot_global_change,"nitrogen_depo_scaled:protection_cat_broad +
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
-    (1 | pair_id)",20,1000,mesh_1,11989,TRUE,8,evi_coef,-41658.2036852148,11576,-3.59866997971793,cv_prot_global_change_mesh_1_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_1_pa_dataset.Rds,EVI Trend
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
+    (1 | pair_id)",20,1000,mesh_1,11137,TRUE,8,evi_coef,-36705.3738398718,10236,-3.58590991010862,cv_prot_global_change_mesh_1_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_1_pa_dataset.Rds,EVI Trend
 prot_global_change,"nitrogen_depo_scaled:protection_cat_broad +
     prec_coef_scaled:protection_cat_broad +
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
-    (1 | pair_id)",40,1000,mesh_2,7688,TRUE,8,evi_coef,-41658.9701020674,11576,-3.59873618711709,cv_prot_global_change_mesh_2_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_2_pa_dataset.Rds,EVI Trend
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
+    (1 | pair_id)",40,1000,mesh_2,7154,TRUE,8,evi_coef,-36686.9010092172,10236,-3.58410521778207,cv_prot_global_change_mesh_2_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_2_pa_dataset.Rds,EVI Trend
 prot_global_change,"nitrogen_depo_scaled:protection_cat_broad +
     prec_coef_scaled:protection_cat_broad +
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
-    (1 | pair_id)",80,1000,mesh_3,4373,TRUE,8,evi_coef,-41795.748082832,11576,-3.61055183853076,cv_prot_global_change_mesh_3_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_3_pa_dataset.Rds,EVI Trend
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
+    (1 | pair_id)",80,1000,mesh_3,4113,TRUE,8,evi_coef,-36777.7532159363,10236,-3.59298097068545,cv_prot_global_change_mesh_3_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_3_pa_dataset.Rds,EVI Trend
 prot_global_change,"nitrogen_depo_scaled:protection_cat_broad +
     prec_coef_scaled:protection_cat_broad +
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
-    (1 | pair_id)",160,1000,mesh_4,2322,TRUE,8,evi_coef,-42064.6471692463,11576,-3.63378085428872,cv_prot_global_change_mesh_4_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_4_pa_dataset.Rds,EVI Trend
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
+    (1 | pair_id)",160,1000,mesh_4,2308,TRUE,8,evi_coef,-36933.8428343894,10236,-3.60823005416074,cv_prot_global_change_mesh_4_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_4_pa_dataset.Rds,EVI Trend
 prot_global_change,"nitrogen_depo_scaled:protection_cat_broad +
     prec_coef_scaled:protection_cat_broad +
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
-    (1 | pair_id)",320,1000,mesh_5,1504,TRUE,8,evi_coef,-42388.646861973,11576,-3.66176977038467,cv_prot_global_change_mesh_5_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_5_pa_dataset.Rds,EVI Trend
-prot_importance,0 + protection_cat_broad + (1 | pair_id),20,1000,mesh_1,11989,TRUE,8,evi_coef,-41621.268906083,11576,-3.59547934572244,cv_prot_importance_mesh_1_pa_dataset,builds/cv_models/cv_prot_importance_mesh_1_pa_dataset.Rds,EVI Trend
-prot_importance,0 + protection_cat_broad + (1 | pair_id),40,1000,mesh_2,7688,TRUE,8,evi_coef,-41652.2392386998,11576,-3.59815473727538,cv_prot_importance_mesh_2_pa_dataset,builds/cv_models/cv_prot_importance_mesh_2_pa_dataset.Rds,EVI Trend
-prot_importance,0 + protection_cat_broad + (1 | pair_id),80,1000,mesh_3,4373,TRUE,8,evi_coef,-41770.5835942858,11576,-3.60837798844902,cv_prot_importance_mesh_3_pa_dataset,builds/cv_models/cv_prot_importance_mesh_3_pa_dataset.Rds,EVI Trend
-prot_importance,0 + protection_cat_broad + (1 | pair_id),160,1000,mesh_4,2322,TRUE,8,evi_coef,-41955.8460723188,11576,-3.62438200348296,cv_prot_importance_mesh_4_pa_dataset,builds/cv_models/cv_prot_importance_mesh_4_pa_dataset.Rds,EVI Trend
-prot_importance,0 + protection_cat_broad + (1 | pair_id),320,1000,mesh_5,1504,TRUE,8,evi_coef,-42374.3932843468,11576,-3.66053846616679,cv_prot_importance_mesh_5_pa_dataset,builds/cv_models/cv_prot_importance_mesh_5_pa_dataset.Rds,EVI Trend
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
+    (1 | pair_id)",320,1000,mesh_5,1457,TRUE,8,evi_coef,-37318.741254822,10236,-3.64583247897831,cv_prot_global_change_mesh_5_pa_dataset,builds/cv_models/cv_prot_global_change_mesh_5_pa_dataset.Rds,EVI Trend
+prot_importance,0 + protection_cat_broad + (1 | pair_id),20,1000,mesh_1,11137,TRUE,8,evi_coef,-36695.0234692678,10236,-3.58489873673972,cv_prot_importance_mesh_1_pa_dataset,builds/cv_models/cv_prot_importance_mesh_1_pa_dataset.Rds,EVI Trend
+prot_importance,0 + protection_cat_broad + (1 | pair_id),40,1000,mesh_2,7154,TRUE,8,evi_coef,-36710.5509755036,10236,-3.58641568732939,cv_prot_importance_mesh_2_pa_dataset,builds/cv_models/cv_prot_importance_mesh_2_pa_dataset.Rds,EVI Trend
+prot_importance,0 + protection_cat_broad + (1 | pair_id),80,1000,mesh_3,4113,TRUE,8,evi_coef,-36781.3403322854,10236,-3.59333141190752,cv_prot_importance_mesh_3_pa_dataset,builds/cv_models/cv_prot_importance_mesh_3_pa_dataset.Rds,EVI Trend
+prot_importance,0 + protection_cat_broad + (1 | pair_id),160,1000,mesh_4,2308,TRUE,8,evi_coef,-36936.3703572371,10236,-3.60847697901886,cv_prot_importance_mesh_4_pa_dataset,builds/cv_models/cv_prot_importance_mesh_4_pa_dataset.Rds,EVI Trend
+prot_importance,0 + protection_cat_broad + (1 | pair_id),320,1000,mesh_5,1457,TRUE,8,evi_coef,-37302.1178968349,10236,-3.64420846979629,cv_prot_importance_mesh_5_pa_dataset,builds/cv_models/cv_prot_importance_mesh_5_pa_dataset.Rds,EVI Trend

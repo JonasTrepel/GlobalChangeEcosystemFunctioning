@@ -26,10 +26,19 @@ pas_t <- pas %>% st_transform(crs = "ESRI:54009") %>%
 ## Load world and make Grid
 world <- rnaturalearth::ne_countries() %>%
   dplyr::select(continent, sovereignt, geometry) %>% 
-  st_transform(crs = "ESRI:54009")
+  st_transform(crs = "ESRI:54009") #%>% filter(sovereignt == "Belgium")
+
+
+world_bbox <- world %>%
+  st_bbox() %>%
+  st_as_sfc() %>%
+  st_buffer(dist = -10000) %>% 
+  st_make_valid() %>%
+  st_sf()
+
 
 ## For now 5km
-world_grid <- st_make_grid(world, cellsize = c(5000, 5000)) %>% st_as_sf()
+world_grid <- st_make_grid(world_bbox, cellsize = c(5000, 5000)) %>% st_as_sf()
 
 world_grid2 <- world_grid %>%
   st_join(world) %>%
@@ -37,70 +46,115 @@ world_grid2 <- world_grid %>%
   mutate(unique_id = paste0("grid_", 1:nrow(.)))
 
 # extract land_cover ----------------------------
-# and remove urban and cultivated pixels
-lc_num <-  c(0, 20, 30, 40, 50, 60, 70, 80, 90, 
-            100, 111, 112, 113, 114, 115, 116,
-            121, 122, 123, 124, 125, 126, 
-            200)
-land_cover <- c("unknown", 
-               "shrubs", 
-               "herbacous_veg", 
-               "cultivated",
-               "urban",
-               "bare",
-               "snow_ice",
-               "water",
-               "herbaceous_wetland",
-               "moss_and_lichen",
-               "closed_forest_evergreen_needle",
-               "closed_forest_evergreen_broad",
-               "closed_forest_deciduous_needle",
-               "closed_forest_deciduous_broad",
-               "closed_forest_mixed",
-               "closed_forest_other",
-               "open_forest_evergreen_needle",
-               "open_forest_evergreen_broad",
-               "open_forest_deciduous_needle",
-               "open_forest_deciduous_broad",
-               "open_forest_mixed",
-               "open_forest_other",
-               "ocean")
+# # and remove urban and cultivated pixels
+# lc_num <-  c(0, 20, 30, 40, 50, 60, 70, 80, 90, 
+#             100, 111, 112, 113, 114, 115, 116,
+#             121, 122, 123, 124, 125, 126, 
+#             200)
+# land_cover <- c("unknown", 
+#                "shrubs", 
+#                "herbacous_veg", 
+#                "cultivated",
+#                "urban",
+#                "bare",
+#                "snow_ice",
+#                "water",
+#                "herbaceous_wetland",
+#                "moss_and_lichen",
+#                "closed_forest_evergreen_needle",
+#                "closed_forest_evergreen_broad",
+#                "closed_forest_deciduous_needle",
+#                "closed_forest_deciduous_broad",
+#                "closed_forest_mixed",
+#                "closed_forest_other",
+#                "open_forest_evergreen_needle",
+#                "open_forest_evergreen_broad",
+#                "open_forest_deciduous_needle",
+#                "open_forest_deciduous_broad",
+#                "open_forest_mixed",
+#                "open_forest_other",
+#                "ocean")
+# 
+# lc_leg <- data.frame(land_cover=land_cover, lc_num=lc_num)
+# 
+# lc <- rast("data/spatial_data/covariates/GlobalLandCovercopernicus2019.tif")
+# plot(lc)
+# 
+# grid_trans_lc <- world_grid2 %>%
+#   st_transform(crs(lc))
+# 
+# grid_trans_lc <- grid_trans_lc[!is.na(st_is_valid(grid_trans_lc)), ]
+# 
+# lc_extr <- exactextractr::exact_extract(lc,
+#                                        grid_trans_lc,
+#                                        append_cols = c("unique_id"),
+#                                        fun = "mode") #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
+# 
 
-lc_leg <- data.frame(land_cover=land_cover, lc_num=lc_num)
+ lc <- rast("data/spatial_data/covariates/modis_unsuitable_landcover_500m_2001_2024.tif")
+ plot(lc)
+ 
+# lc_proj <- terra::project(lc, st_crs(world_grid2)$wkt)
+ 
+ grid_trans_lc_raw <- world_grid2 %>%
+   st_transform(crs(lc)) %>%
+   filter(!st_is_empty(.)) %>% 
+   filter(st_is_valid(.)) %>%
+   st_sf()
 
-lc <- rast("data/spatial_data/covariates/GlobalLandCovercopernicus2019.tif")
-plot(lc)
+st_bbox(grid_trans_lc_raw)
+ 
+ 
+ bbox <- st_bbox(
+   c(xmin = -179.9,
+     ymin = -89.9,
+     xmax = 179.9,
+     ymax = 89.9),
+   crs = st_crs(4326)  
+ )
+ 
+ #sf_use_s2(FALSE)
+ grid_trans_lc <- st_crop(grid_trans_lc_raw, bbox)
+ #sf_use_s2(TRUE)
 
-grid_trans_lc <- world_grid2 %>%
-  st_transform(crs(lc))
+ 
+ grid_trans_lc <- grid_trans_lc[!is.na(st_is_valid(grid_trans_lc)), ]
+ grid_trans_lc <- grid_trans_lc[st_is_valid(grid_trans_lc), ]
+ 
+ grid_trans_lc <- grid_trans_lc[
+   st_is_valid(grid_trans_lc) &
+     as.numeric(st_area(grid_trans_lc)) > 0,]
+ 
 
-grid_trans_lc <- grid_trans_lc[!is.na(st_is_valid(grid_trans_lc)), ]
-
-lc_extr <- exactextractr::exact_extract(lc,
-                                       grid_trans_lc,
-                                       append_cols = c("unique_id"),
-                                       fun = "mode") #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
-
-
+ lc_extr <- exactextractr::exact_extract(lc,
+                                        grid_trans_lc,
+                                        append_cols = c("unique_id"),
+                                        fun = "mean") #https://rdrr.io/cran/exactextractr/man/exact_extract.html, see under User-defined summary functions
+ 
 
 lc_extr_fin <- as.data.table(lc_extr) %>% 
-  rename(lc_num = `mode`) %>%
-  left_join(lc_leg, by = "lc_num") %>% 
-  dplyr::select(unique_id, land_cover) 
+  rename(lc_ex = `mean`) %>%
+  #left_join(lc_leg, by = "lc_num") %>% 
+  dplyr::select(unique_id, lc_ex) 
 
 world_grid3 <- world_grid2 %>%
   left_join(lc_extr_fin) %>% 
-  filter(!is.na(land_cover)) %>% 
-  filter(!land_cover %in% c("unknown", "cultivated", "urban",
-                            "ocean", "water", "snow_ice")) %>% 
-  st_sf()
+ # filter(!is.na(land_cover)) %>% 
+ # filter(!land_cover %in% c("unknown", "cultivated", "urban",
+ #                          "ocean", "water", "snow_ice")) %>% 
+  filter(lc_ex < 0.1) %>% 
+  st_sf() 
 
-unique(world_grid3$land_cover)
+#unique(world_grid3$lc_ex)
 
 #get grid coordinates
 coords <- world_grid3 %>% st_centroid() %>% st_coordinates()
-
-coords_lat_lon <- world_grid3 %>% st_transform(4326) %>% st_centroid() %>% st_coordinates()
+sf::sf_use_s2(FALSE)
+coords_lat_lon <- world_grid3 %>%
+  st_centroid() %>%
+  st_transform(4326) %>%
+  st_coordinates()
+sf::sf_use_s2(TRUE)
 
 
 world_grid3$x_moll <- coords[,1]
@@ -112,3 +166,4 @@ world_grid3$lat <- coords_lat_lon[,2]
 glimpse(world_grid3)
 
 st_write(obj = world_grid3, "data/spatial_data/grids/world_grid.gpkg", append = FALSE)
+

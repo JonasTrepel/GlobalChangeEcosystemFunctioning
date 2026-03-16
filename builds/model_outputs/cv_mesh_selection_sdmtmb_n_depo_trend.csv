@@ -1,8 +1,6 @@
 tier,filter_call,cutoff,max_inner_edge,mesh_id,n_vertices,all_converged,p_d_hessian,response,divisor,sum_loglik,n,log_cpo_approx,model_id,model_path,clean_response
-Europe,region == 'Europe',20,1000,mesh_1,32341,TRUE,8,evi_coef,5,-366727.945174661,118829,-3.08618220446744,cv_Europe_mesh_1_n_depo_trend,builds/cv_models/cv_Europe_mesh_1_n_depo_trend.Rds,EVI Trend
-Europe,region == 'Europe',40,1000,mesh_2,10495,TRUE,8,evi_coef,5,-371295.39390331,118829,-3.1246193597801,cv_Europe_mesh_2_n_depo_trend,builds/cv_models/cv_Europe_mesh_2_n_depo_trend.Rds,EVI Trend
-Europe,region == 'Europe',80,1000,mesh_3,3286,TRUE,8,evi_coef,5,-377837.932942922,118829,-3.17967779702701,cv_Europe_mesh_3_n_depo_trend,builds/cv_models/cv_Europe_mesh_3_n_depo_trend.Rds,EVI Trend
-USA,region == 'USA',20,1000,mesh_1,14093,TRUE,8,evi_coef,2,-369975.999987893,118248,-3.12881401789369,cv_USA_mesh_1_n_depo_trend,builds/cv_models/cv_USA_mesh_1_n_depo_trend.Rds,EVI Trend
-USA,region == 'USA',40,1000,mesh_2,4450,TRUE,8,evi_coef,2,-378600.847485199,118248,-3.20175265108246,cv_USA_mesh_2_n_depo_trend,builds/cv_models/cv_USA_mesh_2_n_depo_trend.Rds,EVI Trend
-USA,region == 'USA',160,1000,mesh_4,419,TRUE,8,evi_coef,2,-395837.145567441,118248,-3.34751662241595,cv_USA_mesh_4_n_depo_trend,builds/cv_models/cv_USA_mesh_4_n_depo_trend.Rds,EVI Trend
-USA,region == 'USA',320,1000,mesh_5,145,TRUE,8,evi_coef,2,-400464.77283508,118248,-3.38665155296563,cv_USA_mesh_5_n_depo_trend,builds/cv_models/cv_USA_mesh_5_n_depo_trend.Rds,EVI Trend
+Europe,region == 'Europe',20,1000,mesh_1,28778,TRUE,8,evi_coef,5,-309035.426180974,102368,-3.01886747988603,cv_Europe_mesh_1_n_depo_trend,builds/cv_models/cv_Europe_mesh_1_n_depo_trend.Rds,EVI Trend
+Europe,region == 'Europe',40,1000,mesh_2,9566,TRUE,8,evi_coef,5,-312962.210076721,102368,-3.05722696620742,cv_Europe_mesh_2_n_depo_trend,builds/cv_models/cv_Europe_mesh_2_n_depo_trend.Rds,EVI Trend
+USA,region == 'USA',20,1000,mesh_1,14088,TRUE,8,evi_coef,1,-591864.294025915,194358,-3.04522733319912,cv_USA_mesh_1_n_depo_trend,builds/cv_models/cv_USA_mesh_1_n_depo_trend.Rds,EVI Trend
+USA,region == 'USA',40,1000,mesh_2,4172,TRUE,8,evi_coef,1,-613728.017143508,194358,-3.15771934853985,cv_USA_mesh_2_n_depo_trend,builds/cv_models/cv_USA_mesh_2_n_depo_trend.Rds,EVI Trend
+USA,region == 'USA',80,1000,mesh_3,1256,FALSE,7,evi_coef,1,-631661.430502372,194358,-3.2499893521356,cv_USA_mesh_3_n_depo_trend,builds/cv_models/cv_USA_mesh_3_n_depo_trend.Rds,EVI Trend

@@ -23,9 +23,9 @@ dt <- fread("data/processed_data/analysis_ready_world_grid.csv")
 setDT(dt)
 
 
-# get dataframe with comlete and clean data fro modeling 
+# get dataframe with complete and clean data for modeling 
 
-acceptable_numbers = seq(1, 10000000, 5)
+acceptable_numbers = seq(1, 10000000, 3)
 # mutate(park_row_nr = 1:n()) %>% 
 #  filter(park_row_nr %in% acceptable_numbers) %>% 
 dt_mod <- dt %>% 
@@ -37,9 +37,10 @@ dt_mod <- dt %>%
 #check corr
 
 dt_corr <- dt_mod %>%
-  dplyr::select(nitrogen_depo, hmi_change, 
+  dplyr::select(nitrogen_depo, hmi_change,
                 mat_coef, prec_coef, max_temp_coef, 
-                fire_frequency, evi_coef)
+                fire_frequency, evi_coef, 
+                mean_mat, mean_prec)
 corr <- round(cor(dt_corr), 1)
 ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE, colors = c("#6D9EC1", "white", "#E46726"))
@@ -68,7 +69,7 @@ mesh_guide_raw <- CJ(subset = subsets,
   filter_call = paste0(subset_col, " == '", subset,"'"), 
   divisor = as.numeric(1))
 
-#get divisor to keem sample size on check 
+#get divisor to keep sample size in check 
 
 for(i in 1:nrow(mesh_guide_raw)){
   
@@ -117,7 +118,7 @@ mesh_guide = mesh_guide_raw %>%
   unique() %>% 
   left_join(mesh_grid)
 
-plan(multisession, workers = 40)
+plan(multisession, workers = 30)
 options(future.globals.maxSize = 10 * 1024^3)  # 10 GiB
 start_time <- Sys.time()
 
@@ -155,7 +156,9 @@ all_mesh_results <- future_map(
         mat_coef_scaled = as.numeric(scale(mat_coef)),
         prec_coef_scaled = as.numeric(scale(prec_coef)),
         hmi_change_scaled = as.numeric(scale(hmi_change)),
-        max_temp_coef_scaled = as.numeric(scale(max_temp_coef))
+        max_temp_coef_scaled = as.numeric(scale(max_temp_coef)),
+        mean_mat_scaled = as.numeric(scale(mean_mat)),
+        mean_prec_scaled = as.numeric(scale(mean_prec))
       )
     
     inla_mesh <- fmesher::fm_mesh_2d_inla(
@@ -176,7 +179,9 @@ all_mesh_results <- future_map(
                      prec_coef_scaled +
                      hmi_change_scaled +
                      max_temp_coef_scaled +
-                     fire_frequency_scaled"))
+                     fire_frequency_scaled +
+                     mean_mat_scaled +
+                     mean_prec_scaled"))
     
     fit_cv <- tryCatch({
       sdmTMB::sdmTMB_cv(
@@ -305,7 +310,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        mat_coef_scaled = as.numeric(scale(mat_coef)),
                                        prec_coef_scaled = as.numeric(scale(prec_coef)),
                                        hmi_change_scaled = as.numeric(scale(hmi_change)), 
-                                       max_temp_coef_scaled = as.numeric(scale(max_temp_coef)))
+                                       max_temp_coef_scaled = as.numeric(scale(max_temp_coef)),
+                                       mean_mat_scaled = as.numeric(scale(mean_mat)),
+                                       mean_prec_scaled = as.numeric(scale(mean_prec)))
                                    
                                    co <- as.numeric(dt_best_mesh[i, ]$cutoff)
                                    i_e <- as.numeric(dt_best_mesh[i, ]$max_inner_edge)
@@ -332,7 +339,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    hmi_change_scaled + 
                                    mat_coef_scaled +
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    
                                    fixed_formula <- as.formula(paste0(resp, " ~
@@ -341,7 +350,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    mat_coef_scaled +
                                    hmi_change_scaled + 
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    full_formula <- as.formula(paste0(resp, " ~
                                    nitrogen_depo_scaled +
@@ -349,7 +360,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    hmi_change_scaled +
                                    mat_coef_scaled +
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    #https://github.com/pbs-assess/sdmTMB/issues/466#issuecomment-3119589818
                                    
@@ -432,12 +445,40 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    # proportion deviance explained by covariates but no n dep:
                                    (dev_explained_no_dep <- 1 - deviance(fit_no_dep) / deviance(fit_int))
                                    
-                                   
+                            
                                    san <- sdmTMB::sanity(fit_full)
                                    
                                    tier_ = gsub(" ", "_", tier)
                                    tier_ = gsub("/", "_", tier_)
                                    model_id = paste0("subset_",tier_, "grid")
+                                   
+                                   
+                                   ### Test spatial autocorrelation -----
+                                   library(spdep)
+                                   
+                                   dt_mod_sf <- dt_sub %>% 
+                                     st_as_sf(.,
+                                              coords = c("x_moll", "y_moll"), 
+                                              crs = "ESRI:54009") %>% 
+                                     mutate(resids_full = residuals(fit_full), 
+                                            resids_fixed = residuals(fit_fixed)) %>% 
+                                     filter(!is.infinite(resids_full), !is.infinite(resids_fixed))
+                                   
+                                   coords <- st_coordinates(dt_mod_sf)
+                                   # knn <- knearneigh(coords, k = 250)
+                                   # nb_knn <- knn2nb(knn)
+                                   
+                                   nb_knn <- dnearneigh(coords, 0, 100000)
+                                   
+                                   lw <- nb2listw(nb_knn, style = "W", zero.policy = T)
+                                   
+                                   mi_fixed <- moran.test(dt_mod_sf$resids_fixed, lw)
+                                   mi_fixed
+                                   
+                                   mi_full <- moran.test(dt_mod_sf$resids_full, lw)
+                                   mi_full
+                                   
+                                   
                                    
                                    tmp_tidy <- broom::tidy(fit_full, conf.int = TRUE) %>%
                                      #dplyr::filter(!grepl("(Intercept)", term)) %>%
@@ -454,6 +495,10 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        dev_explained_n_dep = dev_explained_n_dep, 
                                        dev_explained_no_dep = dev_explained_no_dep,
                                        dev_explained_spatial = dev_explained_spatial,
+                                       morans_i_fixed = as.numeric(mi_fixed$estimate[1]), 
+                                       morans_i_full = as.numeric(mi_full$estimate[1]), 
+                                       morans_i_p_val_fixed = as.numeric(mi_fixed$p.value), 
+                                       morans_i_p_val_full = as.numeric(mi_full$p.value),
                                        cutoff = co,
                                        max_inner_edge = i_e,
                                        n_vertices = nrow(mesh$mesh$loc),
@@ -501,7 +546,9 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
     term == "prec_coef_scaled" ~ "Precipitation Trend",
     term == "max_temp_coef_scaled" ~ "Max. Temperature Trend",
     term == "hmi_change_scaled" ~ "HMI Change",
-    term == "fire_frequency_scaled" ~ "Fire frequency"))
+    term == "fire_frequency_scaled" ~ "Fire frequency",
+    term == "mean_mat_scaled" ~ "MAT", 
+    term == "mean_prec_scaled" ~ "MAP"))
 unique(dt_res$clean_term)
 summary(dt_res)
 fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid.csv")

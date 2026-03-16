@@ -12,8 +12,8 @@ library(exactextractr)
 ### define if we want to run it for control or PA 
 
 #param <- "world_grid"
-#param = "pas"
-param = "pa_controls"
+param = "pas"
+#param = "pa_controls"
 
 if(param == "world_grid"){
  
@@ -97,8 +97,9 @@ col_names <- c(
   "fire_frequency", 
   "elevation", ## Elevation
   "nitrogen_depo", ## Nitrogen depo
-  "hmi_2015", #Human modification index
+  "hmi_2020", #Human modification index
   "hmi_change", #Human modification index
+#  "land_cover_exclusion", #if values > 0, it should be excluded
 
   ### PA fract
   "fract_prot", # fraction protected
@@ -124,8 +125,9 @@ cov_paths <- c(
   "data/spatial_data/covariates/n_fires_500m_2001_2024.tif", 
   "data/spatial_data/covariates/Elevation_Global_930m.tif", ## Elevation
   "data/spatial_data/covariates/total_N_dep.tif", ## Nitrogen depo
-  "data/spatial_data/covariates/hmi_2015.tif", #Human modification index
+  "data/spatial_data/covariates/HMv20240801_2020c_AA.tif", #Human modification index
   "data/spatial_data/covariates/hmi_change.tif", #Human modification index
+#  "data/spatial_data/covariates/modis_unsuitable_landcover_500m_2001_2024.tif",
   
   ### PA fract
   "data/spatial_data/covariates/pa_raster_binary.tif", # fraction protected
@@ -174,10 +176,12 @@ dt_covs_list <- future_map(1:nrow(covs),
                              
                              
                              cov_r <- rast(covs[i, ]$cov_path)
-                             
+                           #  cov_r <- terra::project(cov_r, st_crs(vect)$wkt)
+
                              vect_trans <- st_transform(vect, crs = st_crs(cov_r))
-                                                        
-                             if(param == "pa_controls"){
+                            # vect_trans <- vect
+                                                         
+                             if(param %in% c("pa_controls", "world_grid")){
                              vect_trans <- vect_trans %>% st_make_valid()
                              vect_trans <- vect_trans[!st_is_empty(vect_trans) & !is.na(st_dimension(vect_trans)), ]
                              }

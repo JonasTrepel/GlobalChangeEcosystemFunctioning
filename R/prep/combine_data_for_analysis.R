@@ -58,7 +58,7 @@ dt_pas_covs_raw <- fread("data/processed_data/pas_with_covariates.csv") %>%
   left_join(dt_pas_trends)
 
 
-dt_pa_controls_treds <- fread("data/processed_data/pa_controls_with_trends.csv")
+dt_pa_controls_trends <- fread("data/processed_data/pa_controls_with_trends.csv")
 
 dt_pa_controls_covs <- fread("data/processed_data/pa_controls_with_covariates.csv") %>% 
   filter(control_for %in% unique(dt_pas_covs_raw$unique_id)) %>%
@@ -82,7 +82,7 @@ dt_pa_controls_covs <- fread("data/processed_data/pa_controls_with_covariates.cs
          own_pa_id = "na", 
          iucn_cat = "na", 
          protection_cat_broad = "unprotected") %>% 
-  left_join(dt_pa_controls_treds)
+  left_join(dt_pa_controls_trends)
 
 nrow(dt_pa_controls_covs)/10583
 

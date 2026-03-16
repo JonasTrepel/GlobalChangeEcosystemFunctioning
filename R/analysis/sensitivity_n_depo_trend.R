@@ -133,7 +133,9 @@ all_mesh_results <- future_map(
         mat_coef_scaled = as.numeric(scale(mat_coef)),
         prec_coef_scaled = as.numeric(scale(prec_coef)),
         hmi_change_scaled = as.numeric(scale(hmi_change)),
-        max_temp_coef_scaled = as.numeric(scale(max_temp_coef))
+        max_temp_coef_scaled = as.numeric(scale(max_temp_coef)), 
+        mean_prec_scaled = as.numeric(scale(mean_prec)), 
+        mean_mat_scaled = as.numeric(scale(mean_mat))
       )
     
     inla_mesh <- fmesher::fm_mesh_2d_inla(
@@ -154,7 +156,9 @@ all_mesh_results <- future_map(
                      prec_coef_scaled +
                      hmi_change_scaled +
                      max_temp_coef_scaled +
-                     fire_frequency_scaled"))
+                     fire_frequency_scaled +
+                     mean_mat_scaled +
+                     mean_prec_scaled"))
     
     fit_cv <- tryCatch({
       sdmTMB::sdmTMB_cv(
@@ -283,7 +287,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        mat_coef_scaled = as.numeric(scale(mat_coef)),
                                        prec_coef_scaled = as.numeric(scale(prec_coef)),
                                        hmi_change_scaled = as.numeric(scale(hmi_change)), 
-                                       max_temp_coef_scaled = as.numeric(scale(max_temp_coef)))
+                                       max_temp_coef_scaled = as.numeric(scale(max_temp_coef)), 
+                                       mean_mat_scaled = as.numeric(scale(mean_mat)), 
+                                       mean_prec_scaled = as.numeric(scale(mean_prec)))
                                    
                                    co <- as.numeric(dt_best_mesh[i, ]$cutoff)
                                    i_e <- as.numeric(dt_best_mesh[i, ]$max_inner_edge)
@@ -310,7 +316,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    hmi_change_scaled + 
                                    mat_coef_scaled +
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    
                                    fixed_formula <- as.formula(paste0(resp, " ~
@@ -319,7 +327,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    mat_coef_scaled +
                                    hmi_change_scaled + 
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    full_formula <- as.formula(paste0(resp, " ~
                                    n_depo_coef_scaled +
@@ -327,7 +337,9 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    hmi_change_scaled +
                                    mat_coef_scaled +
                                    max_temp_coef_scaled +
-                                   fire_frequency_scaled"))
+                                   fire_frequency_scaled +
+                                   mean_mat_scaled +
+                                   mean_prec_scaled"))
                                    
                                    #https://github.com/pbs-assess/sdmTMB/issues/466#issuecomment-3119589818
                                    
@@ -479,6 +491,8 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
     term == "prec_coef_scaled" ~ "Precipitation Trend",
     term == "max_temp_coef_scaled" ~ "Max. Temperature Trend",
     term == "hmi_change_scaled" ~ "HMI Change",
+    term == "mean_mat_scaled" ~ "MAT", 
+    term == "mean_prec_scaled" ~ "MAP", 
     term == "fire_frequency_scaled" ~ "Fire frequency"))
 unique(dt_res$clean_term)
 summary(dt_res)

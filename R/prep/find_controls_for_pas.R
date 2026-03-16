@@ -75,7 +75,7 @@ library(tictoc)
 
 n_cores <- parallel::detectCores()
 # Create and register a cluster
-clust <- makeCluster(40)
+clust <- makeCluster(20)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -217,11 +217,21 @@ pa_controls <- rbind(pa_controls_strict, pa_controls_loose)
 print(Sys.time())
 print(paste0("Found controls for ", 
              round((nrow(pa_controls)/nrow(pas_t)*100), 1), "% of the PAs (", nrow(pa_controls), " in total)"))
+#"Found controls for 52.6% of the PAs (25461 in total)"
 
-#"Found controls for 62% of the PAs (30017 in total)"
+
+print(paste0("Found controls for ", 
+             round((nrow(pa_controls %>% 
+                           filter(control_for %in% unique(dt_strict_pas$unique_id)))/
+                      nrow(pas_t %>% 
+                             filter(unique_id %in% unique(dt_strict_pas$unique_id)))*100), 1),
+             "% of the PAs (", nrow(pa_controls %>% 
+                                      filter(control_for %in% unique(dt_strict_pas$unique_id))), " in total)"))
+# "Found controls for 50.5% of the PAs (5345 in total)"
 table(pa_controls$control_within_dist)
 
 pa_controls_final <- pa_controls %>% 
   mutate(unique_id = paste0(control_for, "_control"))
 
-write_sf(pa_controls_final, "data/spatial_data/protected_areas/controls_for_pas.gpkg")
+write_sf(pa_controls_final, "data/spatial_data/protected_areas/controls_for_pas.gpkg", append = FALSE)
+n_distinct(pa_controls_final$unique_id)

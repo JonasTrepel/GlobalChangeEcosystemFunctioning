@@ -59,7 +59,9 @@ mesh_guide_raw <- CJ(tier = tiers,
     hmi_change_scaled:protection_cat_broad +
     max_temp_coef_scaled:protection_cat_broad +
     mat_coef_scaled:protection_cat_broad +
-    fire_frequency_scaled:protection_cat_broad +
+    fire_frequency_scaled:protection_cat_broad  +
+    mean_mat_scaled +
+    mean_prec_scaled +
     (1 | pair_id)"))
 
 
@@ -121,6 +123,8 @@ all_mesh_results <- future_map(
         prec_coef_scaled = as.numeric(scale(prec_coef)),
         hmi_change_scaled = as.numeric(scale(hmi_change)),
         max_temp_coef_scaled = as.numeric(scale(max_temp_coef)),
+        mean_mat_scaled = as.numeric(scale(mean_mat)),
+        mean_prec_scaled = as.numeric(scale(mean_prec)),
         pair_id = as.factor(pair_id)
       )
     
@@ -263,6 +267,8 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        prec_coef_scaled = as.numeric(scale(prec_coef)),
                                        hmi_change_scaled = as.numeric(scale(hmi_change)), 
                                        max_temp_coef_scaled = as.numeric(scale(max_temp_coef)), 
+                                       mean_mat_scaled = as.numeric(scale(mean_mat)),
+                                       mean_prec_scaled = as.numeric(scale(mean_prec)),
                                        pair_id = as.factor(pair_id))
                                    
                                    co <- as.numeric(dt_best_mesh[i, ]$cutoff)
@@ -346,6 +352,33 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    model_id = paste0("subset_",tier, "_pa_dataset")
                                    
+                                   ### Test spatial autocorrelation -----
+                                   library(spdep)
+                                   
+                                   dt_mod_sf <- dt_sub %>% 
+                                     st_as_sf(.,
+                                              coords = c("x_moll", "y_moll"), 
+                                              crs = "ESRI:54009") %>% 
+                                     mutate(resids_full = residuals(fit_full), 
+                                            resids_fixed = residuals(fit_fixed)) %>% 
+                                     filter(!is.infinite(resids_full), !is.infinite(resids_fixed))
+                                   
+                                   coords <- st_coordinates(dt_mod_sf)
+                                   # knn <- knearneigh(coords, k = 250)
+                                   # nb_knn <- knn2nb(knn)
+                                   
+                                   nb_knn <- dnearneigh(coords, 0, 100000)
+                                   
+                                   lw <- nb2listw(nb_knn, style = "W", zero.policy = T)
+                                   
+                                   mi_fixed <- moran.test(dt_mod_sf$resids_fixed, lw)
+                                   mi_fixed
+                                   
+                                   mi_full <- moran.test(dt_mod_sf$resids_full, lw)
+                                   mi_full
+                                   
+                                   
+                                   
                                    tmp_tidy <- broom::tidy(fit_full, conf.int = TRUE) %>%
                                      #dplyr::filter(!grepl("(Intercept)", term)) %>%
                                      dplyr::mutate(sig = case_when(
@@ -358,8 +391,11 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        tier = tier,
                                        dev_explained_fixed = dev_explained_fixed, 
                                        dev_explained_full = dev_explained_full,
-                                       dev_explained_re = dev_explained_re, 
                                        dev_explained_spatial = dev_explained_spatial,
+                                       morans_i_fixed = as.numeric(mi_fixed$estimate[1]), 
+                                       morans_i_full = as.numeric(mi_full$estimate[1]), 
+                                       morans_i_p_val_fixed = as.numeric(mi_fixed$p.value), 
+                                       morans_i_p_val_full = as.numeric(mi_full$p.value),
                                        cutoff = co,
                                        max_inner_edge = i_e,
                                        n_vertices = nrow(mesh$mesh$loc),
@@ -379,6 +415,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        
                                      )
                                    
+                                  
                                    saveRDS(fit_full, file = unique(tmp_tidy$model_path))
                                    
                                    print(paste0(i, " done"))
@@ -408,6 +445,8 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
     grepl("max_temp_coef_scaled", term) ~ "Max. Temperature Trend",
     grepl("hmi_change_scaled", term) ~ "HMI Change",
     grepl("fire_frequency_scaled", term) ~ "Fire frequency", 
+    term == "mean_mat_scaled" ~ "MAT", 
+    term == "mean_prec_scaled" ~ "MAP",
     grepl("protection_cat_broadunprotected", term) ~ "Control", 
     grepl("protection_cat_broadstrict", term) ~ "Protected",
     grepl("(Intercept)", term) ~ "Intercept"),

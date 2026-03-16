@@ -9,9 +9,9 @@ library(tidyverse)
 #read vectors 
 #param = "grid"
 #param = "pas"
-param = "pa_controls"
+#param = "pa_controls"
 #param = "usa"
-#param = "europe"
+param = "europe"
 
 if(param == "grid"){
   
@@ -196,13 +196,16 @@ if(param == "europe"){
   covs <- rbind(covs, n_depo_europe_files)
 }
 
+
+
 ############### create cluster ####################
 library(doSNOW)
 library(foreach)
 library(tictoc)
 
+terraOptions(memfrac = 0.5)
 # Create and register a cluster
-clust <- makeCluster(40)
+clust <- makeCluster(15)
 registerDoSNOW(clust)
 
 ## progress bar 
@@ -227,8 +230,10 @@ dt_covs <- foreach(i = 1:nrow(covs),
                     #for(i in 1:nrow(covs)){
                     
                     cov_r <- rast(covs[i, ]$filepath)
+                   # cov_r <- terra::project(cov_r, st_crs(vect)$wkt)
                     
                     vect_trans <- st_transform(vect, crs = st_crs(cov_r))
+                    # vect_trans <- vect
                     
                     if(param == "pa_controls"){
                       vect_trans <- vect_trans %>% st_make_valid()
