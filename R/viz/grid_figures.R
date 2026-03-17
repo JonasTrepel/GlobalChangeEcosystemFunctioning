@@ -118,7 +118,7 @@ p_pred <- dt_pred %>%
               fill = "#662A3C", alpha = 0.25) +
   geom_line(aes(x = x_unscaled, y = predicted, 
                 linetype = sig), linewidth = 1, color = "#662A3C") +
-  facet_wrap(~var_clean, scales = "free_x", ncol = 6) +
+  facet_wrap(~var_clean, scales = "free_x", ncol = 4) +
   labs(y = "Evi Trend", x = "Predictor Value", color = "", fill = "") +
   theme_minimal() +
   theme(legend.position = "none", 
@@ -180,7 +180,7 @@ p_ct_est <- dt_bm %>%
                                 "Polar" = "#80E6FF"
   )) + 
   theme_minimal() +
-  labs(y = "", x = "Coefficient estimate (± 975 % CI)") +
+  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
@@ -233,7 +233,7 @@ p_sb_est <- dt_bm %>%
                                 "Not Cold Limited\nTall Vegetation" = "#3B6C55"
   )) + 
   theme_minimal() +
-  labs(y = "", x = "Coefficient estimate (± 975 % CI)") +
+  labs(y = "", x = "Coefficient estimate (± 95 % CI)") +
   theme(legend.position = "none", 
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
@@ -249,7 +249,7 @@ p_sub <- p_ct/p_sb  +
   plot_annotation(tag_levels = 'A')
 p_sub
 ggsave(plot = p_sub, "builds/plots/main_subsets.png", dpi = 900, 
-       height = 8, width = 10)
+       height = 9, width = 10)
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#

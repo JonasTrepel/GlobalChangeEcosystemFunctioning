@@ -251,7 +251,7 @@ p_me <- dt_bm %>%
                   alpha = 0.9) +
   scale_fill_manual(values = c("#DC9954", "#5B80BC")) +
   scale_color_manual(values = c("#DC9954", "#5B80BC")) +
-  labs(x = "Model estimate (± 975 % CI)", y = "", subtitle = "Changes in EVI") +
+  labs(x = "Model estimate (± 95 % CI)", y = "", subtitle = "Changes in EVI") +
   theme_minimal() +
   theme(
     legend.position = "none",
