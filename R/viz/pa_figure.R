@@ -220,15 +220,15 @@ p_d = dt_res %>%
                   alpha = 0.75) +
   scale_fill_manual(values = c("grey50", "black"), guide = "none") +
   scale_colour_manual(values = c("grey50", "black"), guide = "none") +
-  annotate("text", x = min(dt_res$cohens_d, na.rm=TRUE) - 0.025,
+  annotate("text", x = -0.25, #min(dt_res$cohens_d, na.rm=TRUE) - 0.025,
            y = 6.1,
            label = "Higher in\ncontrols",
            hjust = 0, size = 2, color = "grey50", fontface = "italic") +
-  annotate("text", x = max(dt_res$cohens_d, na.rm=TRUE) + 0.025,
+  annotate("text", x = 0.25, #max(dt_res$cohens_d, na.rm=TRUE) + 0.1,
            y = 6.1,
            label = "Higher in\nprotected areas",
            hjust = 1, size = 2, color = "grey50", fontface = "italic") +
-  
+  xlim(c(-.3, .3)) +
   labs(x = "Cohen's d", y = NULL) +
   theme_minimal() +
   theme(
