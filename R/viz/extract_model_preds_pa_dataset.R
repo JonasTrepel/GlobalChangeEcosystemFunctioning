@@ -28,7 +28,9 @@ vars = c("nitrogen_depo_scaled",
          "hmi_change_scaled",
          "max_temp_coef_scaled", 
          "fire_frequency_scaled", 
-         "mat_coef_scaled")
+         "mat_coef_scaled", 
+         "mean_mat_scaled", 
+         "mean_prec_scaled")
 
 extr_guide <- CJ(tier = tiers, 
                       vars = vars) %>% 
@@ -107,7 +109,9 @@ dt_pred_comp <- rbindlist(for_results_pred) %>%
     grepl("prec_coef_scaled", var_name) ~ "Precipitation Trend",
     grepl("max_temp_coef_scaled", var_name) ~ "Max. Temperature Trend",
     grepl("hmi_change_scaled", var_name) ~ "HMI Change",
-    grepl("fire_frequency_scaled", var_name) ~ "Fire frequency"),
+    grepl("fire_frequency_scaled", var_name) ~ "Fire frequency",
+    grepl("mean_mat_scaled", var_name) ~ "MAT", 
+    grepl("mean_prec_scaled", var_name) ~ "MAP"),
     group_clean = case_when(
            grepl("strict", group) ~  "Protected", 
            grepl("unprotected", group) ~  "Control"))

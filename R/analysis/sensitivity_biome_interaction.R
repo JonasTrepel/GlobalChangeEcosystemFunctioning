@@ -10,7 +10,6 @@ library(groupdata2)
 library(GGally)
 library(glmmTMB)
 
-#### Leave one site out CV
 
 
 #1 HOUSEKEEPING -------------------------------------
@@ -21,12 +20,11 @@ library(glmmTMB)
 dt <- fread("data/processed_data/analysis_ready_world_grid.csv")
 
 setDT(dt)
-names(dt)
 
 
-# get dataframe with comlete and clean data fro modeling 
+# get dataframe with complete and clean data for modeling 
 
-acceptable_numbers = seq(1, 10000000, 5)
+acceptable_numbers = seq(1, 10000000, 3)
 # mutate(park_row_nr = 1:n()) %>% 
 #  filter(park_row_nr %in% acceptable_numbers) %>% 
 dt_mod <- dt %>% 
@@ -38,67 +36,28 @@ dt_mod <- dt %>%
 #check corr
 
 dt_corr <- dt_mod %>%
-  dplyr::select(mean_n_depo_zhu, hmi_change, 
+  dplyr::select(nitrogen_depo, hmi_change,
                 mat_coef, prec_coef, max_temp_coef, 
-                fire_frequency, evi_coef)
+                fire_frequency, evi_coef, 
+                mean_mat, mean_prec)
 corr <- round(cor(dt_corr), 1)
 ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE, colors = c("#6D9EC1", "white", "#E46726"))
 
 
-subsets <- c(unique(dt_mod$functional_biome), 
-             unique(dt_mod$olson_biome), 
-             unique(dt_mod$climatic_region),
-             unique(dt_mod$super_biome), 
-             "yes"
-) 
+tiers <- c("functional_biome", 
+             "climatic_region", 
+             "olson_biome",
+             "super_biome") 
 
 responses <- c("evi_coef")
 
-mesh_guide_raw <- CJ(subset = subsets, 
+mesh_guide_raw <- CJ(tier = tiers, 
                      response = responses) %>% 
-  filter(subset != "") %>% 
-  mutate(subset_col =  case_when(
-    subset %in% unique(dt_mod$functional_biome) ~ "functional_biome", 
-    subset %in% unique(dt_mod$climatic_region) ~ "climatic_region", 
-    subset %in% unique(dt_mod$olson_biome) ~ "olson_biome",
-    subset %in% unique(dt_mod$super_biome) ~ "super_biome",
-    subset %in% c("yes") ~ "full_dataset"
-  ), 
-  tier = paste0(subset_col, "_", subset), 
-  filter_call = paste0(subset_col, " == '", subset,"'"), 
-  divisor = as.numeric(1))
+  filter(tier != "") %>% 
+  mutate(divisor = as.numeric(10))
 
-#get divisor to keem sample size on check 
 
-for(i in 1:nrow(mesh_guide_raw)){
-  
-  (filter_call = mesh_guide_raw[i, ]$filter_call)
-  dt_sub <- dt_mod %>% 
-    dplyr::filter(eval(parse(text = filter_call)))
-  
-  if(nrow(dt_sub) < 10000){
-    
-    (divisor = NA)
-    
-  } else if(nrow(dt_sub) <= 100000) {
-    
-    (divisor = 1)
-    
-  }else if(nrow(dt_sub) > 100000) {
-    
-    x = nrow(dt_sub)/100000
-    (divisor = floor(x))
-    
-  }
-  
-  mesh_guide_raw[i, ]$divisor <- divisor
-  
-}
-
-mesh_guide_raw <- mesh_guide_raw %>% 
-  mutate(divisor = ifelse(subset == "yes", 10, divisor)) %>% 
-  filter(!is.na(divisor))
 
 ### 2 - Choose Mesh ------------------
 #https://www.biorxiv.org/content/10.1101/2022.03.24.485545v4.full.pdf
@@ -118,7 +77,7 @@ mesh_guide = mesh_guide_raw %>%
   unique() %>% 
   left_join(mesh_grid)
 
-plan(multisession, workers = 40)
+plan(multisession, workers = 20)
 options(future.globals.maxSize = 10 * 1024^3)  # 10 GiB
 start_time <- Sys.time()
 
@@ -134,10 +93,8 @@ all_mesh_results <- future_map(
   .options  = furrr_options(seed = TRUE),
   function(j) {
     
-    library(tidyverse)
     tier  <- mesh_guide[j, ]$tier
     resp <- mesh_guide[j, ]$response
-    filter_call <- mesh_guide[j, ]$filter_call
     divisor <- mesh_guide[j, ]$divisor
     cutoff <- mesh_guide[j, ]$cutoff
     max_inner <- mesh_guide[j, ]$max_inner_edge
@@ -148,11 +105,10 @@ all_mesh_results <- future_map(
     acceptable_numbers <- seq(1, 10000000, by = divisor)
     
     dt_sub <- dt_mod %>%
-      filter(eval(parse(text = filter_call))) %>%
       mutate(row_nr = 1:n()) %>%
       filter(row_nr %in% acceptable_numbers) %>%
       mutate(
-        mean_n_depo_zhu_scaled = as.numeric(scale(mean_n_depo_zhu)),
+        nitrogen_depo_scaled = as.numeric(scale(nitrogen_depo)),
         fire_frequency_scaled = as.numeric(scale(fire_frequency)),
         mat_coef_scaled = as.numeric(scale(mat_coef)),
         prec_coef_scaled = as.numeric(scale(prec_coef)),
@@ -161,6 +117,21 @@ all_mesh_results <- future_map(
         mean_mat_scaled = as.numeric(scale(mean_mat)),
         mean_prec_scaled = as.numeric(scale(mean_prec))
       )
+    
+    
+    if(tier == "functional_biome"){
+      dt_sub <- dt_sub %>% 
+        mutate(biome_col = functional_biome)
+    }else if(tier == "climatic_region"){
+      dt_sub <- dt_sub %>% 
+        mutate(biome_col = climatic_region)
+    }else if(tier == "olson_biome"){
+      dt_sub <- dt_sub %>% 
+        mutate(biome_col = olson_biome)
+    }else if(tier == "super_biome"){
+      dt_sub <- dt_sub %>% 
+        mutate(biome_col = super_biome)
+    }
     
     inla_mesh <- fmesher::fm_mesh_2d_inla(
       loc = cbind(dt_sub$x_moll_km, dt_sub$y_moll_km),
@@ -175,14 +146,14 @@ all_mesh_results <- future_map(
     )
     
     formula <- as.formula(
-      paste0(resp, " ~ mean_n_depo_zhu_scaled +
-                     mat_coef_scaled +
-                     prec_coef_scaled +
-                     hmi_change_scaled +
-                     max_temp_coef_scaled +
-                     fire_frequency_scaled +
-                     mean_mat_scaled +
-                     mean_prec_scaled"))
+      paste0(resp, " ~ 0 + biome_col*nitrogen_depo_scaled +
+                     biome_col*mat_coef_scaled +
+                     biome_col*prec_coef_scaled +
+                     biome_col*hmi_change_scaled +
+                     biome_col*max_temp_coef_scaled +
+                     biome_col*fire_frequency_scaled +
+                     biome_col*mean_mat_scaled +
+                     biome_col*mean_prec_scaled"))
     
     fit_cv <- tryCatch({
       sdmTMB::sdmTMB_cv(
@@ -191,6 +162,7 @@ all_mesh_results <- future_map(
         mesh = mesh,
         # family = sdmTMB::student(),
         spatial = "on",
+        k_folds = 5,
         reml = T
       )
     }, error = function(e) {
@@ -203,7 +175,7 @@ all_mesh_results <- future_map(
     tier_ = gsub(" ", "_", tier)
     tier_ = gsub("/", "_", tier_)
     
-    cv_model_id <- paste0("cv_", tier_, "_", mesh_id, "_grid_zhu_sensitivity")
+    cv_model_id <- paste0("cv_", tier_, "_", mesh_id, "_biome_interaction_sensitivity")
     
     result_row <- data.frame(
       tier = tier,
@@ -249,31 +221,12 @@ dt_mesh_res_fin <- dt_mesh_res  %>%
     response == "evi_coef" ~ "EVI Trend"))
 summary(dt_mesh_res_fin)
 
-fwrite(dt_mesh_res_fin, "builds/model_outputs/cv_mesh_selection_sdmtmb_grid_zhu_sensitivity.csv")
+fwrite(dt_mesh_res_fin, "builds/model_outputs/cv_mesh_selection_sdmtmb_biome_interaction_sensitivity.csv")
 n_distinct(dt_mesh_res_fin$model_id)
-
-
-p_loglik <- dt_mesh_res_fin %>% 
-  filter(tier == "full_dataset_yes") %>% 
-  ggplot() +
-  geom_point(aes(x = cutoff, y = sum_loglik), size = 2, alpha = 0.8) +
-  scale_color_viridis_c(option = "B", direction = - 1, begin = 0.2, end = 0.8) +
-  labs(y = "Log Likelihood (sum)", x = "Cutoff (km)", color = "Max\nInner\nEdge\n(km)") +
-  # facet_wrap(~clean_response, scales = "free") +
-  theme(legend.position = "none", 
-        plot.title = element_text(hjust = .5),
-        panel.grid.major.x = element_blank(), 
-        panel.grid.minor.x = element_blank(),
-        panel.border = element_blank(), 
-        panel.background = element_rect(fill = "snow"), 
-        strip.background = element_rect(fill = "linen", color = "linen"))
-p_loglik
-ggsave(plot = p_loglik, "builds/plots/supplement/sum_loglik_different_meshs_grid_zhu_sensitivity.png", dpi = 600, height = 4, width = 8)
-
 
 ##### run models --------------------------------------------
 
-dt_mesh_res_fin <- fread("builds/model_outputs/cv_mesh_selection_sdmtmb_grid_zhu_sensitivity.csv")
+dt_mesh_res_fin <- fread("builds/model_outputs/cv_mesh_selection_sdmtmb_biome_interaction_sensitivity.csv")
 
 dt_best_mesh <- dt_mesh_res_fin %>% 
   group_by(tier) %>% 
@@ -284,7 +237,7 @@ dt_best_mesh <- dt_mesh_res_fin %>%
 
 ### - Use best  Mesh ------------------
 
-plan(multisession, workers = 42)
+plan(multisession, workers = 4)
 options(future.globals.maxSize = 10 * 1024^3)  # 10 GiB
 start_time <- Sys.time()
 
@@ -295,18 +248,16 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    tier = dt_best_mesh[i,]$tier
                                    resp = dt_best_mesh[i,]$response 
-                                   filter_call = dt_best_mesh[i,]$filter_call
                                    divisor = dt_best_mesh[i, ]$divisor
                                    
                                    
                                    acceptable_numbers = seq(1, 10000000, divisor)
                                    
                                    dt_sub <- dt_mod %>% 
-                                     dplyr::filter(eval(parse(text = filter_call))) %>% 
                                      mutate(row_nr = 1:n()) %>% 
                                      filter(row_nr %in% acceptable_numbers) %>% 
                                      mutate(
-                                       mean_n_depo_zhu_scaled = as.numeric(scale(mean_n_depo_zhu)),
+                                       nitrogen_depo_scaled = as.numeric(scale(nitrogen_depo)),
                                        fire_frequency_scaled = as.numeric(scale(fire_frequency)),
                                        mat_coef_scaled = as.numeric(scale(mat_coef)),
                                        prec_coef_scaled = as.numeric(scale(prec_coef)),
@@ -314,6 +265,21 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        max_temp_coef_scaled = as.numeric(scale(max_temp_coef)),
                                        mean_mat_scaled = as.numeric(scale(mean_mat)),
                                        mean_prec_scaled = as.numeric(scale(mean_prec)))
+                                   
+                                   if(tier == "functional_biome"){
+                                     dt_sub <- dt_sub %>% 
+                                       mutate(biome_col = functional_biome)
+                                   }else if(tier == "climatic_region"){
+                                     dt_sub <- dt_sub %>% 
+                                       mutate(biome_col = climatic_region)
+                                   }else if(tier == "olson_biome"){
+                                     dt_sub <- dt_sub %>% 
+                                       mutate(biome_col = olson_biome)
+                                   }else if(tier == "super_biome"){
+                                     dt_sub <- dt_sub %>% 
+                                       mutate(biome_col = super_biome)
+                                   }
+                                   
                                    
                                    co <- as.numeric(dt_best_mesh[i, ]$cutoff)
                                    i_e <- as.numeric(dt_best_mesh[i, ]$max_inner_edge)
@@ -333,37 +299,37 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    int_formula <- as.formula(paste0(resp, "~ 1"))
                                    
-                                   n_dep_formula <- as.formula(paste0(resp, "~ mean_n_depo_zhu_scaled"))
+                                   n_dep_formula <- as.formula(paste0(resp, "~ 0 + biome_col*nitrogen_depo_scaled"))
                                    
                                    no_dep_formula <- as.formula(paste0(resp, "~
-                                   prec_coef_scaled +
-                                   hmi_change_scaled + 
-                                   mat_coef_scaled +
-                                   max_temp_coef_scaled +
-                                   fire_frequency_scaled +
-                                   mean_mat_scaled +
-                                   mean_prec_scaled"))
+                                   0 + biome_col*prec_coef_scaled +
+                                   biome_col*hmi_change_scaled + 
+                                   biome_col*mat_coef_scaled +
+                                   biome_col*max_temp_coef_scaled +
+                                   biome_col*fire_frequency_scaled +
+                                   biome_col*mean_mat_scaled +
+                                   biome_col*mean_prec_scaled"))
                                    
                                    
                                    fixed_formula <- as.formula(paste0(resp, " ~
-                                   mean_n_depo_zhu_scaled +
-                                   prec_coef_scaled +
-                                   mat_coef_scaled +
-                                   hmi_change_scaled + 
-                                   max_temp_coef_scaled +
-                                   fire_frequency_scaled +
-                                   mean_mat_scaled +
-                                   mean_prec_scaled"))
+                                   0 + biome_col*nitrogen_depo_scaled +
+                                   biome_col*prec_coef_scaled +
+                                   biome_col*mat_coef_scaled +
+                                   biome_col*hmi_change_scaled + 
+                                   biome_col*max_temp_coef_scaled +
+                                   biome_col*fire_frequency_scaled +
+                                   biome_col*mean_mat_scaled +
+                                   biome_col*mean_prec_scaled"))
                                    
                                    full_formula <- as.formula(paste0(resp, " ~
-                                   mean_n_depo_zhu_scaled +
-                                   prec_coef_scaled +
-                                   hmi_change_scaled +
-                                   mat_coef_scaled +
-                                   max_temp_coef_scaled +
-                                   fire_frequency_scaled +
-                                   mean_mat_scaled +
-                                   mean_prec_scaled"))
+                                   0 + biome_col*nitrogen_depo_scaled +
+                                   biome_col*prec_coef_scaled +
+                                   biome_col*hmi_change_scaled +
+                                   biome_col*mat_coef_scaled +
+                                   biome_col*max_temp_coef_scaled +
+                                   biome_col*fire_frequency_scaled +
+                                   biome_col*mean_mat_scaled +
+                                   biome_col*mean_prec_scaled"))
                                    
                                    #https://github.com/pbs-assess/sdmTMB/issues/466#issuecomment-3119589818
                                    
@@ -451,7 +417,36 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    tier_ = gsub(" ", "_", tier)
                                    tier_ = gsub("/", "_", tier_)
-                                   model_id = paste0("subset_",tier_, "grid_zhu_sensitivity")
+                                   
+                                   model_id = paste0("subset_",tier_, "biome_interaction_sensitivity")
+                                   
+                                   
+                                   ### Test spatial autocorrelation -----
+                                   library(spdep)
+                                   
+                                   dt_mod_sf <- dt_sub %>% 
+                                     st_as_sf(.,
+                                              coords = c("x_moll", "y_moll"), 
+                                              crs = "ESRI:54009") %>% 
+                                     mutate(resids_full = residuals(fit_full), 
+                                            resids_fixed = residuals(fit_fixed)) %>% 
+                                     filter(!is.infinite(resids_full), !is.infinite(resids_fixed))
+                                   
+                                   coords <- st_coordinates(dt_mod_sf)
+                                   # knn <- knearneigh(coords, k = 250)
+                                   # nb_knn <- knn2nb(knn)
+                                   
+                                   nb_knn <- dnearneigh(coords, 0, 100000)
+                                   
+                                   lw <- nb2listw(nb_knn, style = "W", zero.policy = T)
+                                   
+                                   mi_fixed <- moran.test(dt_mod_sf$resids_fixed, lw)
+                                   mi_fixed
+                                   
+                                   mi_full <- moran.test(dt_mod_sf$resids_full, lw)
+                                   mi_full
+                                   
+                                   
                                    
                                    tmp_tidy <- broom::tidy(fit_full, conf.int = TRUE) %>%
                                      #dplyr::filter(!grepl("(Intercept)", term)) %>%
@@ -468,6 +463,10 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                        dev_explained_n_dep = dev_explained_n_dep, 
                                        dev_explained_no_dep = dev_explained_no_dep,
                                        dev_explained_spatial = dev_explained_spatial,
+                                       morans_i_fixed = as.numeric(mi_fixed$estimate[1]), 
+                                       morans_i_full = as.numeric(mi_full$estimate[1]), 
+                                       morans_i_p_val_fixed = as.numeric(mi_fixed$p.value), 
+                                       morans_i_p_val_full = as.numeric(mi_full$p.value),
                                        cutoff = co,
                                        max_inner_edge = i_e,
                                        n_vertices = nrow(mesh$mesh$loc),
@@ -501,6 +500,9 @@ plan(sequential)
 
 print(paste0("Started loop at: ", start_time, " and finished at: ", Sys.time()))
 
+
+#####################################################################################
+
 ## bind results 
 unique(responses)
 dt_res <- rbindlist(best_mesh_res_list) %>% 
@@ -510,15 +512,17 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
   ), 
   clean_term = case_when(
     .default = term,
-    term == "mean_n_depo_zhu_scaled" ~ "N Deposition",
+    term == "nitrogen_depo_scaled" ~ "Nitrogen Deposition",
     term == "mat_coef_scaled" ~ "MAT Trend",
     term == "prec_coef_scaled" ~ "Precipitation Trend",
     term == "max_temp_coef_scaled" ~ "Max. Temperature Trend",
     term == "hmi_change_scaled" ~ "HMI Change",
-    term == "fire_frequency_scaled" ~ "Fire frequency"))
+    term == "fire_frequency_scaled" ~ "Fire frequency",
+    term == "mean_mat_scaled" ~ "MAT", 
+    term == "mean_prec_scaled" ~ "MAP"))
 unique(dt_res$clean_term)
 summary(dt_res)
-fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid_zhu_sensitivity.csv")
+fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid.csv")
 
 
 dt_res %>% 

@@ -28,7 +28,9 @@ vars = c("nitrogen_depo_scaled",
          "hmi_change_scaled",
          "max_temp_coef_scaled", 
          "fire_frequency_scaled", 
-         "mat_coef_scaled")
+         "mat_coef_scaled", 
+         "mean_mat_scaled", 
+         "mean_prec_scaled")
 
 extr_guide <- CJ(tier = tiers, 
                       vars = vars) %>% 
@@ -105,7 +107,9 @@ dt_pred_comp <- rbindlist(for_results_pred) %>%
     grepl("prec_coef_scaled", var_name) ~ "Precipitation Trend",
     grepl("max_temp_coef_scaled", var_name) ~ "Max. Temperature Trend",
     grepl("hmi_change_scaled", var_name) ~ "HMI Change",
-    grepl("fire_frequency_scaled", var_name) ~ "Fire frequency"))
+    grepl("fire_frequency_scaled", var_name) ~ "Fire frequency", 
+    grepl("mean_prec_scaled", var_name) ~ "MAP", 
+    grepl("mean_mat_scaled", var_name) ~ "MAT"))
 unique(dt_pred_comp$var_name)
 
 fwrite(dt_pred_comp, "builds/model_outputs/world_grid_predictions.csv")
@@ -122,7 +126,8 @@ c("#FFCE66","#DC99754","#B96C46","#92463A", "#662A3C","#4E3025D","#4D5492","#5B8
 dt_long <- dat %>% pivot_longer(
   cols = c("nitrogen_depo", "mat_coef",
            "prec_coef", "hmi_change", 
-           "max_temp_coef", "fire_frequency"), 
+           "max_temp_coef", "fire_frequency", 
+           "mean_prec", "mean_mat"), 
   names_to = "var_name", 
   values_to = "var_value") %>% 
   mutate(var_clean = case_when(
@@ -131,7 +136,9 @@ dt_long <- dat %>% pivot_longer(
     grepl("prec_coef", var_name) ~ "Precipitation Trend",
     grepl("max_temp_coef", var_name) ~ "Max. Temperature Trend",
     grepl("hmi_change", var_name) ~ "HMI Change",
-    grepl("fire_frequency", var_name) ~ "Fire frequency")
+    grepl("fire_frequency", var_name) ~ "Fire frequency",
+    grepl("mean_prec_scaled", var_name) ~ "MAP", 
+    grepl("mean_mat_scaled", var_name) ~ "MAT")
   ) #%>% 
   #left_join(dt_pred_comp %>% 
    #           dplyr::select(q025_unscaled, q975_unscaled, var_clean) %>% 
@@ -146,7 +153,7 @@ p_b <- dt_pred_comp %>%
   geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high),
               fill = "#662A3C", alpha = 0.25) +
   geom_line(aes(x = x_unscaled, y = predicted), linewidth = 1, color = "#662A3C") +
-  facet_wrap(~var_clean, scales = "free_x", ncol = 6) +
+  facet_wrap(~var_clean, scales = "free_x", ncol = 4) +
   labs(y = "Response Value", x = "Predictor Value", color = "", fill = "", title = "B") +
   theme_minimal() +
   theme(legend.position = "bottom", 
@@ -167,7 +174,7 @@ p_a <- dt_pred_comp %>%
   geom_ribbon(aes(x = x_unscaled, ymin = conf.low, ymax = conf.high),
               fill = "#662A3C", alpha = 0.25) +
   geom_line(aes(x = x_unscaled, y = predicted), linewidth = 1, color = "#662A3C") +
-  facet_wrap(~var_clean, scales = "free_x", ncol = 6) +
+  facet_wrap(~var_clean, scales = "free_x", ncol = 4) +
   labs(y = "Response Value", x = "Predictor Value", color = "", fill = "", title = "A") +
   theme_minimal() +
   theme(legend.position = "bottom", 
@@ -182,4 +189,4 @@ p_a
 p_q = p_a / p_b
 
 ggsave(plot = p_q, "builds/plots/supplement/world_grid_predictions_with_points.png",
-       dpi = 600, height = 6, width = 12)
+       dpi = 600, height = 8, width = 12)
