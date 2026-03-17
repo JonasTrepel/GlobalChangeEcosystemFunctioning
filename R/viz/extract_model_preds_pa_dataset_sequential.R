@@ -13,7 +13,7 @@ library(ggeffects)
 #### subsets ----------
 
 dt_bm_subset <- fread("builds/model_outputs/sdmtmb_results_world_grid.csv") %>% 
-dplyr::select(tier, model_id, model_path, response, dev_explained_full, dev_explained_fixed) %>% 
+  dplyr::select(tier, model_id, model_path, response, dev_explained_full, dev_explained_fixed) %>% 
   unique()
 
 
@@ -33,19 +33,16 @@ vars = c("nitrogen_depo_scaled",
          "mean_prec_scaled")
 
 extr_guide <- CJ(tier = tiers, 
-                      vars = vars) %>% 
+                 vars = vars) %>% 
   left_join(dt_bm_subset)
 
 extr_guide <- extr_guide %>% 
   filter(tier == "full_dataset_yes")
 
-plan(multisession, workers = 8)
 
-for_results_pred <- future_map(
-  1:nrow(extr_guide),
-  .progress = TRUE,
-  .options = furrr_options(seed = TRUE),
-  function(i) {
+for_results_pred <- data.frame()
+
+for(i in 1:nrow(extr_guide)){
     
     response <- extr_guide[i, ]$response
     tier <- unique(extr_guide[i, ]$tier)
@@ -87,19 +84,16 @@ for_results_pred <- future_map(
                std.error = NA)
     }
     
+    for_results_pred <- rbind(for_results_pred, plot_data)
     
-    #print(paste0(response, " done at: ", Sys.time()))
+    print(i)
+    print(paste0(var, " done at: ", Sys.time()))
     
     # Clean up that mess
     rm(m)
-    gc()
-    
-    return(plot_data)
   }
-)
 
-plan(sequential)
-print(paste0("subsetp done ", Sys.time()))
+print(paste0("subset done ", Sys.time()))
 
 dt_pred_comp <- rbindlist(for_results_pred) %>% 
   mutate(var_clean = case_when(
@@ -141,9 +135,9 @@ dt_long <- dat %>% pivot_longer(
     grepl("mean_prec_scaled", var_name) ~ "MAP", 
     grepl("mean_mat_scaled", var_name) ~ "MAT")
   ) #%>% 
-  #left_join(dt_pred_comp %>% 
-   #           dplyr::select(q025_unscaled, q975_unscaled, var_clean) %>% 
-    #          unique())
+#left_join(dt_pred_comp %>% 
+#           dplyr::select(q025_unscaled, q975_unscaled, var_clean) %>% 
+#          unique())
 
 p_b <- dt_pred_comp %>% 
   filter(tier == "full_dataset_yes") %>% 

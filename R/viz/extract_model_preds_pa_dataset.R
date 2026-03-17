@@ -143,6 +143,7 @@ dt_long <- dat %>% pivot_longer(
               unique())
 
 p_b <- dt_pred_comp %>% 
+  filter(!var_clean %in% c("MAP", "MAT")) %>% 
   #filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
   geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
@@ -165,6 +166,7 @@ p_b <- dt_pred_comp %>%
 p_b
 
 p_a <- dt_pred_comp %>% 
+  filter(!var_clean %in% c("MAP", "MAT")) %>% 
   #filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
  # geom_point(data = dt_long, aes(x = var_value, y = evi_coef), alpha = 0.1, size = 0.1, color = "grey25") +
