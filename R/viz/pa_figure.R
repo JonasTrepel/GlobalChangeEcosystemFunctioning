@@ -63,7 +63,8 @@ ggsave(plot = p_pa_shapes, "builds/plots/pas_protection_map_shapes.png", dpi = 9
 ################################   Trend comparison   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-p_pred <- dt_pred%>% 
+p_pred <- dt_pred %>% 
+  filter(!var_clean %in% c("MAP", "MAT")) %>%
   filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   ggplot() +
   #geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +

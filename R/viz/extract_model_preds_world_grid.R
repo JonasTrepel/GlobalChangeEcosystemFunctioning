@@ -36,7 +36,7 @@ extr_guide <- CJ(tier = tiers,
                       vars = vars) %>% 
   left_join(dt_bm_subset)
 
-plan(multisession, workers = 50)
+plan(multisession, workers = 25)
 
 for_results_pred <- future_map(
   1:nrow(extr_guide),
