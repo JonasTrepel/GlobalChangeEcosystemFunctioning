@@ -110,7 +110,7 @@ p_pred <- dt_pred %>%
   filter(x_unscaled > q025_unscaled,  x_unscaled < q975_unscaled) %>% 
   left_join(dt_bm %>% 
               filter(tier == "full_dataset_yes", !term == "(Intercept)") %>% 
-              select(tier, term, sig) %>% 
+              select(tier, var_name = term, sig) %>% 
               unique()) %>% 
   ggplot() +
  # geom_hline(yintercept = 0, linetype = "dashed", color = "grey25") +
@@ -118,6 +118,7 @@ p_pred <- dt_pred %>%
               fill = "#662A3C", alpha = 0.25) +
   geom_line(aes(x = x_unscaled, y = predicted, 
                 linetype = sig), linewidth = 1, color = "#662A3C") +
+  scale_linetype_manual(values = c("dashed", "solid")) +
   facet_wrap(~var_clean, scales = "free_x", ncol = 4) +
   labs(y = "Evi Trend", x = "Predictor Value", color = "", fill = "") +
   theme_minimal() +
@@ -130,10 +131,10 @@ p_pred <- dt_pred %>%
 
 p_pred
 
-p_main = (p_evi_map / p_pred) + plot_layout(heights = c(3, 1)) +
+p_main = (p_evi_map / p_pred) + plot_layout(heights = c(3, 2)) +
   plot_annotation(tag_levels = 'A')
 ggsave(plot = p_main, "builds/plots/evi_map_and_preds.png", 
-       dpi = 900, height = 8, width = 10)
+       dpi = 900, height = 9, width = 10)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   Main Subsets   ##################################

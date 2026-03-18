@@ -138,8 +138,8 @@ dt_long <- dat %>% pivot_longer(
     grepl("max_temp_coef", var_name) ~ "Max. Temperature Trend",
     grepl("hmi_change", var_name) ~ "HMI Change",
     grepl("fire_frequency", var_name) ~ "Fire frequency",
-    grepl("mean_prec_scaled", var_name) ~ "MAP", 
-    grepl("mean_mat_scaled", var_name) ~ "MAT")
+    grepl("mean_prec", var_name) ~ "MAP", 
+    grepl("mean_mat", var_name) ~ "MAT")
   ) #%>% 
   #left_join(dt_pred_comp %>% 
    #           dplyr::select(q025_unscaled, q975_unscaled, var_clean) %>% 
@@ -190,4 +190,4 @@ p_a
 p_q = p_a / p_b
 
 ggsave(plot = p_q, "builds/plots/supplement/world_grid_predictions_with_points.png",
-       dpi = 600, height = 8, width = 12)
+       dpi = 600, height = 12, width = 12)

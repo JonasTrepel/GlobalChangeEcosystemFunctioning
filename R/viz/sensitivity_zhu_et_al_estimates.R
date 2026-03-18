@@ -39,7 +39,7 @@ p_full_est <- dt_bm %>%
                       x = estimate, xmin = conf.low, xmax = conf.high, 
                       color = sig), 
                   shape = 18, linewidth = 1, size = 1.3, alpha = .85) +
-  scale_color_manual(values = c("#8E3F3D")) + 
+  scale_color_manual(values = c("#EEB554", "#8E3F3D")) + 
   facet_wrap(~subset, scales = "free_x", ncol = 5) +
   theme_minimal() +
   labs(y = "", color = "significance", title = "Alternative N Deposition Product", 
@@ -162,3 +162,4 @@ p_ob_est
 
 ggsave(plot = p_ob_est, "builds/plots/supplement/zhu_n_depo_olson_biomes_estimates.png", 
        dpi = 900, height = 10, width = 10)
+

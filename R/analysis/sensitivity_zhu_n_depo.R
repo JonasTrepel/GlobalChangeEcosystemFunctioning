@@ -515,7 +515,9 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
     term == "prec_coef_scaled" ~ "Precipitation Trend",
     term == "max_temp_coef_scaled" ~ "Max. Temperature Trend",
     term == "hmi_change_scaled" ~ "HMI Change",
-    term == "fire_frequency_scaled" ~ "Fire frequency"))
+    term == "fire_frequency_scaled" ~ "Fire frequency",
+    term == "mean_mat_scaled" ~ "MAT",
+    term == "mean_prec_scaled" ~ "MAP",))
 unique(dt_res$clean_term)
 summary(dt_res)
 fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid_zhu_sensitivity.csv")
