@@ -146,7 +146,7 @@ all_mesh_results <- future_map(
     )
     
     formula <- as.formula(
-      paste0(resp, " ~ 0 + biome_col*nitrogen_depo_scaled +
+      paste0(resp, " ~ biome_col*nitrogen_depo_scaled +
                      biome_col*mat_coef_scaled +
                      biome_col*prec_coef_scaled +
                      biome_col*hmi_change_scaled +
@@ -179,7 +179,6 @@ all_mesh_results <- future_map(
     
     result_row <- data.frame(
       tier = tier,
-      filter_call = filter_call,
       cutoff = cutoff,
       max_inner_edge = max_inner,
       mesh_id  = mesh_id,
@@ -299,10 +298,10 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    int_formula <- as.formula(paste0(resp, "~ 1"))
                                    
-                                   n_dep_formula <- as.formula(paste0(resp, "~ 0 + biome_col*nitrogen_depo_scaled"))
+                                   n_dep_formula <- as.formula(paste0(resp, "~ biome_col*nitrogen_depo_scaled"))
                                    
                                    no_dep_formula <- as.formula(paste0(resp, "~
-                                   0 + biome_col*prec_coef_scaled +
+                                   biome_col*prec_coef_scaled +
                                    biome_col*hmi_change_scaled + 
                                    biome_col*mat_coef_scaled +
                                    biome_col*max_temp_coef_scaled +
@@ -312,7 +311,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    
                                    
                                    fixed_formula <- as.formula(paste0(resp, " ~
-                                   0 + biome_col*nitrogen_depo_scaled +
+                                   biome_col*nitrogen_depo_scaled +
                                    biome_col*prec_coef_scaled +
                                    biome_col*mat_coef_scaled +
                                    biome_col*hmi_change_scaled + 
@@ -322,7 +321,7 @@ best_mesh_res_list <- future_map(1:nrow(dt_best_mesh),
                                    biome_col*mean_prec_scaled"))
                                    
                                    full_formula <- as.formula(paste0(resp, " ~
-                                   0 + biome_col*nitrogen_depo_scaled +
+                                   biome_col*nitrogen_depo_scaled +
                                    biome_col*prec_coef_scaled +
                                    biome_col*hmi_change_scaled +
                                    biome_col*mat_coef_scaled +
@@ -520,8 +519,11 @@ dt_res <- rbindlist(best_mesh_res_list) %>%
     term == "fire_frequency_scaled" ~ "Fire frequency",
     term == "mean_mat_scaled" ~ "MAT", 
     term == "mean_prec_scaled" ~ "MAP"))
+
 unique(dt_res$clean_term)
+
 summary(dt_res)
+
 fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid.csv")
 
 

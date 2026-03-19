@@ -41,10 +41,12 @@ dt_corr <- dt_mod %>%
                 mat_coef, prec_coef, max_temp_coef, 
                 fire_frequency, evi_coef, 
                 mean_mat, mean_prec)
-corr <- round(cor(dt_corr), 1)
-ggcorrplot(corr, hc.order = TRUE, type = "lower",
+corr <- round(cor(dt_corr), 3)
+p_corr <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
            lab = TRUE, colors = c("#6D9EC1", "white", "#E46726"))
 
+ggsave(plot = p_corr, "builds/plots/supplement/world_grid_corrs.png", dpi = 900)
+cor.test(dt_mod$mean_n_depo_zhu, dt_mod$nitrogen_depo)
 
 subsets <- c(unique(dt_mod$functional_biome), 
              unique(dt_mod$olson_biome), 

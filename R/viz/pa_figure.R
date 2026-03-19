@@ -267,6 +267,31 @@ p_difference <- (p_ridge | p_est) +
   plot_annotation(tag_levels = 'A')
 ggsave(plot = p_difference, "builds/plots/global_change_difference_pas.png",
        dpi = 900, height = 6, width = 9)
+
+p_me_long <- dt_bm %>% 
+  filter(tier == "prot_importance") %>% 
+  ggplot() +
+  geom_pointrange(aes(x = estimate, xmin = conf.low, xmax = conf.high,
+                      y = clean_term, color = clean_term),
+                  shape = 18,
+                  size = 1.4,
+                  linewidth = 1, 
+                  alpha = 0.9) +
+  scale_fill_manual(values = c("#DC9954", "#5B80BC")) +
+  scale_color_manual(values = c("#DC9954", "#5B80BC")) +
+  labs(x = "Model estimate (± 95 % CI)", y = "", subtitle = "Changes in EVI") +
+  theme_minimal() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme(
+    legend.position = "none",
+    plot.subtitle = element_text(hjust = 0.5),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank())
+p_me_long
+
+ggsave(plot = p_me_long, "builds/plots/supplement/evi_trend_inside_vs_outside_pas.png",
+       dpi = 900, height = 3, width = 4)
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 ################################   CONTROL DISTANCE   ##################################
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -290,4 +315,7 @@ count_plot <- dt %>%
 count_plot
 
 ggsave(plot = count_plot, "builds/plots/pa_control_within_dist_ditribution.png", dpi = 600, height = 4.5, width = 4.5)
+
+
+
 
