@@ -253,6 +253,7 @@ p_me <- dt_bm %>%
   scale_color_manual(values = c("#DC9954", "#5B80BC")) +
   labs(x = "Model estimate (± 95 % CI)", y = "", subtitle = "Changes in EVI") +
   theme_minimal() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
   theme(
     legend.position = "none",
     plot.subtitle = element_text(hjust = 0.5),
