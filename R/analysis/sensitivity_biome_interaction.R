@@ -528,7 +528,7 @@ fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid.csv")
 
 
 dt_res %>% 
-  filter(tier == "full_dataset_yes") %>% 
+  filter(tier == "super_biome") %>% 
   ggplot(aes(x = estimate, y = clean_term, xmin = conf.low,  xmax = conf.high
   )) +
   geom_pointrange( 
