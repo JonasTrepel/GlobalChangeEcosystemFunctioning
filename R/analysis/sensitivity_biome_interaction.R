@@ -526,26 +526,60 @@ summary(dt_res)
 
 fwrite(dt_res, "builds/model_outputs/sdmtmb_results_world_grid.csv")
 
+### Plot 
 
-dt_res %>% 
+dt_res <- fread("builds/model_outputs/sdmtmb_results_world_grid.csv")
+glimpse(dt_res)
+
+dt_cr <- dt_res %>% 
+  filter(tier == "climatic_region") %>% 
+  mutate(
+    biome = case_when(
+      str_detect(term, "biome_colCold") ~ "Cold",
+      str_detect(term, "biome_colPolar") ~ "Polar",
+      str_detect(term, "biome_colTemperate") ~ "Temperate",
+      str_detect(term, "biome_colTropical") ~ "Tropical",
+      TRUE ~ "Reference (Arid)"),  #reference biome
+    cont_var = case_when(
+      str_detect(term, "nitrogen_depo_scaled") ~ "N Deposition",
+      str_detect(term, "prec_coef_scaled") ~ "Precipitation trend",
+      str_detect(term, "hmi_change_scaled") ~ "HMI Change",
+      str_detect(term, "mat_coef_scaled") ~ "Mat Trend",
+      str_detect(term, "max_temp_coef_scaled") ~ "Max. Temperature Trend",
+      str_detect(term, "fire_frequency_scaled") ~ "Fire Frequency",
+      str_detect(term, "mean_mat_scaled") ~ "MAT",
+      str_detect(term, "mean_prec_scaled") ~ "MAP",
+      TRUE ~ "Intercept"), 
+    estimate_ci = paste0(round(estimate, 2), " (", round(conf.low, 2), "; ", round(conf.high, 2), ")")
+  ) %>% 
+  dplyr::select(Predictor = cont_var, Biome = biome, Estimate = estimate_ci) %>% 
+  arrange(Predictor)
+dt_cr
+
+fwrite(dt_cr, "builds/model_outputs/clean_res_biome_interaction_climatic_regions.csv")
+
+dt_sb <- dt_res %>% 
   filter(tier == "super_biome") %>% 
-  ggplot(aes(x = estimate, y = clean_term, xmin = conf.low,  xmax = conf.high
-  )) +
-  geom_pointrange( 
-    linewidth = 1) +
-  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.5) +
-  scale_color_brewer(palette = "Dark2") +
-  theme_minimal() +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.title.y = element_blank(),
-    axis.title.x = element_text(size = 12),
-    legend.title = element_blank(),
-    legend.position = "bottom"
-  ) +
-  labs(
-    x = "Estimate",
-    y = NULL
-  )
+  mutate(
+    biome = case_when(
+      str_detect(term, "biome_colnot_cold_tall") ~ "Tall Vegetation, Not Cold Limited",
+      str_detect(term, "biome_colnot_cold_short") ~ "Short Vegetation, Not Cold Limited",
+      str_detect(term, "biome_colcold_tall") ~ "Tall Vegetation, Cold Limited",
+      TRUE ~ "Reference (Short Vegetation, Cold Limited)"),  #reference biome
+    cont_var = case_when(
+      str_detect(term, "nitrogen_depo_scaled") ~ "N Deposition",
+      str_detect(term, "prec_coef_scaled") ~ "Precipitation trend",
+      str_detect(term, "hmi_change_scaled") ~ "HMI Change",
+      str_detect(term, "mat_coef_scaled") ~ "Mat Trend",
+      str_detect(term, "max_temp_coef_scaled") ~ "Max. Temperature Trend",
+      str_detect(term, "fire_frequency_scaled") ~ "Fire Frequency",
+      str_detect(term, "mean_mat_scaled") ~ "MAT",
+      str_detect(term, "mean_prec_scaled") ~ "MAP",
+      TRUE ~ "Intercept"), 
+    estimate_ci = paste0(round(estimate, 2), " (", round(conf.low, 2), "; ", round(conf.high, 2), ")")
+  ) %>% 
+  dplyr::select(Predictor = cont_var, Biome = biome, Estimate = estimate_ci) %>% 
+  arrange(Predictor)
+dt_sb
+fwrite(dt_sb, "builds/model_outputs/clean_res_biome_interaction_super_biome.csv")
 
